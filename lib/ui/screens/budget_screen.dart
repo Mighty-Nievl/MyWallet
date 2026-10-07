@@ -236,6 +236,13 @@ class BudgetScreen extends ConsumerWidget {
                           categoryId: catId!,
                           limit: limit,
                           month: month);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content:
+                                  Text('Budget tersimpan.')),
+                        );
+                      }
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(

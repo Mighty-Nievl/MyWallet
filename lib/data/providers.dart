@@ -134,8 +134,11 @@ final budgetsProvider =
         (ref) {
   final db = ref.watch(dbProvider);
   final month = ref.watch(selectedMonthProvider);
+  // Trigger: dengarkan perubahan tabel budgets ATAU transactions
+  // (keduanya via readsFrom) — simpan/hapus budget langsung
+  // refresh list tanpa restart aplikasi.
   final result = db
-      .select(db.transactions)
+      .customSelect('SELECT 1', readsFrom: {db.budgets, db.transactions})
       .watch()
       .asyncMap((_) async {
     final (from, to) = ref.read(monthRangeProvider);

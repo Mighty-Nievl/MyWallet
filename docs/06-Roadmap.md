@@ -44,6 +44,9 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 ## v1.7.1 — Fix Budget ✅ (rilis 7 Okt 2026 sebagai v1.7.1)
 - [x] Fix tombol Tambah Budget: dialog terbuka instan (kategori dimuat di dalam dialog via Consumer) + SnackBar bila kategori/batas belum lengkap + dispose controller.
 
+## v1.7.2 — Fix Budget refresh ✅ (rilis 7 Okt 2026 sebagai v1.7.2)
+- [x] Fix list tetap "Belum ada budget" setelah simpan: trigger `budgetsProvider` dengarkan tabel budgets + transactions (sebelumnya cuma transactions) + SnackBar "Budget tersimpan.".
+
 ## v1.8 — Uang lebih terkontrol
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).
