@@ -1,12 +1,17 @@
 # 05 — Panduan Pakai
 
 ## Beranda
-- Kartu hijau = **saldo** (total masuk − total keluar sepanjang waktu) + ringkasan masuk/keluar **bulan yang dipilih**.
+- Kartu hijau = **saldo** (saldo awal + total masuk − total keluar sepanjang waktu) + ringkasan masuk/keluar **bulan yang dipilih**.
+- Ikon mata di kartu = sembunyikan/tampilkan saldo cepat (mode privacy).
+- Ikon ⚙️ kanan atas = **Pengaturan**.
 - Panah `<` `>` untuk pindah bulan.
 - Bar di bawahnya = 5 kategori pengeluaran terbesar bulan itu.
 - "Terakhir dicatat" = 5 transaksi terbaru — ketuk untuk edit.
 
-## Mencatat (tombol "Catat")
+## Navigasi bawah
+`[ home ] [ history ] [ + ] [ budget ] [ laporan ]` — tombol **+** di tengah untuk mencatat.
+
+## Mencatat (tombol + tengah)
 1. Pilih **Keluar** / **Masuk**.
 2. Isi nominal (angka saja, cth. `25000`).
 3. Pilih kategori (atau "+ Tambah kategori baru").
@@ -27,6 +32,14 @@
 - Grafik batang 6 bulan (hijau = masuk, merah = keluar).
 - Pie + rincian pengeluaran per kategori bulan berjalan.
 
-## Lainnya
-- Kelola kategori (tambah/hapus). Menghapus kategori membuat transaksinya jadi "Tanpa kategori", bukan ikut terhapus.
-- **Export CSV**: membuat file `mywallet-<timestamp>.csv` (kolom: tanggal, tipe, kategori, nominal, catatan) lalu dibuka lewat share sheet — simpan ke file / kirim ke diri sendiri sebagai backup.
+## Pengaturan (ikon ⚙️ kanan atas Beranda)
+- **Tampilan:** tema Terang/Gelap/Ikuti HP + sembunyikan saldo.
+- **Keuangan:** saldo awal (uang yang sudah dipegang sebelum mulai mencatat).
+- **Kategori:** tambah/hapus. Menghapus kategori membuat transaksinya jadi "Tanpa kategori", bukan ikut terhapus.
+- **Keamanan:** kunci aplikasi PIN / biometrik.
+- **Pengingat harian:** notifikasi "sudah catat belum?" tiap hari di jam pilihan.
+- **Data:**
+  - **Export CSV**: membuat file `mywallet-<timestamp>.csv` (kolom: tanggal, tipe, kategori, nominal, catatan) lalu dibuka lewat share sheet.
+  - **Backup database**: salinan konsisten `mywallet.sqlite` ke file pilihan.
+  - **Restore database**: kembalikan dari file backup, lalu tutup total aplikasi + buka lagi.
+  - **Hapus semua data**: reset total (konfirmasi 2x, ketik HAPUS), lalu restart aplikasi.

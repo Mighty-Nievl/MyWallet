@@ -2,14 +2,16 @@
 
 Aplikasi pencatat pemasukan & pengeluaran. Data **100% lokal** (SQLite via Drift) — tanpa login, tanpa server.
 
-## Status: MVP v1.0.0 ✅
+## Status: v1.1.0 ✅
 - `flutter analyze` → No issues found · `flutter test` → 12/12 passed
-- Dashboard saldo + ringkasan bulanan + top kategori + transaksi terakhir
+- Dashboard saldo (+ saldo awal) + ringkasan bulanan + top kategori + transaksi terakhir
+- Bottom bar [home] [history] [+] [budget] [laporan] · settings di kanan atas Beranda
 - Catat / edit / hapus transaksi · kategori custom · riwayat + filter
 - Budget bulanan per kategori · laporan 6 bulan + pie · export CSV
+- P0 Pengaturan: tema, sembunyikan saldo, saldo awal, kunci PIN/biometrik, pengingat harian, backup/restore/hapus data
 
 ## Teknologi
-Flutter 3.44 · Dart 3.12 · Drift 2.35 (SQLite) · flutter_riverpod 3.4 · fl_chart · Material 3
+Flutter 3.44 · Dart 3.12 · Drift 2.35 (SQLite) · flutter_riverpod 3.4 · fl_chart · Material 3 · local_auth · flutter_secure_storage · flutter_local_notifications · file_picker
 
 ## Mulai cepat
 

@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
 import '../../data/providers.dart';
+import '../../data/settings.dart';
 import '../format.dart';
 import '../widgets/tx_tile.dart';
+import 'settings_screen.dart';
 import 'tx_form_screen.dart';
 
 /// Beranda: saldo, ringkasan bulan ini, top kategori, transaksi terakhir.
@@ -19,7 +21,18 @@ class HomeScreen extends ConsumerWidget {
     final byCat = ref.watch(monthExpenseByCategoryProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('MyWallet')),
+      appBar: AppBar(
+        title: const Text('MyWallet'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Pengaturan',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -124,14 +137,15 @@ class _MonthNav extends StatelessWidget {
   }
 }
 
-class _BalanceCard extends StatelessWidget {
+class _BalanceCard extends ConsumerWidget {
   const _BalanceCard({required this.balance, required this.totals});
   final AsyncValue<int> balance;
   final AsyncValue<(int, int)> totals;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
+    final hide = ref.watch(hideBalanceProvider).value ?? false;
     return Card(
       color: scheme.primaryContainer,
       child: Padding(
@@ -139,15 +153,29 @@ class _BalanceCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Saldo saat ini',
-                style: TextStyle(color: scheme.onPrimaryContainer)),
-            const SizedBox(height: 4),
+            Row(
+              children: [
+                Text('Saldo saat ini',
+                    style: TextStyle(color: scheme.onPrimaryContainer)),
+                const Spacer(),
+                IconButton(
+                  icon: Icon(
+                    hide ? Icons.visibility_off : Icons.visibility,
+                    color: scheme.onPrimaryContainer,
+                  ),
+                  tooltip: hide ? 'Tampilkan saldo' : 'Sembunyikan saldo',
+                  onPressed: () => ref
+                      .read(settingsServiceProvider)
+                      .setHideBalance(!hide),
+                ),
+              ],
+            ),
             balance.when(
               loading: () => const Text('…',
                   style: TextStyle(
                       fontSize: 32, fontWeight: FontWeight.bold)),
               error: (e, _) => Text('Error: $e'),
-              data: (b) => Text(formatRp(b),
+              data: (b) => Text(hide ? 'Rp••••••' : formatRp(b),
                   style: const TextStyle(
                       fontSize: 32, fontWeight: FontWeight.bold)),
             ),

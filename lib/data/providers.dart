@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 import 'database.dart';
+import 'settings.dart';
 
 /// Provider database (satu instance untuk seluruh aplikasi).
 final dbProvider = Provider<AppDatabase>((ref) {
@@ -41,12 +42,14 @@ final incomeCategoriesProvider = StreamProvider<List<Category>>((ref) {
 });
 
 /// Saldo saat ini (reaktif: ikut berubah tiap ada transaksi baru).
+/// = saldo awal (pengaturan) + total transaksi.
 final balanceProvider = StreamProvider<int>((ref) {
   final db = ref.watch(dbProvider);
+  final start = ref.watch(startingBalanceProvider).value ?? 0;
   return db
       .select(db.transactions)
       .watch()
-      .asyncMap((_) => db.getBalance());
+      .asyncMap((_) async => start + await db.getBalance());
 });
 
 /// Bulan yang sedang dilihat (format "yyyy-MM"). Bisa diubah dari UI.

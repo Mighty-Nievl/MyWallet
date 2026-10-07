@@ -24,5 +24,20 @@ Mencatat keuangan pribadi sering gagal bukan karena niat, tapi karena aplikasiny
 | Export CSV (share sheet) | ✅ |
 | Offline-first, tanpa login | ✅ |
 
+## v1.1.0 (7 Okt 2026 — sudah jadi)
+Layout baru + P0 Pengaturan lengkap.
+
+| Fitur | Status |
+|---|---|
+| Bottom bar [home] [history] [+] [budget] [laporan], + di tengah | ✅ |
+| Settings pindah ke ikon kanan atas Beranda | ✅ |
+| Tema Terang/Gelap/Ikuti HP | ✅ |
+| Sembunyikan saldo (toggle di kartu + di Pengaturan) | ✅ |
+| Saldo awal | ✅ |
+| Kunci aplikasi PIN (hash di secure storage) / biometrik + LockScreen | ✅ |
+| Pengingat harian terjadwal (izin runtime Android 13+, pulih tiap buka app) | ✅ |
+| Backup DB (`VACUUM INTO`), restore, hapus semua data (konfirmasi dobel) | ✅ |
+| Versi otomatis di Tentang (`package_info_plus`) | ✅ |
+
 ## Bukan bagian MVP (lihat [[06-Roadmap]])
-Sinkronisasi cloud, multi-dompet/rekening, scan struk OCR, PIN/biometrik, widget home screen, reminder otomatis harian.
+Sinkronisasi cloud, multi-dompet/rekening, scan struk OCR, widget home screen, input cepat parsing.

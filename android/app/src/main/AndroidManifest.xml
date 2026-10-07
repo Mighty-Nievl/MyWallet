@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Pengingat harian (Android 13+ butuh izin runtime, diminta saat dinyalakan). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Kunci biometrik. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <application
         android:label="mywallet"
         android:name="${applicationName}"

@@ -2,18 +2,19 @@
 
 Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 
-## v1.1 — Privasi & kebiasaan
-- [ ] Kunci aplikasi (PIN / biometrik) — privasi itu alasan #1 orang mau pakai pencatat lokal.
-- [ ] Pengingat harian mencatat (notifikasi lokal, `flutter_local_notifications`).
+## v1.1 — Privasi & kebiasaan ✅ (rilis 7 Okt 2026 sebagai v1.1.0)
+- [x] Kunci aplikasi (PIN / biometrik) — privasi itu alasan #1 orang mau pakai pencatat lokal.
+- [x] Pengingat harian mencatat (notifikasi lokal, `flutter_local_notifications`).
+- [x] Saldo awal / koreksi saldo (masuk P0 Pengaturan).
+- [x] Backup (file `.sqlite` via `VACUUM INTO` + restore + hapus semua data) — dimajukan dari v1.3 karena kritis untuk app offline.
+- [x] Tema gelap/terang + sembunyikan saldo.
 - [ ] Input cepat: parsing "makan 25 ribu" dari satu kolom.
 
 ## v1.2 — Uang lebih terkontrol
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).
-- [ ] Saldo awal / koreksi saldo.
 
 ## v1.3 — Data aman & berguna
-- [ ] Backup otomatis (file `.sqlite` ke folder pilihan + restore).
 - [ ] Rencana menabung / target (sinking fund).
 - [ ] Insight sederhana: "pengeluaran makan naik 20% vs bulan lalu".
 

@@ -1,6 +1,5 @@
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'database.dart';
 import 'providers.dart';
@@ -107,8 +106,3 @@ Future<void> deleteBudget(WidgetRef ref, int id) async {
   final db = ref.read(dbProvider);
   await (db.delete(db.budgets)..where((b) => b.id.equals(id))).go();
 }
-
-// ---------- Pengaturan (SharedPreferences) ----------
-
-final prefsProvider =
-    FutureProvider<SharedPreferences>((_) => SharedPreferences.getInstance());

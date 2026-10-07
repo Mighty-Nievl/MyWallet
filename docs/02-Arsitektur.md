@@ -5,26 +5,31 @@
 - **Drift 2.35** + `sqlite3_flutter_libs` → SQLite lokal (`mywallet.sqlite`)
 - **flutter_riverpod 3.4** → state reaktif. Catatan penting: `StateProvider` di v3 pindah ke `package:flutter_riverpod/legacy.dart` — jangan lupa import itu kalau pakai `StateProvider`.
 - **fl_chart** → grafik laporan · **shared_preferences** → pengaturan · **share_plus** (v12 API: `SharePlus.instance.share(ShareParams(...))`) + **csv** (v8 API: `Csv().encode(rows)`) → export CSV.
+- **local_auth** → kunci biometrik (butuh `FlutterFragmentActivity` di `MainActivity.kt`) · **flutter_secure_storage** → simpan hash PIN · **flutter_local_notifications** + **timezone** + **flutter_timezone** → pengingat harian terjadwal · **file_picker** → dialog simpan/buka file backup · **package_info_plus** → versi aplikasi otomatis di layar Tentang.
 - Codegen: `build_runner` + `drift_dev` → `lib/data/database.g.dart` (jangan edit manual).
 
 ## Struktur folder
 
 ```
 lib/
-├── main.dart            # ProviderScope + MyWalletApp
+├── main.dart            # ProviderScope + MyWalletApp + pulihkan jadwal pengingat
 ├── data/
 │   ├── tables.dart      # definisi tabel + seed kategori
 │   ├── database.dart    # AppDatabase + query custom (saldo, total, riwayat, per-kategori)
 │   ├── database.g.dart  # hasil codegen (jangan edit)
 │   ├── providers.dart   # Riverpod: db, kategori, saldo, bulan, riwayat, budget
-│   └── actions.dart     # fungsi tulis: tambah/edit/hapus transaksi, kategori, budget
+│   ├── actions.dart     # fungsi tulis: tambah/edit/hapus transaksi, kategori, budget
+│   ├── settings.dart    # P0: prefs keys + SettingsService + theme/hide/saldo-awal/kunci/reminder providers
+│   ├── lock_service.dart     # hash PIN (secure storage) + biometrik
+│   ├── reminder_service.dart # notifikasi harian terjadwal
+│   └── backup_service.dart   # VACUUM INTO backup, restore, wipe (+ PRAGMA database_list)
 └── ui/
-    ├── app.dart         # MaterialApp + tema
+    ├── app.dart         # MaterialApp + tema + gerbang LockScreen
     ├── app_theme.dart   # Material 3, seed hijau-dompet
-    ├── shell.dart       # 5 tab + FAB "Catat"
+    ├── shell.dart       # 4 tab + tombol + tengah [home][history][+][budget][laporan]
     ├── format.dart      # formatRp, parseRp, formatDate, monthKey/Label/shift
     ├── widgets/tx_tile.dart
-    └── screens/         # home, tx_form, history, budget, reports, settings
+    └── screens/         # home, tx_form, history, budget, reports, settings, lock
 ```
 
 ## Alur data
