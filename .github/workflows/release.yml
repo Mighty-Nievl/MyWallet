@@ -16,6 +16,7 @@ jobs:
   release:
     name: Build & Publish Release
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: write
     steps:
@@ -25,11 +26,27 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+          cache: gradle
 
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           flutter-version: "3.44.4"
+          cache: true
+
+      # Runner cloud RAM 16GB: pakai setting kencang (lihat build.yml).
+      - name: Tune Gradle for CI (fast)
+        run: |
+          cat > android/gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8
+          org.gradle.workers.max=4
+          org.gradle.parallel=true
+          org.gradle.caching=true
+          kotlin.incremental=true
+          android.useAndroidX=true
+          android.newDsl=false
+          android.builtInKotlin=false
+          EOF
 
       - name: Tentukan tag rilis
         id: tag

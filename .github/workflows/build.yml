@@ -7,10 +7,16 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Push baru membatalkan build lama di ref yang sama (hemat menit + antrean).
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   analyze-test:
     name: Analyze & Test
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -18,6 +24,7 @@ jobs:
         with:
           channel: stable
           flutter-version: "3.44.4"
+          cache: true
 
       - run: flutter pub get
       - run: dart run build_runner build
@@ -28,6 +35,7 @@ jobs:
     name: Build APK & AAB
     runs-on: ubuntu-latest
     needs: analyze-test
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -35,11 +43,29 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+          cache: gradle
 
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           flutter-version: "3.44.4"
+          cache: true
+
+      # Runner cloud RAM 16GB: pakai setting kencang.
+      # (android/gradle.properties di repo diset hemat 2GB buat laptop RAM kecil —
+      #  setting itu yang bikin build cloud ikut lambat, jadi timpa di sini.)
+      - name: Tune Gradle for CI (fast)
+        run: |
+          cat > android/gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8
+          org.gradle.workers.max=4
+          org.gradle.parallel=true
+          org.gradle.caching=true
+          kotlin.incremental=true
+          android.useAndroidX=true
+          android.newDsl=false
+          android.builtInKotlin=false
+          EOF
 
       - run: flutter pub get
       - run: dart run build_runner build

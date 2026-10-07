@@ -35,3 +35,9 @@ flutter run                              # jalan + hot reload (Windows desktop j
 - Kalau build Android gagal dengan error Java: pastikan JDK 17 yang dipakai (`flutter doctor` → Android toolchain harus ✅).
 - `database.g.dart` JANGAN diedit manual — selalu hasilkan ulang via build_runner.
 - **Mode hemat RAM (2GB):** `android/gradle.properties` sudah diset `-Xmx2g`, 1 worker, tanpa parallel, Kotlin in-process. Build lebih lambat (±5-8 menit) tapi aman di RAM kecil. Setelah ubah file itu, daemon lama harus dimatikan (`gradle --stop`) agar setting kepakai.
+
+## Kecepatan build (kenapa cloud ±10 menit, lokal bisa <30 detik?)
+Tiga jenis build yang beda obat:
+- **Cloud (GitHub Actions) = selalu dingin.** Tiap run sewa VM baru: unduh Flutter SDK + Gradle + dependencies Maven, compile Dart AOT + Kotlin + native (sqlite3), lalu bangun DUA artefak (APK + AAB). Normalnya 8–12 menit. Percepatan yang sudah dipasang di workflow: cache pub + cache Gradle, setting Gradle kencang khusus CI (`-Xmx4g`, 4 worker, parallel + caching + incremental — `android/gradle.properties` 2GB di repo di-timpa di CI karena itu yang bikin cloud ikut lambat), dan `cancel-in-progress` biar push baru membatalkan build basi. Ekspektasi realistis: run pertama setelah ini masih dingin (±10 menit, cache belum ada), run berikutnya ±5–7 menit. **30 detik tidak mungkin** untuk build rilis bersih di cloud.
+- **Lokal full build (`flutter build apk`) = menit.** Sama seperti cloud tapi cache panas (Gradle + pub sudah ada) → 1–3 menit. Setting 2GB di repo memang bikin ini lebih lambat demi RAM.
+- **Lokal dev (`flutter run` + hot reload) = detik.** Ini yang <30 detik: `flutter run -d windows` / ke HP, ubah kode, tekan `r` (reload) / `R` (restart). Full build ulang hanya saat butuh file APK/AAB — sehari-hari pakai Obtainium/cloud saja.
