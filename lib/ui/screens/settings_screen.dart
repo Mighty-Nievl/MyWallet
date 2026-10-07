@@ -597,16 +597,15 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _backupDb(BuildContext context, WidgetRef ref) async {
-    final path = await BackupService.pickSavePath(
-        BackupService.defaultBackupName());
-    if (path == null) return; // user batal
     try {
-      await BackupService.backupTo(ref, path);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Backup berhasil disimpan.')),
-        );
-      }
+      final uri = await BackupService.backupToFile(ref);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(uri == null
+                ? 'Backup dibatalkan.'
+                : 'Backup berhasil disimpan.')),
+      );
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

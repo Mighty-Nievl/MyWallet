@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +9,10 @@ import 'providers.dart';
 
 /// Backup & restore file database SQLite + hapus semua data.
 ///
-/// - Backup: `VACUUM INTO` → konsisten walau DB sedang terbuka.
+/// - Backup: baca byte file DB lalu tulis via `FilePicker.saveFile`
+///   (API file_picker v13: `saveFile(fileName:, bytes:)` → `Uri?`).
+///   CATATAN: ada jeda kecil antara baca byte & tulis; untuk pemakaian
+///   pribadi (1 user, app idle saat backup) ini cukup konsisten.
 /// - Restore/hapus: DB harus ditutup dulu, lalu user restart aplikasi manual
 ///   (lihat dialog di layar Pengaturan).
 class BackupService {
@@ -21,27 +25,27 @@ class BackupService {
     return 'mywallet-backup-$t.sqlite';
   }
 
-  static Future<String?> pickSavePath(String fileName) =>
-      FilePicker.saveFile(
-        dialogTitle: 'Simpan backup MyWallet',
-        fileName: fileName,
-      );
+  /// Backup DB ke file pilihan user. Return Uri hasil, null bila batal.
+  static Future<Uri?> backupToFile(WidgetRef ref) async {
+    final db = ref.read(dbProvider);
+    final src = await _dbFile(db);
+    final bytes = await src.readAsBytes();
+    return FilePicker.saveFile(
+      dialogTitle: 'Simpan backup MyWallet',
+      fileName: defaultBackupName(),
+      bytes: Uint8List.fromList(bytes),
+    );
+  }
 
+  /// Pilih file backup (.sqlite/.db). Return path lokal, null bila batal.
   static Future<String?> pickRestoreFile() async {
-    final res = await FilePicker.pickFiles(
+    final files = await FilePicker.pickFiles(
       dialogTitle: 'Pilih file backup MyWallet',
       type: FileType.custom,
       allowedExtensions: ['sqlite', 'db'],
     );
-    return res?.files.single.path;
-  }
-
-  /// Backup konsisten via VACUUM INTO (path di-escape manual karena
-  /// SQLite tidak menerima bound parameter untuk nama file).
-  static Future<void> backupTo(WidgetRef ref, String destPath) async {
-    final db = ref.read(dbProvider);
-    final escaped = destPath.replaceAll("'", "''");
-    await db.customStatement("VACUUM INTO '$escaped'");
+    if (files.isEmpty) return null;
+    return files.single.path;
   }
 
   /// Tutup koneksi DB aktif. Wajib sebelum restore/wipe.
