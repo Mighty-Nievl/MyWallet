@@ -607,7 +607,7 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
         title: Text('Changelog'),
         content: SingleChildScrollView(
           child: Text(
-            'v1.7.0 — Redesign STEP 3: navigasi custom + Budget + Laporan baru (visual saja, logika utuh).\n\n'
+            'v1.7.1 — Fix tombol Tambah Budget: dialog terbuka instan + kategori dimuat di dalam dialog + SnackBar bila belum lengkap.\n\n'
             'v1.3.0 — Restruktur Pengaturan (cari, 4 grup, kelola kategori sendiri, tentang tap-to-copy) + ringkasan harian di Beranda.\n\n'
             'v1.2.1 — Warna semantik ikut colorScheme + palet pie tanpa hijau.\n\n'
             'v1.2.0 — Tampilan full (aksen, Material You, true black, privacy all, nominal ringkas, kustom Beranda, overkill).\n\n'

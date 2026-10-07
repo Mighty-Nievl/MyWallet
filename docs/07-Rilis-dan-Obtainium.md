@@ -20,6 +20,7 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 5. Pantau di tab **Actions → Release MyWallet**.
 
 ## Riwayat rilis
+- **v1.7.1** (7 Okt 2026): Fix tombol Tambah Budget — dialog terbuka instan (kategori dimuat di dalam dialog) + SnackBar bila belum lengkap.
 - **v1.7.0** (7 Okt 2026): Redesign STEP 3 (visual saja) — navigasi bawah custom + Budget baru (overview + item + progress) + Laporan baru (ringkasan + bar 6 bulan + pie + rincian). Logika/provider/query tidak berubah.
 - **v1.6.0** (7 Okt 2026): Redesign STEP 2 (visual saja) — Riwayat baru (header custom, bulan ala Beranda, chip filter kompak) + Form Transaksi baru (nominal hero, kategori bottom sheet, tanggal tile, Simpan 52px). Logika/provider/query tidak berubah.
 - **v1.5.0** (7 Okt 2026): Redesign STEP 1 ala shadcn (visual saja) — design tokens + TxTile baris bersih + Beranda baru (header custom, saldo kartu subtle) + tema netral restrained. Logika/provider/query tidak berubah.

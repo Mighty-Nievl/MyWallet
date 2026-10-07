@@ -2,8 +2,9 @@
 
 Aplikasi pencatat pemasukan & pengeluaran. Data **100% lokal** (SQLite via Drift) — tanpa login, tanpa server.
 
-## Status: v1.7.0 ✅
+## Status: v1.7.1 ✅
 - `flutter analyze` → No issues found · `flutter test` → 27/27 passed
+- Fix tombol **Tambah Budget**: dialog terbuka instan + kategori dimuat di dalam dialog + SnackBar bila kategori/batas belum lengkap
 - Redesign **STEP 3** (visual saja, logika utuh): navigasi bawah custom + Budget baru (overview + item + progress) + Laporan baru (ringkasan + bar 6 bulan + pie + rincian)
 - Redesign **STEP 2**: Riwayat baru (header custom, bulan ala Beranda, chip filter kompak) + Form Transaksi baru (nominal hero, kategori bottom sheet, tanggal tile, Simpan 52px)
 - Redesign **STEP 1 ala shadcn**: design tokens (`lib/ui/design/`) + komponen (`lib/ui/components/`) + TxTile baris bersih + Beranda baru (header custom, saldo kartu subtle, kategori & riwayat tanpa kartu)

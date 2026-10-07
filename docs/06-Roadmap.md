@@ -41,6 +41,9 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] Laporan baru: header + month-nav + ringkasan (Masuk/Keluar/Selisih) + bar 6 bulan + pie + rincian konsisten Home — fl_chart & data tetap.
 - [x] Komponen reuse baru: `app_header`, `app_month_nav`, `app_progress`, `app_empty_state`.
 
+## v1.7.1 — Fix Budget ✅ (rilis 7 Okt 2026 sebagai v1.7.1)
+- [x] Fix tombol Tambah Budget: dialog terbuka instan (kategori dimuat di dalam dialog via Consumer) + SnackBar bila kategori/batas belum lengkap + dispose controller.
+
 ## v1.8 — Uang lebih terkontrol
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).

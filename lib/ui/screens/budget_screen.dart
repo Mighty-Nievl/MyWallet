@@ -136,60 +136,123 @@ class BudgetScreen extends ConsumerWidget {
     );
   }
 
+  /// Dialog tambah/ubah budget.
+  ///
+  /// Dibuka INSTAN tanpa await dulu (anti tombol mati): daftar kategori
+  /// dimuat di dalam dialog via Consumer (loading/error/kosong eksplisit).
+  /// Simpan selalu memberi umpan balik (SnackBar) bila ada yang kurang/gagal.
   Future<void> _showBudgetDialog(
       BuildContext context, WidgetRef ref, String month) async {
-    final cats = await ref.read(expenseCategoriesProvider.future);
     int? catId;
     final limitCtrl = TextEditingController();
-    final ok = await showDialog<bool>(
-      // ignore: use_build_context_synchronously
-      context: context,
-      builder: (c) => StatefulBuilder(
-        builder: (c, setS) => AlertDialog(
-          title: const Text('Budget kategori'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<int?>(
-                initialValue: catId,
-                decoration: const InputDecoration(
-                    labelText: 'Kategori'),
-                items: [
-                  for (final cat in cats)
-                    DropdownMenuItem(
-                        value: cat.id,
-                        child: Text('${cat.icon} ${cat.name}')),
-                ],
-                onChanged: (v) => setS(() => catId = v),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: limitCtrl,
-                keyboardType: TextInputType.number,
-                inputFormatters: [ThousandSeparatorInputFormatter()],
-                decoration: const InputDecoration(
-                  labelText: 'Batas (Rp)',
-                  hintText: 'cth. 1.500.000',
-                  prefixText: 'Rp ',
-                ),
-              ),
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (c) => StatefulBuilder(
+          builder: (c, setS) => AlertDialog(
+            title: const Text('Budget kategori'),
+            content: Consumer(
+              builder: (c, dialogRef, _) {
+                final catsAsync =
+                    dialogRef.watch(expenseCategoriesProvider);
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    catsAsync.when(
+                      loading: () => const SizedBox(
+                        height: 56,
+                        child: Center(
+                            child: CircularProgressIndicator()),
+                      ),
+                      error: (e, _) => Text(
+                        'Gagal memuat kategori: $e',
+                        style: AppType.secondary(c),
+                      ),
+                      data: (cats) {
+                        if (cats.isEmpty) {
+                          return Text(
+                            'Belum ada kategori pengeluaran. Tambah dulu di Pengaturan → Kelola → Kategori.',
+                            style: AppType.secondary(c),
+                          );
+                        }
+                        return DropdownButtonFormField<int?>(
+                          initialValue: catId,
+                          decoration: const InputDecoration(
+                              labelText: 'Kategori'),
+                          items: [
+                            for (final cat in cats)
+                              DropdownMenuItem(
+                                  value: cat.id,
+                                  child: Text(
+                                      '${cat.icon} ${cat.name}')),
+                          ],
+                          onChanged: (v) => setS(() => catId = v),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: limitCtrl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        ThousandSeparatorInputFormatter()
+                      ],
+                      decoration: const InputDecoration(
+                        labelText: 'Batas (Rp)',
+                        hintText: 'cth. 1.500.000',
+                        prefixText: 'Rp ',
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(c),
+                  child: const Text('Batal')),
+              FilledButton(
+                  onPressed: () async {
+                    final limit = parseRp(limitCtrl.text);
+                    if (catId == null) {
+                      ScaffoldMessenger.of(c).showSnackBar(
+                        const SnackBar(
+                            content:
+                                Text('Pilih kategori dulu.')),
+                      );
+                      return;
+                    }
+                    if (limit <= 0) {
+                      ScaffoldMessenger.of(c).showSnackBar(
+                        const SnackBar(
+                            content: Text(
+                                'Isi batas dulu (lebih dari 0).')),
+                      );
+                      return;
+                    }
+                    Navigator.pop(c);
+                    try {
+                      await upsertBudget(ref,
+                          categoryId: catId!,
+                          limit: limit,
+                          month: month);
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text(
+                                  'Gagal menyimpan budget: $e')),
+                        );
+                      }
+                    }
+                  },
+                  child: const Text('Simpan')),
             ],
           ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(c, false),
-                child: const Text('Batal')),
-            FilledButton(
-                onPressed: () => Navigator.pop(c, true),
-                child: const Text('Simpan')),
-          ],
         ),
-      ),
-    );
-    final limit = parseRp(limitCtrl.text);
-    if (ok == true && catId != null && limit > 0) {
-      await upsertBudget(ref,
-          categoryId: catId!, limit: limit, month: month);
+      );
+    } finally {
+      limitCtrl.dispose();
     }
   }
 }
