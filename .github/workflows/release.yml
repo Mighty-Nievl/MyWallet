@@ -48,6 +48,13 @@ jobs:
           android.builtInKotlin=false
           EOF
 
+      # NDK di runner kadang korup (unduhan parsial dari jaringan):
+      # hapus dulu agar AGP mengunduh ulang bersih.
+      # (Kejadian: rilis v1.8.0 gagal CXX1101 + ZipException
+      #  padahal analyze+test lolos — murni infra, bukan kode.)
+      - name: Bersihkan NDK korup (unduh ulang bersih)
+        run: rm -rf "${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/ndk"
+
       - name: Tentukan tag rilis
         id: tag
         run: |

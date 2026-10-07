@@ -67,6 +67,12 @@ jobs:
           android.builtInKotlin=false
           EOF
 
+      # NDK di runner kadang korup (unduhan parsial dari jaringan):
+      # hapus dulu agar AGP mengunduh ulang bersih. Asuransi yang
+      # sama seperti di release.yml.
+      - name: Bersihkan NDK korup (unduh ulang bersih)
+        run: rm -rf "${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/ndk"
+
       - run: flutter pub get
       - run: dart run build_runner build
       - run: flutter build apk --debug
