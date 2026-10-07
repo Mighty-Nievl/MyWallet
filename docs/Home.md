@@ -10,6 +10,7 @@
 4. [[04-Panduan-Build]] — cara build & install APK di HP.
 5. [[05-Panduan-Pakai]] — cara memakai aplikasi sehari-hari.
 6. [[06-Roadmap]] — ide fitur lanjutan.
+7. [[07-Rilis-dan-Obtainium]] — signing, rilis GitHub, install via Obtainium.
 
 ## Fakta kunci
 

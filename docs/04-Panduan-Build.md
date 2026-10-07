@@ -9,6 +9,9 @@ Repo: `Mighty-Nievl/MyWallet` (private). Workflow `.github/workflows/build.yml`:
 - File AAB release = yang di-upload ke Play Console (bukan APK debug).
 - ✅ Build pertama (7 Okt 2026, run `37568474280`): hijau semua — `analyze-test` 42 dtk, `build-android` 10 mnt 46 dtk. Artifact: `app-release.aab` 58 MB, `app-debug.apk` 164 MB (tersimpan di `dist-cloud/`, di-ignore git).
 
+## Rilis resmi ke GitHub Releases (untuk Obtainium)
+Lihat [[07-Rilis-dan-Obtainium]] — ringkasnya: naikkan `version:` di `pubspec.yaml`, push, lalu `git tag vX.Y.Z && git push origin vX.Y.Z`. Workflow **Release MyWallet** membangun APK rilis bertanda tangan + AAB lalu menerbitkannya ke halaman Releases.
+
 ## Syarat
 - Flutter 3.44 (di `E:\dev\flutter`), JDK 17, Android SDK di `E:\dev\android\sdk` (platform 35/36 + build-tools sudah ada).
 - Config Flutter yang sudah diset di mesin ini:
