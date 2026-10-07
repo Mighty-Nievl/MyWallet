@@ -40,9 +40,13 @@ final incomeCategoriesProvider = StreamProvider<List<Category>>((ref) {
       .watch();
 });
 
-/// Saldo saat ini.
-final balanceProvider = FutureProvider<int>((ref) async {
-  return ref.watch(dbProvider).getBalance();
+/// Saldo saat ini (reaktif: ikut berubah tiap ada transaksi baru).
+final balanceProvider = StreamProvider<int>((ref) {
+  final db = ref.watch(dbProvider);
+  return db
+      .select(db.transactions)
+      .watch()
+      .asyncMap((_) => db.getBalance());
 });
 
 /// Bulan yang sedang dilihat (format "yyyy-MM"). Bisa diubah dari UI.
@@ -64,27 +68,23 @@ final monthRangeProvider = Provider<(DateTime, DateTime)>((ref) {
 /// Total (pemasukan, pengeluaran) bulan yang dipilih. Auto-refresh tiap ada perubahan.
 final monthTotalsProvider = StreamProvider<(int, int)>((ref) {
   final db = ref.watch(dbProvider);
-  // Dengarkan tabel transaksi; hitung ulang tiap ada perubahan.
+  // Dengarkan tabel transaksi + bulan aktif; hitung ulang tiap ada perubahan.
+  final (from, to) = ref.watch(monthRangeProvider);
   return db
       .select(db.transactions)
       .watch()
-      .asyncMap((_) async {
-    final (from, to) = ref.read(monthRangeProvider);
-    return db.getTotals(from, to);
-  });
+      .asyncMap((_) => db.getTotals(from, to));
 });
 
 /// Ringkasan pengeluaran per kategori bulan yang dipilih.
 final monthExpenseByCategoryProvider =
     StreamProvider<List<CategoryTotal>>((ref) {
   final db = ref.watch(dbProvider);
+  final (from, to) = ref.watch(monthRangeProvider);
   return db
       .select(db.transactions)
       .watch()
-      .asyncMap((_) async {
-    final (from, to) = ref.read(monthRangeProvider);
-    return db.totalsByCategory(from, to, true);
-  });
+      .asyncMap((_) => db.totalsByCategory(from, to, true));
 });
 
 /// Filter riwayat (diubah dari layar Riwayat).
@@ -98,14 +98,17 @@ class HistoryFilter {
 final historyFilterProvider =
     StateProvider<HistoryFilter>((ref) => const HistoryFilter());
 
-/// Stream riwayat sesuai filter aktif.
+/// Stream riwayat sesuai filter aktif + bulan yang dipilih.
 final historyProvider = StreamProvider<List<TxWithCategory>>((ref) {
   final db = ref.watch(dbProvider);
   final f = ref.watch(historyFilterProvider);
+  final (from, to) = ref.watch(monthRangeProvider);
   return db.watchHistory(
     categoryId: f.categoryId,
     isExpense: f.isExpense,
     keyword: f.keyword,
+    from: from,
+    to: to,
   );
 });
 

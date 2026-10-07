@@ -80,6 +80,8 @@ class AppDatabase extends _$AppDatabase {
     int? categoryId,
     bool? isExpense,
     String? keyword,
+    DateTime? from,
+    DateTime? to,
     int limit = 100,
     int offset = 0,
   }) {
@@ -96,6 +98,14 @@ class AppDatabase extends _$AppDatabase {
     if (keyword != null && keyword.trim().isNotEmpty) {
       where.add('t.note LIKE ?');
       vars.add(Variable.withString('%${keyword.trim()}%'));
+    }
+    if (from != null) {
+      where.add('t.date >= ?');
+      vars.add(Variable.withDateTime(from));
+    }
+    if (to != null) {
+      where.add('t.date <= ?');
+      vars.add(Variable.withDateTime(to));
     }
     final query = customSelect(
       'SELECT t.*, c.name AS cat_name, c.icon AS cat_icon '

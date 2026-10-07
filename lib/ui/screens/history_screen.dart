@@ -32,7 +32,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Riwayat'),
+        title: Text('Riwayat · ${monthLabel(month)}'),
         actions: [
           IconButton(
             icon: const Icon(Icons.calendar_month),
