@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../design/app_colors.dart';
-
-/// Progress bar subtle yang konsisten di seluruh aplikasi
+/// Progress bar konsisten di seluruh aplikasi
 /// (Beranda kategori, Budget, Laporan).
 ///
-/// Track = permukaan sekunder netral, fill = warna semantik
-/// dari pemanggil (normal = primary, warning = tertiary,
-/// lewat batas = error). Threshold tetap milik logika pemanggil.
+/// Track = abu-abu terang ([surfaceContainerHighest]) agar batas 100%
+/// selalu kelihatan; fill = warna semantik dari pemanggil
+/// (normal = primary, warning = tertiary, lewat batas = error).
+/// Threshold tetap milik logika pemanggil.
 class AppProgress extends StatelessWidget {
   const AppProgress({
     super.key,
@@ -23,12 +22,13 @@ class AppProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return ClipRRect(
       borderRadius: BorderRadius.circular(4),
       child: LinearProgressIndicator(
         value: value.clamp(0.0, 1.0),
         minHeight: height,
-        backgroundColor: AppColors.subtleOf(context),
+        backgroundColor: scheme.surfaceContainerHighest,
         color: color,
       ),
     );

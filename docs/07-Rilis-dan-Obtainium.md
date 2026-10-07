@@ -14,12 +14,15 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 
 ## Cara merilis versi baru
 1. Naikkan `version:` di `pubspec.yaml` (contoh: `1.0.1+2`).
-2. Commit + push ke `main`.
-3. `git tag v1.0.1 && git push origin v1.0.1`
-4. Workflow **Release MyWallet** otomatis jalan: codegen → analyze → test → `flutter build apk --release` (signed) + AAB → membuat GitHub Release berisi `mywallet-v1.0.1.apk` (+ `.aab` untuk Play Console).
-5. Pantau di tab **Actions → Release MyWallet**.
+2. WAJIB tambah entri baru paling atas di `lib/ui/changelog.dart` (satu-satunya sumber changelog in-app — dialog Tentang ambil dari sini otomatis). `test/changelog_test.dart` gagal bila langkah ini lupa.
+3. Update `docs/07-Rilis-dan-Obtainium.md` (riwayat rilis) + `README.md` (status versi).
+4. Commit + push ke `main`.
+5. `git tag v1.0.1 && git push origin v1.0.1`
+6. Workflow **Release MyWallet** otomatis jalan: codegen → analyze → test → `flutter build apk --release` (signed) + AAB → membuat GitHub Release berisi `mywallet-v1.0.1.apk` (+ `.aab` untuk Play Console).
+7. Pantau di tab **Actions → Release MyWallet**.
 
 ## Riwayat rilis
+- **v1.10.0** (8 Okt 2026): Beranda baru (visual saja) — kartu saldo aksen + teks putih, progress bertrack abu terang, nama kategori lebih besar, ikon monochrome aksen, teks transaksi kontras, tombol Catat jadi FAB melayang. Logika/provider/query/navigasi tidak berubah.
 - **v1.9.0** (7 Okt 2026): Redesign STEP 4 (visual saja) — Kategori + Pengaturan + Lock Screen baru, satu bahasa dengan STEP 1-3. Logika/provider/query/navigasi tidak berubah.
 - **v1.8.0** (7 Okt 2026): Budget P0+P1 — dialog edit beneran (prefill + kategori dikunci) + hapus konfirmasi + undo 5 detik + validasi inline + kategori bottom sheet + overview "X dari Y aman" + urutan stabil + 6 test budget in-memory. Logika simpan/hitung tidak berubah.
 - **v1.7.2** (7 Okt 2026): Fix list tetap "Belum ada budget" setelah simpan — trigger `budgetsProvider` dengarkan tabel budgets + transactions + SnackBar "Budget tersimpan.".

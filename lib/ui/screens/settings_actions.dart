@@ -13,6 +13,7 @@ import '../../data/providers.dart';
 import '../../data/reminder_service.dart';
 import '../../data/settings.dart';
 import '../amount_input.dart';
+import '../changelog.dart';
 import '../design/app_colors.dart';
 import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
@@ -640,20 +641,12 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
   Future<void> showChangelog() async {
     await showDialog<void>(
       context: context,
-      builder: (c) => const AlertDialog(
-        title: Text('Changelog'),
+      builder: (c) => AlertDialog(
+        title: const Text('Changelog'),
         content: SingleChildScrollView(
-          child: Text(
-            'v1.9.0 — Redesign STEP 4: Kategori + Pengaturan + Lock Screen baru (visual saja, logika utuh).\n\n'
-            'v1.3.0 — Restruktur Pengaturan (cari, 4 grup, kelola kategori sendiri, tentang tap-to-copy) + ringkasan harian di Beranda.\n\n'
-            'v1.2.1 — Warna semantik ikut colorScheme + palet pie tanpa hijau.\n\n'
-            'v1.2.0 — Tampilan full (aksen, Material You, true black, privacy all, nominal ringkas, kustom Beranda, overkill).\n\n'
-            'v1.1.0 — P0 Pengaturan + bottom bar baru.\n\n'
-            'v1.0.1 — Fix saldo reaktif.\n\n'
-            'v1.0.0 — MVP awal.',
-          ),
+          child: Text(formatChangelog()),
         ),
-        actions: [
+        actions: const [
           _ChangelogClose(),
         ],
       ),

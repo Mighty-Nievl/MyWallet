@@ -40,4 +40,11 @@ abstract final class AppColors {
   /// Teks sekunder di atas permukaan.
   static Color mutedOf(BuildContext context) =>
       Theme.of(context).colorScheme.onSurfaceVariant;
+
+  /// Teks sekunder KONTRAS TINGGI (abu-abu gelap di light, abu terang
+  /// di dark) — untuk tanggal/deskripsi list transaksi agar mudah dibaca.
+  /// Lebih gelap dari [mutedOf], tapi tetap di bawah judul (hierarki
+  /// dijaga via ukuran + weight, bukan cuma warna).
+  static Color strongSecondaryOf(BuildContext context) =>
+      isDark(context) ? const Color(0xFFE0E0E0) : const Color(0xFF424242);
 }

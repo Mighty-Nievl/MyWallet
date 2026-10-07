@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_colors.dart';
+
 /// Hierarki tipografi MyWallet.
 ///
 /// - Judul layar: besar + semibold (header Beranda).
@@ -50,6 +52,17 @@ abstract final class AppType {
         const TextStyle(fontSize: 12);
     return base.copyWith(
       color: Theme.of(context).colorScheme.onSurfaceVariant,
+    );
+  }
+
+  /// Varian kontras tinggi dari [secondary] — tanggal/deskripsi
+  /// transaksi. Hierarki vs judul tetap terjaga (lebih kecil,
+  /// tanpa bold), tapi jauh lebih mudah dibaca.
+  static TextStyle secondaryStrong(BuildContext context) {
+    final base = Theme.of(context).textTheme.bodySmall ??
+        const TextStyle(fontSize: 12);
+    return base.copyWith(
+      color: AppColors.strongSecondaryOf(context),
     );
   }
 }

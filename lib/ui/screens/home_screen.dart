@@ -5,9 +5,11 @@ import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../../data/settings.dart';
 import '../components/app_card.dart';
+import '../components/app_progress.dart';
 import '../components/app_section.dart';
-import '../components/category_icon.dart';
+import '../components/category_glyph.dart';
 import '../design/app_colors.dart';
+import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../display.dart';
@@ -154,8 +156,10 @@ class _MonthNav extends StatelessWidget {
   }
 }
 
-/// Saldo: elemen visual terkuat di layar. Label kecil, nominal besar,
-/// lalu ringkasan pemasukan/pengeluaran bulan berjalan.
+/// Saldo: kartu hero dengan background aksen utama + teks putih —
+/// elemen visual terkuat di layar, jauh di atas kartu "Hari ini"
+/// yang tetap putih. Label kecil, nominal besar, lalu ringkasan
+/// pemasukan/pengeluaran bulan berjalan (teks putih lembut).
 class _BalanceCard extends ConsumerWidget {
   const _BalanceCard({required this.balance, required this.totals});
   final AsyncValue<int> balance;
@@ -164,17 +168,28 @@ class _BalanceCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
+    // Aksen utama yang adaptif: ikut pilihan user (pengaturan Tampilan)
+    // maupun Material You — bukan hijau hard-code.
+    final onAccent = scheme.onPrimary;
+    final onAccentSoft = onAccent.withValues(alpha: 0.85);
+    final divider = onAccent.withValues(alpha: 0.25);
     final hide = ref.watch(hideBalanceProvider).value ?? false;
     final display = ref.watch(displayPrefsProvider);
     final showTotals = ref.watch(showMonthTotalsProvider).value ?? true;
-    return AppCard(
+    return Container(
+      padding: AppSpacing.cardPadding,
+      decoration: BoxDecoration(
+        color: scheme.primary,
+        borderRadius: AppRadius.lgAll,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Text('Saldo saat ini',
-                  style: AppType.labelMuted(context)),
+                  style: AppType.labelMuted(context)
+                      .copyWith(color: onAccentSoft)),
               const Spacer(),
               InkWell(
                 onTap: () => ref
@@ -186,7 +201,7 @@ class _BalanceCard extends ConsumerWidget {
                   child: Icon(
                     hide ? Icons.visibility_off : Icons.visibility,
                     size: 18,
-                    color: AppColors.mutedOf(context),
+                    color: onAccentSoft,
                   ),
                 ),
               ),
@@ -194,41 +209,49 @@ class _BalanceCard extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.s4),
           balance.when(
-            loading: () => Text('…', style: AppType.balance(context)),
-            error: (e, _) => Text('Error: $e'),
+            loading: () => Text('…',
+                style:
+                    AppType.balance(context).copyWith(color: onAccent)),
+            error: (e, _) => Text('Error: $e',
+                style: TextStyle(color: onAccent)),
             data: (b) => Text(
               hide ? 'Rp••••••' : display.money(b),
-              style: AppType.balance(context),
+              style:
+                  AppType.balance(context).copyWith(color: onAccent),
             ),
           ),
           if (showTotals) ...[
             const SizedBox(height: AppSpacing.s16),
-            Container(height: 1, color: AppColors.borderOf(context)),
+            Container(height: 1, color: divider),
             const SizedBox(height: AppSpacing.s12),
             totals.when(
               loading: () => Text('Memuat ringkasan…',
-                  style: AppType.secondary(context)),
-              error: (e, _) => Text('Error: $e'),
+                  style: AppType.secondary(context)
+                      .copyWith(color: onAccentSoft)),
+              error: (e, _) =>
+                  Text('Error: $e', style: TextStyle(color: onAccent)),
               data: (t) => Row(
                 children: [
                   Expanded(
                     child: _MiniStat(
                       label: 'Pemasukan',
                       value: display.signed(t.$1, isExpense: false),
-                      color: scheme.primary,
+                      labelColor: onAccentSoft,
+                      valueColor: onAccent,
                     ),
                   ),
                   Container(
                     width: 1,
                     height: 32,
-                    color: AppColors.borderOf(context),
+                    color: divider,
                   ),
                   const SizedBox(width: AppSpacing.s16),
                   Expanded(
                     child: _MiniStat(
                       label: 'Pengeluaran',
                       value: display.signed(t.$2, isExpense: true),
-                      color: scheme.error,
+                      labelColor: onAccentSoft,
+                      valueColor: onAccent,
                     ),
                   ),
                 ],
@@ -242,21 +265,35 @@ class _BalanceCard extends ConsumerWidget {
 }
 
 class _MiniStat extends StatelessWidget {
-  const _MiniStat(
-      {required this.label, required this.value, required this.color});
+  const _MiniStat({
+    required this.label,
+    required this.value,
+    this.color,
+    this.labelColor,
+    this.valueColor,
+  });
   final String label;
   final String value;
-  final Color color;
+
+  /// Warna semantik tunggal (mode lama: Pemasukan=primary,
+  /// Pengeluaran=error). Diabaikan bila [valueColor] diisi.
+  final Color? color;
+  final Color? labelColor;
+  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppType.labelMuted(context)),
+        Text(
+            label,
+            style: AppType.labelMuted(context)
+                .copyWith(color: labelColor)),
         const SizedBox(height: 2),
         Text(value,
-            style: AppType.amount(context).copyWith(color: color)),
+            style: AppType.amount(context)
+                .copyWith(color: valueColor ?? color)),
       ],
     );
   }
@@ -319,7 +356,8 @@ class _DailyCard extends ConsumerWidget {
   }
 }
 
-/// Daftar top kategori bulan ini: ikon subtle, nama, progress, nominal.
+/// Daftar top kategori bulan ini: glyph aksen, nama lebih besar,
+/// progress dengan track abu terang (batas 100% kelihatan), nominal.
 /// Perhitungan & query tidak berubah — hanya presentasi.
 class _CategoryList extends ConsumerWidget {
   const _CategoryList({required this.byCat, required this.display});
@@ -328,6 +366,7 @@ class _CategoryList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
     return byCat.when(
       loading: () => const _Skeleton(lines: 3),
       error: (e, _) => Text('Gagal memuat: $e'),
@@ -347,7 +386,8 @@ class _CategoryList extends ConsumerWidget {
                     vertical: AppSpacing.s8),
                 child: Row(
                   children: [
-                    CategoryIcon(icon: c.icon, size: 36, fontSize: 18),
+                    CategoryGlyph(
+                        emoji: c.icon, size: 36, iconSize: 18),
                     const SizedBox(width: AppSpacing.s12),
                     Expanded(
                       child: Column(
@@ -356,20 +396,15 @@ class _CategoryList extends ConsumerWidget {
                           Text(c.name,
                               style: Theme.of(context)
                                   .textTheme
-                                  .bodyMedium
+                                  .bodyLarge
                                   ?.copyWith(
-                                      fontWeight: FontWeight.w500)),
+                                      fontWeight: FontWeight.w600)),
                           const SizedBox(height: 6),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: LinearProgressIndicator(
-                              value: max == 0
-                                  ? 0
-                                  : (c.total / max).clamp(0.0, 1.0),
-                              minHeight: 6,
-                              backgroundColor:
-                                  AppColors.subtleOf(context),
-                            ),
+                          AppProgress(
+                            value: max == 0
+                                ? 0
+                                : (c.total / max).clamp(0.0, 1.0),
+                            color: scheme.primary,
                           ),
                         ],
                       ),

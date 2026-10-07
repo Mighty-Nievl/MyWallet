@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
-import '../components/category_icon.dart';
+import '../components/category_glyph.dart';
 import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
@@ -12,8 +12,8 @@ import '../display.dart';
 /// Nominal, tanggal, dan ikon mengikuti preferensi Tampilan.
 ///
 /// Public API TETAP (STEP 1B): [tx] + [onTap].
-/// Hanya visual yang diubah — baris bersih ala fintech modern:
-/// ikon subtle, judul jelas, info sekunder muted, nominal tegas.
+/// Visual: glyph monochrome aksen, judul jelas, info sekunder
+/// kontras tinggi (mudah dibaca), nominal tegas.
 class TxTile extends ConsumerWidget {
   const TxTile({super.key, required this.tx, this.onTap});
 
@@ -33,7 +33,7 @@ class TxTile extends ConsumerWidget {
         child: Row(
           children: [
             if (display.showIcons) ...[
-              CategoryIcon(icon: tx.catIcon ?? '📦'),
+              CategoryGlyph(emoji: tx.catIcon ?? '📦'),
               const SizedBox(width: AppSpacing.s12),
             ],
             Expanded(
@@ -56,7 +56,7 @@ class TxTile extends ConsumerWidget {
                     '${tx.catName ?? 'Tanpa kategori'} · ${display.date(tx.date)}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppType.secondary(context),
+                    style: AppType.secondaryStrong(context),
                   ),
                 ],
               ),

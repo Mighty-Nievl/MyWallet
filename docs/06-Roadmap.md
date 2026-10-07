@@ -62,11 +62,18 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] Lock Screen: hierarki MyWallet → 🔒 → "Aplikasi terkunci" → PIN 52px + biometrik; controller/validasi/auth/obscure/keyboard/error/loading TETAP.
 - [x] Aksen/dynamic/true-black/compact/font-scale/light/dark: semua lewat colorScheme + token lama, tidak ada hard-code. 33/33 hijau.
 
-## v1.10 — Berikutnya
+## v1.10 — Beranda baru ✅ (rilis 8 Okt 2026 sebagai v1.10.0)
+- [x] Kartu saldo: background aksen utama (`scheme.primary`, ikut pilihan user/Material You — bukan hijau hard-code) + teks putih; "Hari ini" tetap putih.
+- [x] Progress kategori: `AppProgress` dengan track abu terang (`surfaceContainerHighest`, batas 100% kelihatan) + fill aksen; dipakai Beranda/Budget/Laporan.
+- [x] Tipografi: nama kategori `bodyLarge/w600`; tanggal/deskripsi transaksi pakai `secondaryStrong` kontras (`#424242` light / `#E0E0E0` dark).
+- [x] Ikon: `CategoryGlyph` monochrome aksen (mapping emoji→Material outlined, DB tidak diubah, fallback generik); dipakai TxTile + top kategori.
+- [x] Navigasi: tombol Catat jadi FAB lingkaran melayang (`centerDocked`) + tooltip; tab aktif tetap pil aksen. 35/35 hijau.
+
+## v1.11 — Berikutnya
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).
 
-## v1.9 — Data aman & berguna
+## Backlog — Data aman & berguna
 - [ ] Rencana menabung / target (sinking fund).
 - [ ] Insight sederhana: "pengeluaran makan naik 20% vs bulan lalu".
 
