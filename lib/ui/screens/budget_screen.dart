@@ -98,11 +98,12 @@ class BudgetScreen extends ConsumerWidget {
                               : (b.spent / b.budget.limit)
                                   .clamp(0.0, 1.0);
                           final over = b.spent > b.budget.limit;
+                          final scheme = Theme.of(context).colorScheme;
                           final color = over
-                              ? Theme.of(context).colorScheme.error
+                              ? scheme.error
                               : pct >= 0.8
-                                  ? Colors.orange
-                                  : Colors.green;
+                                  ? scheme.tertiary
+                                  : scheme.primary;
                           return Column(
                             crossAxisAlignment:
                                 CrossAxisAlignment.start,

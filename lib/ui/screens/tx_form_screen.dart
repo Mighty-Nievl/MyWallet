@@ -193,8 +193,9 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
             subtitle: const Text('Tanggal transaksi'),
             trailing: const Icon(Icons.edit),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: Theme.of(context).colorScheme.outline),
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                  color: Theme.of(context).colorScheme.outlineVariant),
             ),
             onTap: _pickDate,
           ),

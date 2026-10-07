@@ -201,7 +201,7 @@ class _BalanceCard extends ConsumerWidget {
                       child: _MiniStat(
                         label: 'Masuk',
                         value: display.signed(t.$1, isExpense: false),
-                        color: Colors.green.shade700,
+                        color: scheme.primary,
                       ),
                     ),
                     Expanded(

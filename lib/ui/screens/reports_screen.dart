@@ -106,19 +106,23 @@ class ReportsScreen extends ConsumerWidget {
   }
 }
 
+/// Palet pie: SENGAJA fix 6 warna (jangan ikut aksen) agar kategori A
+/// selalu warna sama tiap bulan + potongan mudah dibedakan.
+/// Tanpa hijau (hijau = warna pemasukan/aksen default, biar tidak ambigu).
 const _pieColors = [
-  Color(0xFF0E7C5B),
   Color(0xFF3B82F6),
   Color(0xFFF59E0B),
   Color(0xFFEF4444),
   Color(0xFF8B5CF6),
   Color(0xFF06B6D4),
+  Color(0xFFEC4899),
 ];
 
 class _SixMonthChart extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final db = ref.watch(dbProvider);
+    final scheme = Theme.of(context).colorScheme;
     return FutureBuilder<List<(String, int, int)>>(
       future: _lastSixMonths(db),
       builder: (context, snap) {
@@ -162,12 +166,12 @@ class _SixMonthChart extends ConsumerWidget {
                 BarChartGroupData(x: i, barRods: [
                   BarChartRodData(
                     toY: rows[i].$3.toDouble(), // keluar
-                    color: Colors.red.shade400,
+                    color: scheme.error,
                     width: 8,
                   ),
                   BarChartRodData(
                     toY: rows[i].$2.toDouble(), // masuk
-                    color: Colors.green.shade500,
+                    color: scheme.primary,
                     width: 8,
                   ),
                 ]),

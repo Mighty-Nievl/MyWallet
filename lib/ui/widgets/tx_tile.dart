@@ -15,9 +15,8 @@ class TxTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final display = ref.watch(displayPrefsProvider);
-    final color = tx.isExpense
-        ? Theme.of(context).colorScheme.error
-        : Colors.green.shade700;
+    final scheme = Theme.of(context).colorScheme;
+    final color = tx.isExpense ? scheme.error : scheme.primary;
     return ListTile(
       dense: true,
       leading: display.showIcons
