@@ -5,7 +5,7 @@ import '../../data/actions.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../components/app_empty_state.dart';
-import '../components/category_icon.dart';
+import '../components/category_glyph.dart';
 import '../components/setting_row.dart';
 import '../design/app_colors.dart';
 import '../design/app_radius.dart';
@@ -338,8 +338,8 @@ class _CategoryRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          CategoryIcon(
-              icon: cat.icon, size: 36, fontSize: 18),
+          CategoryGlyph(
+              emoji: cat.icon, size: 36, iconSize: 18),
           const SizedBox(width: AppSpacing.s12),
           Expanded(
             child: Text(

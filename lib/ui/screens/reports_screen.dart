@@ -9,7 +9,7 @@ import '../components/app_empty_state.dart';
 import '../components/app_header.dart';
 import '../components/app_month_nav.dart';
 import '../components/app_section.dart';
-import '../components/category_icon.dart';
+import '../components/category_glyph.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../display.dart';
@@ -207,8 +207,8 @@ class _Breakdown extends StatelessWidget {
                 child: Row(
                   children: [
                     if (display.showIcons)
-                      CategoryIcon(
-                          icon: c.icon, size: 36, fontSize: 18),
+                      CategoryGlyph(
+                          emoji: c.icon, size: 36, iconSize: 18),
                     if (display.showIcons)
                       const SizedBox(width: AppSpacing.s12),
                     Expanded(

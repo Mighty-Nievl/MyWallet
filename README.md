@@ -2,9 +2,9 @@
 
 Aplikasi pencatat pemasukan & pengeluaran. Data **100% lokal** (SQLite via Drift) — tanpa login, tanpa server.
 
-## Status: v1.10.0 ✅
+## Status: v1.10.1 ✅
 - `flutter analyze` → No issues found · `flutter test` → 35/35 passed
-- **Beranda baru** (visual saja, logika utuh): kartu saldo background aksen + teks putih · progress kategori pakai `AppProgress` (track abu terang) · nama kategori `bodyLarge/w600` · ikon monochrome aksen (`CategoryGlyph`, DB emoji tidak diubah) · teks transaksi `secondaryStrong` kontras · tombol Catat jadi FAB melayang `centerDocked`
+- **Penyeragaman** (visual saja, logika utuh): FAB Catat tertanam via `BottomAppBar` + notch · Beranda `CustomScrollView` satu-sliver-per-section + `ValueKey` · ikon monochrome aksen di SEMUA layar (`CategoryGlyph`, file `category_icon.dart` lama dihapus)
 - Fix tombol **Tambah Budget**: dialog terbuka instan + kategori dimuat di dalam dialog + SnackBar bila kategori/batas belum lengkap
 - Redesign **STEP 3** (visual saja, logika utuh): navigasi bawah custom + Budget baru (overview + item + progress) + Laporan baru (ringkasan + bar 6 bulan + pie + rincian)
 - Redesign **STEP 2**: Riwayat baru (header custom, bulan ala Beranda, chip filter kompak) + Form Transaksi baru (nominal hero, kategori bottom sheet, tanggal tile, Simpan 52px)

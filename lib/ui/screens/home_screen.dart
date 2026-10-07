@@ -21,9 +21,16 @@ import 'tx_form_screen.dart';
 /// Beranda: saldo, ringkasan hari ini, ringkasan bulan ini, top kategori,
 /// transaksi terakhir.
 ///
-/// STEP 1C — hanya UI/layout yang diubah. Logika bisnis TETAP:
-/// provider, perhitungan saldo, query transaksi, navigasi bulan,
-/// navigasi ke Pengaturan & form transaksi tidak disentuh.
+/// Struktur scroll: [CustomScrollView] dengan TEPAT SATU
+/// [SliverToBoxAdapter] per section (masing-masing berkunci [ValueKey]).
+/// Tidak ada [ListView]/scroll bersarang di dalam section — baris-baris
+/// kategori & transaksi memakai [Column] biasa — sehingga tidak ada jalur
+/// yang bisa me-render "Pengeluaran bulan ini" / "Terakhir dicatat"
+/// dua kali. Kalau suatu section terlihat dobel, itu rebuild stream
+/// (skeleton → data), bukan dua widget: tiap key hanya ada satu.
+///
+/// Logika bisnis TETAP: provider, perhitungan saldo, query transaksi,
+/// navigasi bulan, navigasi ke Pengaturan & form transaksi tidak disentuh.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -42,53 +49,108 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.page,
-            AppSpacing.s8,
-            AppSpacing.page,
-            96,
-          ),
-          children: [
-            _Header(
-              onOpenSettings: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+        // Satu viewport, satu sliver per section — tidak ada yang ganda.
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              key: const ValueKey('home:header'),
+              child: _pad(
+                _Header(
+                  onOpenSettings: () =>
+                      Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (_) => const SettingsScreen()),
+                  ),
+                ),
+                top: AppSpacing.s8,
               ),
             ),
-            const SizedBox(height: AppSpacing.s8),
-            _MonthNav(
-              month: month,
-              onShift: (d) => ref.read(selectedMonthProvider.notifier).state =
-                  shiftMonth(month, d),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: AppSpacing.s8),
             ),
-            const SizedBox(height: AppSpacing.s16),
-            _BalanceCard(balance: balance, totals: totals),
+            SliverToBoxAdapter(
+              key: const ValueKey('home:monthnav'),
+              child: _pad(
+                _MonthNav(
+                  month: month,
+                  onShift: (d) => ref
+                      .read(selectedMonthProvider.notifier)
+                      .state = shiftMonth(month, d),
+                ),
+              ),
+            ),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: AppSpacing.s16),
+            ),
+            SliverToBoxAdapter(
+              key: const ValueKey('home:balance'),
+              child: _pad(
+                  _BalanceCard(balance: balance, totals: totals)),
+            ),
             if (showDaily) ...[
-              const SizedBox(height: AppSpacing.sectionGap),
-              AppSection(
-                title: 'Hari ini',
-                child: _DailyCard(dayTotals: dayTotals),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppSpacing.sectionGap),
+              ),
+              SliverToBoxAdapter(
+                key: const ValueKey('home:daily'),
+                child: _pad(
+                  AppSection(
+                    title: 'Hari ini',
+                    child: _DailyCard(dayTotals: dayTotals),
+                  ),
+                ),
               ),
             ],
             if (showTop) ...[
-              const SizedBox(height: AppSpacing.sectionGap),
-              AppSection(
-                title: 'Pengeluaran bulan ini',
-                child: _CategoryList(byCat: byCat, display: display),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppSpacing.sectionGap),
+              ),
+              SliverToBoxAdapter(
+                key: const ValueKey('home:topcats'),
+                child: _pad(
+                  AppSection(
+                    title: 'Pengeluaran bulan ini',
+                    child:
+                        _CategoryList(byCat: byCat, display: display),
+                  ),
+                ),
               ),
             ],
             if (showRecent) ...[
-              const SizedBox(height: AppSpacing.sectionGap),
-              AppSection(
-                title: 'Terakhir dicatat',
-                child: _RecentList(count: recentCount),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppSpacing.sectionGap),
+              ),
+              SliverToBoxAdapter(
+                key: const ValueKey('home:recent'),
+                child: _pad(
+                  AppSection(
+                    title: 'Terakhir dicatat',
+                    child: _RecentList(count: recentCount),
+                  ),
+                ),
               ),
             ],
+            // Ruang napas di bawah agar konten terakhir tidak
+            // tertutup FAB + BottomAppBar yang docked.
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 96),
+            ),
           ],
         ),
       ),
     );
   }
+}
+
+/// Padding horizontal halaman untuk satu sliver section.
+/// Satu-satunya tempat padding diatur — section tidak mengatur
+/// padding sendiri, jadi tidak ada celah ganda / menumpuk.
+Widget _pad(Widget child, {double top = 0}) {
+  return Padding(
+    padding: EdgeInsets.fromLTRB(
+        AppSpacing.page, top, AppSpacing.page, 0),
+    child: child,
+  );
 }
 
 /// Judul layar + ikon aksi Pengaturan (navigasi tidak berubah).

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
-import 'category_icon.dart';
+import 'category_glyph.dart';
 
 /// Empty state minimal yang dipakai ulang:
 /// ikon netral + judul + deskripsi + aksi opsional.
@@ -30,7 +30,7 @@ class AppEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CategoryIcon(icon: icon, size: 56, fontSize: 28),
+            CategoryGlyph(emoji: icon, size: 56, iconSize: 28),
             const SizedBox(height: AppSpacing.s16),
             Text(
               title,

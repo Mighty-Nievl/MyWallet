@@ -9,15 +9,14 @@ import 'design/app_colors.dart';
 import 'design/app_radius.dart';
 import 'design/app_spacing.dart';
 
-/// Kerangka utama: 4 tab + FAB Catat melayang di tengah.
+/// Kerangka utama: 4 tab + FAB Catat TERTANAM di tengah.
 /// [ home ] [ history ] [ (+) ] [ budget ] [ laporan ]
 /// Pengaturan dibuka dari ikon kanan atas Beranda (bukan tab).
 ///
-/// Navigasi custom MyWallet: bar ramping + garis atas subtle,
-/// tab aktif = pil permukaan aksen, Catat = FAB lingkaran aksen
-/// yang docked di tengah (terapung di atas bar, bukan sejajar
-/// di dalamnya) — aksi utama selalu terpisah jelas dari tab.
-/// Destinasi & perilaku TETAP.
+/// FAB menyatu dengan bar via [BottomAppBar] + [CircularNotchedRectangle]:
+/// Scaffold memotong cekungan (notch) persis di bawah FAB sehingga tombol
+/// terlihat bernaung di bar, bukan melayang tipis di atasnya.
+/// Tab aktif = pil permukaan aksen. Destinasi & perilaku TETAP.
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
 
@@ -47,24 +46,27 @@ class _AppShellState extends State<AppShell> {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       body: IndexedStack(index: _index, children: _screens),
+      // FAB lingkaran aksen — bentuk bulat agar pas di cekungan notch.
       floatingActionButton: FloatingActionButton(
         onPressed: _openAdd,
         tooltip: 'Catat transaksi',
         backgroundColor: scheme.primary,
         foregroundColor: scheme.onPrimary,
+        shape: const CircleBorder(),
         child: const Icon(Icons.add),
       ),
       floatingActionButtonLocation:
           FloatingActionButtonLocation.centerDocked,
+      // BottomAppBar WAJIB agar notch terpotong otomatis oleh Scaffold.
+      // Jangan ganti ke Container biasa — notch hanya jalan di BottomAppBar.
       bottomNavigationBar: SafeArea(
         top: false,
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.surfaceOf(context),
-            border: Border(
-              top: BorderSide(color: AppColors.borderOf(context)),
-            ),
-          ),
+        child: BottomAppBar(
+          shape: const CircularNotchedRectangle(),
+          notchMargin: 8,
+          color: AppColors.surfaceOf(context),
+          elevation: 4,
+          clipBehavior: Clip.antiAlias,
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.s8,
             AppSpacing.s8,
@@ -91,7 +93,8 @@ class _AppShellState extends State<AppShell> {
                   onTap: () => setState(() => _index = 1),
                 ),
               ),
-              // Celah untuk FAB yang melayang di tengah (diameter 56).
+              // Ruang kosong selebar FAB + margin notch (56 + 2×8).
+              // Tanpa ini tab Budget/Laporan ketindih cekungan.
               const SizedBox(width: 72),
               Expanded(
                 child: _NavItem(

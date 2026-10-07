@@ -22,6 +22,7 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 7. Pantau di tab **Actions → Release MyWallet**.
 
 ## Riwayat rilis
+- **v1.10.1** (8 Okt 2026): Penyeragaman (visual saja) — FAB Catat tertanam via notch + Beranda satu-sliver-per-section + ikon monochrome di semua layar. Logika/provider/query/navigasi tidak berubah.
 - **v1.10.0** (8 Okt 2026): Beranda baru (visual saja) — kartu saldo aksen + teks putih, progress bertrack abu terang, nama kategori lebih besar, ikon monochrome aksen, teks transaksi kontras, tombol Catat jadi FAB melayang. Logika/provider/query/navigasi tidak berubah.
 - **v1.9.0** (7 Okt 2026): Redesign STEP 4 (visual saja) — Kategori + Pengaturan + Lock Screen baru, satu bahasa dengan STEP 1-3. Logika/provider/query/navigasi tidak berubah.
 - **v1.8.0** (7 Okt 2026): Budget P0+P1 — dialog edit beneran (prefill + kategori dikunci) + hapus konfirmasi + undo 5 detik + validasi inline + kategori bottom sheet + overview "X dari Y aman" + urutan stabil + 6 test budget in-memory. Logika simpan/hitung tidak berubah.

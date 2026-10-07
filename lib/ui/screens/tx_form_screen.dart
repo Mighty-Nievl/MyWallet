@@ -6,7 +6,7 @@ import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../amount_input.dart';
 import '../components/app_card.dart';
-import '../components/category_icon.dart';
+import '../components/category_glyph.dart';
 import '../design/app_colors.dart';
 import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
@@ -515,7 +515,7 @@ class _CategoryTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
             children: [
-              CategoryIcon(icon: current?.icon ?? '📦', size: 40),
+              CategoryGlyph(emoji: current?.icon ?? '📦', size: 40),
               const SizedBox(width: AppSpacing.s12),
               Expanded(
                 child: Text(
@@ -555,7 +555,7 @@ class _DateTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
             children: [
-              CategoryIcon(icon: '📅', size: 40, fontSize: 18),
+              CategoryGlyph(emoji: '📅', size: 40, iconSize: 18),
               const SizedBox(width: AppSpacing.s12),
               Expanded(
                 child: Column(
@@ -603,7 +603,7 @@ class _SheetRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
-            CategoryIcon(icon: icon, size: 36, fontSize: 18),
+            CategoryGlyph(emoji: icon, size: 36, iconSize: 18),
             const SizedBox(width: AppSpacing.s12),
             Expanded(
               child: Text(name,

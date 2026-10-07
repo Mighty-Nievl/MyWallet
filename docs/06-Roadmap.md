@@ -69,6 +69,11 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] Ikon: `CategoryGlyph` monochrome aksen (mapping emoji→Material outlined, DB tidak diubah, fallback generik); dipakai TxTile + top kategori.
 - [x] Navigasi: tombol Catat jadi FAB lingkaran melayang (`centerDocked`) + tooltip; tab aktif tetap pil aksen. 35/35 hijau.
 
+## v1.10.1 — Penyeragaman ✅ (rilis 8 Okt 2026)
+- [x] FAB Catat tertanam: bar bawah `Container` → `BottomAppBar` + `CircularNotchedRectangle` (notch kepotong otomatis, tombol bernaung di bar bukan melayang tipis).
+- [x] Beranda: `ListView` → `CustomScrollView`, tepat satu `SliverToBoxAdapter` + `ValueKey` per section (`home:header/monthnav/balance/daily/topcats/recent`) — tidak ada jalur render ganda.
+- [x] Ikon monochrome di semua layar: 11 titik `CategoryIcon` → `CategoryGlyph` (Budget 4, Kategori, Riwayat empty, Laporan, TxForm 3, empty-state generik); file `category_icon.dart` dihapus; DB emoji tidak diubah.
+
 ## v1.11 — Berikutnya
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).

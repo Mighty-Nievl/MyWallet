@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/providers.dart';
 import '../components/app_card.dart';
-import '../components/category_icon.dart';
+import '../components/category_glyph.dart';
 import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
@@ -360,7 +360,7 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CategoryIcon(icon: '🧾', size: 56, fontSize: 28),
+            const CategoryGlyph(emoji: '🧾', size: 56, iconSize: 28),
             const SizedBox(height: AppSpacing.s16),
             Text(
               'Belum ada transaksi',

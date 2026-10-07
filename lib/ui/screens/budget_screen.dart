@@ -11,7 +11,7 @@ import '../components/app_header.dart';
 import '../components/app_month_nav.dart';
 import '../components/app_progress.dart';
 import '../components/app_section.dart';
-import '../components/category_icon.dart';
+import '../components/category_glyph.dart';
 import '../design/app_colors.dart';
 import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
@@ -273,10 +273,10 @@ class BudgetScreen extends ConsumerWidget {
                         vertical: AppSpacing.s8),
                     child: Row(
                       children: [
-                        CategoryIcon(
-                            icon: cat.icon,
+                        CategoryGlyph(
+                            emoji: cat.icon,
                             size: 36,
-                            fontSize: 18),
+                            iconSize: 18),
                         const SizedBox(
                             width: AppSpacing.s12),
                         Expanded(
@@ -409,8 +409,8 @@ class BudgetScreen extends ConsumerWidget {
                             horizontal: 12, vertical: 8),
                         child: Row(
                           children: [
-                            CategoryIcon(
-                                icon: existing.icon,
+                            CategoryGlyph(
+                                emoji: existing.icon,
                                 size: 40),
                             const SizedBox(
                                 width: AppSpacing.s12),
@@ -469,8 +469,8 @@ class BudgetScreen extends ConsumerWidget {
                                         vertical: 4),
                                 child: Row(
                                   children: [
-                                    CategoryIcon(
-                                        icon: current?.icon ??
+                                    CategoryGlyph(
+                                        emoji: current?.icon ??
                                             '📦',
                                         size: 40),
                                     const SizedBox(
@@ -743,7 +743,7 @@ class _BudgetItem extends ConsumerWidget {
             const EdgeInsets.symmetric(vertical: AppSpacing.s8),
         child: Row(
           children: [
-            CategoryIcon(icon: b.icon, size: 36, fontSize: 18),
+            CategoryGlyph(emoji: b.icon, size: 36, iconSize: 18),
             const SizedBox(width: AppSpacing.s12),
             Expanded(
               child: Column(
