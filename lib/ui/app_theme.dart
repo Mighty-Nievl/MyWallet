@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 
+import 'design/app_colors.dart';
+import 'design/app_radius.dart';
+
 /// Tema Material 3 MyWallet: seed warna aksen + varian gelap/hitam pekat.
 ///
 /// Dibuat dari seed agar seluruh varian (terang/gelap) konsisten,
 /// atau dari [ColorScheme] dinamis (Material You) via [fromScheme].
+///
+/// Visual (STEP 1, ala shadcn): latar netral restrained, kartu subtle
+/// + border tipis tanpa shadow, radius restrained (kartu 14, input 12).
+/// Fungsionalitas lama (aksen, dynamic, true black, compact, font scale)
+/// TIDAK berubah — hanya fondasi visual yang dirapikan.
 class AppTheme {
   /// Pilihan warna aksen: nama -> (label, warna).
   static const accentOptions = <String, ({String label, Color color})>{
@@ -54,50 +62,72 @@ class AppTheme {
     final isDark = scheme.brightness == Brightness.dark;
     final useBlack = isDark && trueBlack;
     final effective = useBlack ? scheme.copyWith(surface: Colors.black) : scheme;
+    // Latar netral restrained (bukan surface bawaan M3 yang kebiruan).
+    final bg = useBlack
+        ? Colors.black
+        : isDark
+            ? AppColors.darkBackground
+            : AppColors.lightBackground;
+    final border = useBlack
+        ? AppColors.darkBorder
+        : isDark
+            ? AppColors.darkBorder
+            : AppColors.lightBorder;
     return ThemeData(
       useMaterial3: true,
       colorScheme: effective,
-      scaffoldBackgroundColor: useBlack ? Colors.black : null,
+      scaffoldBackgroundColor: bg,
       visualDensity:
           compact ? VisualDensity.compact : VisualDensity.standard,
       cardTheme: CardThemeData(
         margin: EdgeInsets.zero,
-        color: useBlack ? const Color(0xFF121212) : null,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
+        color: useBlack
+            ? const Color(0xFF121212)
+            : isDark
+                ? AppColors.darkSurface
+                : AppColors.lightSurface,
+        // Subtle: border tipis netral, tanpa shadow.
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.lgAll,
+          side: BorderSide(color: border),
         ),
       ),
+      dividerTheme: DividerThemeData(color: border, thickness: 1, space: 1),
       // Semua kolom input (cari, nominal, catatan, dropdown, PIN, dialog)
-      // satu gaya: radius 16 + outlineVariant, fokus pakai aksen.
+      // satu gaya: radius 12 + border subtle, fokus pakai aksen.
       // Widget TIDAK perlu set border manual — cukup InputDecoration biasa.
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: scheme.outlineVariant),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: BorderSide(color: border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: scheme.outlineVariant),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: BorderSide(color: border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: scheme.primary, width: 2),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: BorderSide(color: scheme.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           borderSide: BorderSide(color: scheme.error),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: scheme.error, width: 2),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: BorderSide(color: scheme.error, width: 1.5),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
       searchBarTheme: SearchBarThemeData(
+        elevation: const WidgetStatePropertyAll(0),
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             side: BorderSide(color: scheme.outlineVariant),
           ),
         ),

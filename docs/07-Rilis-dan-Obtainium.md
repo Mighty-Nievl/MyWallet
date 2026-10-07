@@ -20,6 +20,7 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 5. Pantau di tab **Actions → Release MyWallet**.
 
 ## Riwayat rilis
+- **v1.5.0** (8 Okt 2026): Redesign STEP 1 ala shadcn (visual saja) — design tokens + TxTile baris bersih + Beranda baru (header custom, saldo kartu subtle) + tema netral restrained. Logika/provider/query tidak berubah.
 - **v1.4.0** (7 Okt 2026): Pengaturan multi-halaman (hub + 4 sub-halaman + cari global) + input nominal otomatis bertitik + border input seragam via tema.
 - **v1.3.0** (7 Okt 2026): Restruktur Pengaturan (kolom cari, 4 grup, Isi Beranda sub-bagian, Kelola kategori halaman sendiri, hirarki Data, Tentang tap-to-copy + changelog) + ringkasan harian di Beranda + warna semantik ikut colorScheme (pemasukan = primary, keluar = error, warning 80% = tertiary) + palet pie tanpa hijau.
 - **v1.2.0** (7 Okt 2026): Tampilan full — warna aksen (6) + Material You + hitam pekat + privacy semua nominal + nominal ringkas + kustom Beranda + overkill (font/list/tanggal/ikon).

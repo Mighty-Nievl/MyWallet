@@ -2,8 +2,9 @@
 
 Aplikasi pencatat pemasukan & pengeluaran. Data **100% lokal** (SQLite via Drift) — tanpa login, tanpa server.
 
-## Status: v1.4.0 ✅
+## Status: v1.5.0 ✅
 - `flutter analyze` → No issues found · `flutter test` → 27/27 passed
+- Redesign **STEP 1 ala shadcn** (visual saja, logika utuh): design tokens (`lib/ui/design/`) + komponen (`lib/ui/components/`) + TxTile baris bersih + Beranda baru (header custom, saldo kartu subtle, kategori & riwayat tanpa kartu)
 - Pengaturan **multi-halaman**: hub 4 grup → sub-halaman sendiri (Tampilan / Saldo & Privasi / Kelola / Tentang) + cari global yang lompat ke halaman terkait
 - Input nominal **otomatis bertitik** (ketik `1000` → `1.000`) di form catat, budget, saldo awal · border input seragam radius 16 + fokus aksen
 - Bottom bar [home] [history] [+] [budget] [laporan] · settings di kanan atas Beranda

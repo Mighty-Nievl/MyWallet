@@ -25,11 +25,17 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] Input nominal otomatis bertitik (ketik `1000` → `1.000`) di form catat, budget, saldo awal (parse tetap via `parseRp`).
 - [x] Border input seragam global (radius 16 + `outlineVariant`, fokus aksen) via `inputDecorationTheme` — hapus semua border manual.
 
-## v1.5 — Uang lebih terkontrol
+## v1.5 — Redesign STEP 1 ✅ (rilis 8 Okt 2026 sebagai v1.5.0)
+- [x] Design tokens ala shadcn (`lib/ui/design/`: warna netral, spacing, radius, tipografi) + komponen (`lib/ui/components/`: kartu subtle, section, ikon kategori).
+- [x] TxTile baru (baris bersih: ikon subtle, judul, info muted, nominal tegas) — API tetap.
+- [x] Beranda baru (header custom, saldo kartu subtle, kategori tanpa kartu, riwayat tanpa kartu) — logika/provider/query tidak berubah.
+- [x] Tema: latar netral restrained, kartu tanpa shadow + border tipis, radius kartu 14 / input 12. Aksen, dynamic color, true black, compact, font scale tetap.
+
+## v1.6 — Uang lebih terkontrol
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).
 
-## v1.5 — Data aman & berguna
+## v1.7 — Data aman & berguna
 - [ ] Rencana menabung / target (sinking fund).
 - [ ] Insight sederhana: "pengeluaran makan naik 20% vs bulan lalu".
 

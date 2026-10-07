@@ -4,6 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../../data/settings.dart';
+import '../components/app_card.dart';
+import '../components/app_section.dart';
+import '../components/category_icon.dart';
+import '../design/app_colors.dart';
+import '../design/app_spacing.dart';
+import '../design/app_typography.dart';
 import '../display.dart';
 import '../format.dart';
 import '../widgets/tx_tile.dart';
@@ -12,6 +18,10 @@ import 'tx_form_screen.dart';
 
 /// Beranda: saldo, ringkasan hari ini, ringkasan bulan ini, top kategori,
 /// transaksi terakhir.
+///
+/// STEP 1C — hanya UI/layout yang diubah. Logika bisnis TETAP:
+/// provider, perhitungan saldo, query transaksi, navigasi bulan,
+/// navigasi ke Pengaturan & form transaksi tidak disentuh.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -29,104 +39,85 @@ class HomeScreen extends ConsumerWidget {
     final recentCount = ref.watch(recentCountProvider).value ?? 5;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('MyWallet'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.page,
+            AppSpacing.s8,
+            AppSpacing.page,
+            96,
+          ),
+          children: [
+            _Header(
+              onOpenSettings: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s8),
+            _MonthNav(
+              month: month,
+              onShift: (d) => ref.read(selectedMonthProvider.notifier).state =
+                  shiftMonth(month, d),
+            ),
+            const SizedBox(height: AppSpacing.s16),
+            _BalanceCard(balance: balance, totals: totals),
+            if (showDaily) ...[
+              const SizedBox(height: AppSpacing.sectionGap),
+              AppSection(
+                title: 'Hari ini',
+                child: _DailyCard(dayTotals: dayTotals),
+              ),
+            ],
+            if (showTop) ...[
+              const SizedBox(height: AppSpacing.sectionGap),
+              AppSection(
+                title: 'Pengeluaran bulan ini',
+                child: _CategoryList(byCat: byCat, display: display),
+              ),
+            ],
+            if (showRecent) ...[
+              const SizedBox(height: AppSpacing.sectionGap),
+              AppSection(
+                title: 'Terakhir dicatat',
+                child: _RecentList(count: recentCount),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Judul layar + ikon aksi Pengaturan (navigasi tidak berubah).
+class _Header extends StatelessWidget {
+  const _Header({required this.onOpenSettings});
+  final VoidCallback onOpenSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text('MyWallet', style: AppType.screenTitle(context)),
+        const Spacer(),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border:
+                Border.all(color: AppColors.borderOf(context)),
+          ),
+          child: IconButton(
+            onPressed: onOpenSettings,
+            icon: const Icon(Icons.settings_outlined, size: 20),
             tooltip: 'Pengaturan',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            constraints: const BoxConstraints.tightFor(
+              width: 40,
+              height: 40,
             ),
+            padding: EdgeInsets.zero,
           ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _MonthNav(
-            month: month,
-            onShift: (d) => ref.read(selectedMonthProvider.notifier).state =
-                shiftMonth(month, d),
-          ),
-          const SizedBox(height: 12),
-          _BalanceCard(balance: balance, totals: totals),
-          if (showDaily) ...[
-            const SizedBox(height: 16),
-            Text('Hari ini',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            _DailyCard(dayTotals: dayTotals),
-          ],
-          if (showTop) ...[
-            const SizedBox(height: 16),
-            Text('Pengeluaran bulan ini',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            byCat.when(
-              loading: () => const _Skeleton(lines: 3),
-              error: (e, _) => Text('Gagal memuat: $e'),
-              data: (list) {
-                if (list.isEmpty) {
-                  return const Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text('Belum ada pengeluaran bulan ini.'),
-                    ),
-                  );
-                }
-                final max = list.first.total;
-                return Card(
-                  child: Column(
-                    children: [
-                      for (final c in list.take(5))
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          child: Row(
-                            children: [
-                              Text(c.icon,
-                                  style: const TextStyle(fontSize: 20)),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Text(c.name,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w600)),
-                                    const SizedBox(height: 4),
-                                    LinearProgressIndicator(
-                                      value: max == 0
-                                          ? 0
-                                          : (c.total / max).clamp(0.0, 1.0),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Text(display.money(c.total),
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ],
-          if (showRecent) ...[
-            const SizedBox(height: 16),
-            Text('Terakhir dicatat',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            _RecentList(count: recentCount),
-          ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -144,18 +135,27 @@ class _MonthNav extends StatelessWidget {
         IconButton(
           onPressed: () => onShift(-1),
           icon: const Icon(Icons.chevron_left),
+          constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+          padding: EdgeInsets.zero,
         ),
         Text(monthLabel(month),
-            style: Theme.of(context).textTheme.titleMedium),
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.w600)),
         IconButton(
           onPressed: () => onShift(1),
           icon: const Icon(Icons.chevron_right),
+          constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+          padding: EdgeInsets.zero,
         ),
       ],
     );
   }
 }
 
+/// Saldo: elemen visual terkuat di layar. Label kecil, nominal besar,
+/// lalu ringkasan pemasukan/pengeluaran bulan berjalan.
 class _BalanceCard extends ConsumerWidget {
   const _BalanceCard({required this.balance, required this.totals});
   final AsyncValue<int> balance;
@@ -167,65 +167,75 @@ class _BalanceCard extends ConsumerWidget {
     final hide = ref.watch(hideBalanceProvider).value ?? false;
     final display = ref.watch(displayPrefsProvider);
     final showTotals = ref.watch(showMonthTotalsProvider).value ?? true;
-    return Card(
-      color: scheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text('Saldo saat ini',
-                    style: TextStyle(color: scheme.onPrimaryContainer)),
-                const Spacer(),
-                IconButton(
-                  icon: Icon(
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('Saldo saat ini',
+                  style: AppType.labelMuted(context)),
+              const Spacer(),
+              InkWell(
+                onTap: () => ref
+                    .read(settingsServiceProvider)
+                    .setHideBalance(!hide),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.s4),
+                  child: Icon(
                     hide ? Icons.visibility_off : Icons.visibility,
-                    color: scheme.onPrimaryContainer,
+                    size: 18,
+                    color: AppColors.mutedOf(context),
                   ),
-                  tooltip: hide ? 'Tampilkan saldo' : 'Sembunyikan saldo',
-                  onPressed: () => ref
-                      .read(settingsServiceProvider)
-                      .setHideBalance(!hide),
-                ),
-              ],
-            ),
-            balance.when(
-              loading: () => const Text('…',
-                  style: TextStyle(
-                      fontSize: 32, fontWeight: FontWeight.bold)),
-              error: (e, _) => Text('Error: $e'),
-              data: (b) => Text(hide ? 'Rp••••••' : display.money(b),
-                  style: const TextStyle(
-                      fontSize: 32, fontWeight: FontWeight.bold)),
-            ),
-            if (showTotals) const SizedBox(height: 12),
-            if (showTotals)
-              totals.when(
-                loading: () => const Text('Memuat ringkasan…'),
-                error: (e, _) => Text('Error: $e'),
-                data: (t) => Row(
-                  children: [
-                    Expanded(
-                      child: _MiniStat(
-                        label: 'Masuk',
-                        value: display.signed(t.$1, isExpense: false),
-                        color: scheme.primary,
-                      ),
-                    ),
-                    Expanded(
-                      child: _MiniStat(
-                        label: 'Keluar',
-                        value: display.signed(t.$2, isExpense: true),
-                        color: scheme.error,
-                      ),
-                    ),
-                  ],
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.s4),
+          balance.when(
+            loading: () => Text('…', style: AppType.balance(context)),
+            error: (e, _) => Text('Error: $e'),
+            data: (b) => Text(
+              hide ? 'Rp••••••' : display.money(b),
+              style: AppType.balance(context),
+            ),
+          ),
+          if (showTotals) ...[
+            const SizedBox(height: AppSpacing.s16),
+            Container(height: 1, color: AppColors.borderOf(context)),
+            const SizedBox(height: AppSpacing.s12),
+            totals.when(
+              loading: () => Text('Memuat ringkasan…',
+                  style: AppType.secondary(context)),
+              error: (e, _) => Text('Error: $e'),
+              data: (t) => Row(
+                children: [
+                  Expanded(
+                    child: _MiniStat(
+                      label: 'Pemasukan',
+                      value: display.signed(t.$1, isExpense: false),
+                      color: scheme.primary,
+                    ),
+                  ),
+                  Container(
+                    width: 1,
+                    height: 32,
+                    color: AppColors.borderOf(context),
+                  ),
+                  const SizedBox(width: AppSpacing.s16),
+                  Expanded(
+                    child: _MiniStat(
+                      label: 'Pengeluaran',
+                      value: display.signed(t.$2, isExpense: true),
+                      color: scheme.error,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -243,15 +253,16 @@ class _MiniStat extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
+        Text(label, style: AppType.labelMuted(context)),
+        const SizedBox(height: 2),
         Text(value,
-            style: TextStyle(fontWeight: FontWeight.bold, color: color)),
+            style: AppType.amount(context).copyWith(color: color)),
       ],
     );
   }
 }
 
-/// Kartu ringkasan HARI INI: masuk / keluar / selisih + jumlah transaksi.
+/// Ringkasan HARI INI: masuk / keluar / selisih.
 /// Ikut privacy scope 'all' (nominal jadi Rp••••) + nominal ringkas.
 class _DailyCard extends ConsumerWidget {
   const _DailyCard({required this.dayTotals});
@@ -261,54 +272,117 @@ class _DailyCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final display = ref.watch(displayPrefsProvider);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: dayTotals.when(
-          loading: () => const _Skeleton(lines: 2),
-          error: (e, _) => Text('Gagal memuat: $e'),
-          data: (t) {
-            final net = t.$1 - t.$2;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(formatDate(DateTime.now()),
-                    style: Theme.of(context).textTheme.bodySmall),
-                const SizedBox(height: 8),
-                Row(
+    return AppCard(
+      child: dayTotals.when(
+        loading: () => const _Skeleton(lines: 2),
+        error: (e, _) => Text('Gagal memuat: $e'),
+        data: (t) {
+          final net = t.$1 - t.$2;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(formatDate(DateTime.now()),
+                  style: AppType.secondary(context)),
+              const SizedBox(height: AppSpacing.s8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _MiniStat(
+                      label: 'Masuk',
+                      value: display.signed(t.$1, isExpense: false),
+                      color: scheme.primary,
+                    ),
+                  ),
+                  Expanded(
+                    child: _MiniStat(
+                      label: 'Keluar',
+                      value: display.signed(t.$2, isExpense: true),
+                      color: scheme.error,
+                    ),
+                  ),
+                  Expanded(
+                    child: _MiniStat(
+                      label: 'Selisih',
+                      value: display.signed(net.abs(),
+                          isExpense: net < 0),
+                      color:
+                          net < 0 ? scheme.error : scheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Daftar top kategori bulan ini: ikon subtle, nama, progress, nominal.
+/// Perhitungan & query tidak berubah — hanya presentasi.
+class _CategoryList extends ConsumerWidget {
+  const _CategoryList({required this.byCat, required this.display});
+  final AsyncValue<List<CategoryTotal>> byCat;
+  final DisplayPrefs display;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return byCat.when(
+      loading: () => const _Skeleton(lines: 3),
+      error: (e, _) => Text('Gagal memuat: $e'),
+      data: (list) {
+        if (list.isEmpty) {
+          return AppCard(
+            child: Text('Belum ada pengeluaran bulan ini.',
+                style: AppType.secondary(context)),
+          );
+        }
+        final max = list.first.total;
+        return Column(
+          children: [
+            for (final c in list.take(5))
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.s8),
+                child: Row(
                   children: [
+                    CategoryIcon(icon: c.icon, size: 36, fontSize: 18),
+                    const SizedBox(width: AppSpacing.s12),
                     Expanded(
-                      child: _MiniStat(
-                        label: 'Masuk',
-                        value:
-                            display.signed(t.$1, isExpense: false),
-                        color: scheme.primary,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(c.name,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                      fontWeight: FontWeight.w500)),
+                          const SizedBox(height: 6),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: max == 0
+                                  ? 0
+                                  : (c.total / max).clamp(0.0, 1.0),
+                              minHeight: 6,
+                              backgroundColor:
+                                  AppColors.subtleOf(context),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Expanded(
-                      child: _MiniStat(
-                        label: 'Keluar',
-                        value: display.signed(t.$2, isExpense: true),
-                        color: scheme.error,
-                      ),
-                    ),
-                    Expanded(
-                      child: _MiniStat(
-                        label: 'Selisih',
-                        value: display.signed(net.abs(),
-                            isExpense: net < 0),
-                        color: net < 0
-                            ? scheme.error
-                            : scheme.primary,
-                      ),
-                    ),
+                    const SizedBox(width: AppSpacing.s12),
+                    Text(display.money(c.total),
+                        style: AppType.amount(context, size: 14)),
                   ],
                 ),
-              ],
-            );
-          },
-        ),
-      ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
@@ -326,27 +400,25 @@ class _RecentList extends ConsumerWidget {
         if (!snap.hasData) return const _Skeleton(lines: 3);
         final list = snap.data!;
         if (list.isEmpty) {
-          return const Card(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                  'Belum ada transaksi. Ketuk tombol "Catat" untuk mulai.'),
+          return AppCard(
+            child: Text(
+              'Belum ada transaksi. Ketuk tombol "Catat" untuk mulai.',
+              style: AppType.secondary(context),
             ),
           );
         }
-        return Card(
-          child: Column(
-            children: [
-              for (final tx in list)
-                TxTile(
-                  tx: tx,
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (_) => TxFormScreen(existing: tx)),
-                  ),
+        // Tanpa kartu pembungkus — TxTile tampil sebagai baris bersih.
+        return Column(
+          children: [
+            for (final tx in list)
+              TxTile(
+                tx: tx,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (_) => TxFormScreen(existing: tx)),
                 ),
-            ],
-          ),
+              ),
+          ],
         );
       },
     );
@@ -359,16 +431,13 @@ class _Skeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: List.generate(
-            lines,
-            (_) => const Padding(
-              padding: EdgeInsets.symmetric(vertical: 6),
-              child: LinearProgressIndicator(),
-            ),
+    return AppCard(
+      child: Column(
+        children: List.generate(
+          lines,
+          (_) => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 6),
+            child: LinearProgressIndicator(),
           ),
         ),
       ),
