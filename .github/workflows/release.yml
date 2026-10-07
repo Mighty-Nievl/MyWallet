@@ -48,12 +48,27 @@ jobs:
           android.builtInKotlin=false
           EOF
 
-      # NDK di runner kadang korup (unduhan parsial dari jaringan):
-      # hapus dulu agar AGP mengunduh ulang bersih.
-      # (Kejadian: rilis v1.8.0 gagal CXX1101 + ZipException
-      #  padahal analyze+test lolos — murni infra, bukan kode.)
-      - name: Bersihkan NDK korup (unduh ulang bersih)
-        run: rm -rf "${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/ndk"
+      # NDK di runner sering korup saat diunduh (ZipException flaky).
+      # Pasang eksplisit dengan retry agar Gradle tidak unduh dadakan
+      # dan gagal di tengah jalan. Versi NDK = flutter.ndkVersion
+      # untuk Flutter 3.44.4 (cek ulang saat bump Flutter).
+      # (Kejadian: rilis v1.8.0 lolos via rerun, v1.9.0 gagal lagi
+      #  dengan pola sama — murni infra, bukan kode.)
+      - name: Pasang NDK dengan retry (anti-korup)
+        run: |
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          NDK_VER="28.2.13676358"
+          MGR="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          for i in 1 2 3 4 5; do
+            echo "== NDK attempt $i =="
+            rm -rf "$SDK/ndk/$NDK_VER" "$SDK/.temp"
+            if yes | "$MGR" --install "ndk;$NDK_VER"; then
+              break
+            fi
+            echo "NDK install gagal, coba lagi..."
+            sleep 15
+          done
+          test -f "$SDK/ndk/$NDK_VER/source.properties"
 
       - name: Tentukan tag rilis
         id: tag

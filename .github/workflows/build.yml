@@ -67,11 +67,24 @@ jobs:
           android.builtInKotlin=false
           EOF
 
-      # NDK di runner kadang korup (unduhan parsial dari jaringan):
-      # hapus dulu agar AGP mengunduh ulang bersih. Asuransi yang
-      # sama seperti di release.yml.
-      - name: Bersihkan NDK korup (unduh ulang bersih)
-        run: rm -rf "${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/ndk"
+      # NDK di runner sering korup saat diunduh (ZipException flaky).
+      # Pasang eksplisit dengan retry — asuransi yang sama seperti
+      # di release.yml, agar build debug/AAB tidak kena juga.
+      - name: Pasang NDK dengan retry (anti-korup)
+        run: |
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          NDK_VER="28.2.13676358"
+          MGR="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          for i in 1 2 3 4 5; do
+            echo "== NDK attempt $i =="
+            rm -rf "$SDK/ndk/$NDK_VER" "$SDK/.temp"
+            if yes | "$MGR" --install "ndk;$NDK_VER"; then
+              break
+            fi
+            echo "NDK install gagal, coba lagi..."
+            sleep 15
+          done
+          test -f "$SDK/ndk/$NDK_VER/source.properties"
 
       - run: flutter pub get
       - run: dart run build_runner build
