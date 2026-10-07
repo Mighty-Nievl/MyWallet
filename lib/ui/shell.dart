@@ -15,7 +15,14 @@ import 'design/app_spacing.dart';
 ///
 /// FAB menyatu dengan bar via [BottomAppBar] + [CircularNotchedRectangle]:
 /// Scaffold memotong cekungan (notch) persis di bawah FAB sehingga tombol
-/// terlihat bernaung di bar, bukan melayang tipis di atasnya.
+/// terlihat bernaung di bar. Dua syarat agar notch rapat + tidak belang:
+/// 1. `extendBody: true` — body turun sampai ujung layar sehingga yang
+///    terlihat lewat cekungan adalah konten, bukan background Scaffold.
+/// 2. JANGAN bungkus [BottomAppBar] dengan [SafeArea] dari luar —
+///    BottomAppBar sudah punya SafeArea INTERNAL di dalam material-nya
+///    (padding di dalam bar, background ikut warna bar).
+///    SafeArea luar menggeser bar ke atas: area gesture jadi background
+///    Scaffold (blok hitam belang) + posisi notch miss dari FAB.
 /// Tab aktif = pil permukaan aksen. Destinasi & perilaku TETAP.
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -45,6 +52,9 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
+      // Body sampai ujung layar — yang nongol lewat notch adalah konten,
+      // bukan background Scaffold (sumber blok hitam belang).
+      extendBody: true,
       body: IndexedStack(index: _index, children: _screens),
       // FAB lingkaran aksen — bentuk bulat agar pas di cekungan notch.
       floatingActionButton: FloatingActionButton(
@@ -57,65 +67,63 @@ class _AppShellState extends State<AppShell> {
       ),
       floatingActionButtonLocation:
           FloatingActionButtonLocation.centerDocked,
-      // BottomAppBar WAJIB agar notch terpotong otomatis oleh Scaffold.
-      // Jangan ganti ke Container biasa — notch hanya jalan di BottomAppBar.
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: BottomAppBar(
-          shape: const CircularNotchedRectangle(),
-          notchMargin: 8,
-          color: AppColors.surfaceOf(context),
-          elevation: 4,
-          clipBehavior: Clip.antiAlias,
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.s8,
-            AppSpacing.s8,
-            AppSpacing.s8,
-            AppSpacing.s8,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: _NavItem(
-                  icon: Icons.home_outlined,
-                  activeIcon: Icons.home,
-                  label: 'Beranda',
-                  active: _index == 0,
-                  onTap: () => setState(() => _index = 0),
-                ),
+      // Langsung BottomAppBar TANPA SafeArea pembungkus — safe area
+      // sudah diurus SafeArea internal BottomAppBar. Jangan bungkus
+      // dari luar (bikin belang + notch miss).
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8,
+        color: AppColors.surfaceOf(context),
+        elevation: 4,
+        clipBehavior: Clip.antiAlias,
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.s8,
+          AppSpacing.s8,
+          AppSpacing.s8,
+          AppSpacing.s8,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: _NavItem(
+                icon: Icons.home_outlined,
+                activeIcon: Icons.home,
+                label: 'Beranda',
+                active: _index == 0,
+                onTap: () => setState(() => _index = 0),
               ),
-              Expanded(
-                child: _NavItem(
-                  icon: Icons.receipt_long_outlined,
-                  activeIcon: Icons.receipt_long,
-                  label: 'Riwayat',
-                  active: _index == 1,
-                  onTap: () => setState(() => _index = 1),
-                ),
+            ),
+            Expanded(
+              child: _NavItem(
+                icon: Icons.receipt_long_outlined,
+                activeIcon: Icons.receipt_long,
+                label: 'Riwayat',
+                active: _index == 1,
+                onTap: () => setState(() => _index = 1),
               ),
-              // Ruang kosong selebar FAB + margin notch (56 + 2×8).
-              // Tanpa ini tab Budget/Laporan ketindih cekungan.
-              const SizedBox(width: 72),
-              Expanded(
-                child: _NavItem(
-                  icon: Icons.savings_outlined,
-                  activeIcon: Icons.savings,
-                  label: 'Budget',
-                  active: _index == 2,
-                  onTap: () => setState(() => _index = 2),
-                ),
+            ),
+            // Ruang kosong selebar FAB + margin notch (56 + 2×8).
+            // Tanpa ini tab Budget/Laporan ketindih cekungan.
+            const SizedBox(width: 72),
+            Expanded(
+              child: _NavItem(
+                icon: Icons.savings_outlined,
+                activeIcon: Icons.savings,
+                label: 'Budget',
+                active: _index == 2,
+                onTap: () => setState(() => _index = 2),
               ),
-              Expanded(
-                child: _NavItem(
-                  icon: Icons.bar_chart_outlined,
-                  activeIcon: Icons.bar_chart,
-                  label: 'Laporan',
-                  active: _index == 3,
-                  onTap: () => setState(() => _index = 3),
-                ),
+            ),
+            Expanded(
+              child: _NavItem(
+                icon: Icons.bar_chart_outlined,
+                activeIcon: Icons.bar_chart,
+                label: 'Laporan',
+                active: _index == 3,
+                onTap: () => setState(() => _index = 3),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -74,6 +74,10 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] Beranda: `ListView` → `CustomScrollView`, tepat satu `SliverToBoxAdapter` + `ValueKey` per section (`home:header/monthnav/balance/daily/topcats/recent`) — tidak ada jalur render ganda.
 - [x] Ikon monochrome di semua layar: 11 titik `CategoryIcon` → `CategoryGlyph` (Budget 4, Kategori, Riwayat empty, Laporan, TxForm 3, empty-state generik); file `category_icon.dart` dihapus; DB emoji tidak diubah.
 
+## v1.10.2 — Fix bar bawah ✅ (rilis 8 Okt 2026)
+- [x] Blok hitam belang hilang: buang `SafeArea` pembungkus `BottomAppBar` (safe area diurus SafeArea internal di dalam material bar — background ikut warna bar).
+- [x] Notch rapat: `extendBody: true` + `BottomAppBar` langsung tanpa wrapper sehingga cekungan `CircularNotchedRectangle` kepotong tepat di bawah FAB; satu akar dua gejala (SafeArea luar menggeser bar + miss notch).
+
 ## v1.11 — Berikutnya
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).

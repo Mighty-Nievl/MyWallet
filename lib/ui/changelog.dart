@@ -11,6 +11,11 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String text})>[
   (
+    version: 'v1.10.2',
+    text:
+        'Fix bar bawah: blok hitam belang hilang + notch FAB rapat (extendBody + buang SafeArea pembungkus, visual saja).',
+  ),
+  (
     version: 'v1.10.1',
     text:
         'Penyeragaman: FAB Catat tertanam via BottomAppBar notch + Beranda CustomScrollView satu-sliver-per-section + ikon monochrome di semua layar (CategoryIcon lama dihapus).',
