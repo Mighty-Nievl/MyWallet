@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../../data/settings.dart';
+import '../display.dart';
 import '../format.dart';
 import '../widgets/tx_tile.dart';
 import 'settings_screen.dart';
@@ -19,6 +20,10 @@ class HomeScreen extends ConsumerWidget {
     final balance = ref.watch(balanceProvider);
     final totals = ref.watch(monthTotalsProvider);
     final byCat = ref.watch(monthExpenseByCategoryProvider);
+    final display = ref.watch(displayPrefsProvider);
+    final showTop = ref.watch(showTopCategoriesProvider).value ?? true;
+    final showRecent = ref.watch(showRecentProvider).value ?? true;
+    final recentCount = ref.watch(recentCountProvider).value ?? 5;
 
     return Scaffold(
       appBar: AppBar(
@@ -43,69 +48,73 @@ class HomeScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           _BalanceCard(balance: balance, totals: totals),
-          const SizedBox(height: 16),
-          Text('Pengeluaran bulan ini',
-              style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          byCat.when(
-            loading: () => const _Skeleton(lines: 3),
-            error: (e, _) => Text('Gagal memuat: $e'),
-            data: (list) {
-              if (list.isEmpty) {
-                return const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('Belum ada pengeluaran bulan ini.'),
+          if (showTop) ...[
+            const SizedBox(height: 16),
+            Text('Pengeluaran bulan ini',
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            byCat.when(
+              loading: () => const _Skeleton(lines: 3),
+              error: (e, _) => Text('Gagal memuat: $e'),
+              data: (list) {
+                if (list.isEmpty) {
+                  return const Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('Belum ada pengeluaran bulan ini.'),
+                    ),
+                  );
+                }
+                final max = list.first.total;
+                return Card(
+                  child: Column(
+                    children: [
+                      for (final c in list.take(5))
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          child: Row(
+                            children: [
+                              Text(c.icon,
+                                  style: const TextStyle(fontSize: 20)),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(c.name,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w600)),
+                                    const SizedBox(height: 4),
+                                    LinearProgressIndicator(
+                                      value: max == 0
+                                          ? 0
+                                          : (c.total / max).clamp(0.0, 1.0),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(display.money(c.total),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                    ],
                   ),
                 );
-              }
-              final max = list.first.total;
-              return Card(
-                child: Column(
-                  children: [
-                    for (final c in list.take(5))
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        child: Row(
-                          children: [
-                            Text(c.icon,
-                                style: const TextStyle(fontSize: 20)),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  Text(c.name,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w600)),
-                                  const SizedBox(height: 4),
-                                  LinearProgressIndicator(
-                                    value: max == 0
-                                        ? 0
-                                        : (c.total / max).clamp(0.0, 1.0),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(formatRp(c.total),
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-          Text('Terakhir dicatat',
-              style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          _RecentList(),
+              },
+            ),
+          ],
+          if (showRecent) ...[
+            const SizedBox(height: 16),
+            Text('Terakhir dicatat',
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            _RecentList(count: recentCount),
+          ],
         ],
       ),
     );
@@ -146,6 +155,8 @@ class _BalanceCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final hide = ref.watch(hideBalanceProvider).value ?? false;
+    final display = ref.watch(displayPrefsProvider);
+    final showTotals = ref.watch(showMonthTotalsProvider).value ?? true;
     return Card(
       color: scheme.primaryContainer,
       child: Padding(
@@ -175,33 +186,34 @@ class _BalanceCard extends ConsumerWidget {
                   style: TextStyle(
                       fontSize: 32, fontWeight: FontWeight.bold)),
               error: (e, _) => Text('Error: $e'),
-              data: (b) => Text(hide ? 'Rp••••••' : formatRp(b),
+              data: (b) => Text(hide ? 'Rp••••••' : display.money(b),
                   style: const TextStyle(
                       fontSize: 32, fontWeight: FontWeight.bold)),
             ),
-            const SizedBox(height: 12),
-            totals.when(
-              loading: () => const Text('Memuat ringkasan…'),
-              error: (e, _) => Text('Error: $e'),
-              data: (t) => Row(
-                children: [
-                  Expanded(
-                    child: _MiniStat(
-                      label: 'Masuk',
-                      value: '+${formatRp(t.$1)}',
-                      color: Colors.green.shade700,
+            if (showTotals) const SizedBox(height: 12),
+            if (showTotals)
+              totals.when(
+                loading: () => const Text('Memuat ringkasan…'),
+                error: (e, _) => Text('Error: $e'),
+                data: (t) => Row(
+                  children: [
+                    Expanded(
+                      child: _MiniStat(
+                        label: 'Masuk',
+                        value: display.signed(t.$1, isExpense: false),
+                        color: Colors.green.shade700,
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: _MiniStat(
-                      label: 'Keluar',
-                      value: '-${formatRp(t.$2)}',
-                      color: scheme.error,
+                    Expanded(
+                      child: _MiniStat(
+                        label: 'Keluar',
+                        value: display.signed(t.$2, isExpense: true),
+                        color: scheme.error,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -230,11 +242,14 @@ class _MiniStat extends StatelessWidget {
 }
 
 class _RecentList extends ConsumerWidget {
+  const _RecentList({required this.count});
+  final int count;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final db = ref.watch(dbProvider);
     return StreamBuilder<List<TxWithCategory>>(
-      stream: db.watchHistory(limit: 5),
+      stream: db.watchHistory(limit: count),
       builder: (context, snap) {
         if (!snap.hasData) return const _Skeleton(lines: 3);
         final list = snap.data!;

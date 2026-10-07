@@ -10,7 +10,13 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] Tema gelap/terang + sembunyikan saldo.
 - [ ] Input cepat: parsing "makan 25 ribu" dari satu kolom.
 
-## v1.2 — Uang lebih terkontrol
+## v1.2 — Tampilan full ✅ (rilis 7 Okt 2026 sebagai v1.2.0)
+- [x] Warna aksen (6 pilihan) + Material You / dynamic_color.
+- [x] Hitam pekat mode gelap, privacy semua nominal, nominal ringkas (Rp1,5 jt).
+- [x] Kustom Beranda (ringkasan / top kategori / terakhir 3-5-10).
+- [x] Overkill: ukuran font, list rapat, tanggal relatif, ikon kategori on/off.
+
+## v1.3 — Uang lebih terkontrol
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).
 

@@ -16,6 +16,44 @@ String formatRp(int amount) {
   return '${neg ? '-' : ''}Rp${_group(amount.abs())}';
 }
 
+/// Format ringkas Indonesia: 25000 -> "Rp25 rb", 1500000 -> "Rp1,5 jt",
+/// 2000000000 -> "Rp2 M". Desimal koma, maksimal 1 digit, tanpa ",0".
+/// Nilai < 1000 tetap penuh ("Rp500").
+String formatRpCompact(int amount) {
+  final neg = amount < 0;
+  final n = amount.abs();
+  String fmt(double v) {
+    final rounded = (v * 10).round() / 10;
+    var s = rounded.toStringAsFixed(rounded == rounded.roundToDouble() ? 0 : 1);
+    s = s.replaceAll('.', ',');
+    return s;
+  }
+
+  final body = n < 1000
+      ? _group(n)
+      : n < 1000000
+          ? '${fmt(n / 1000)} rb'
+          : n < 1000000000
+              ? '${fmt(n / 1000000)} jt'
+              : '${fmt(n / 1000000000)} M';
+  return '${neg ? '-' : ''}Rp$body';
+}
+
+/// Tanggal relatif Indonesia: "Hari ini", "Kemarin", "Besok",
+/// selebihnya formatDate biasa. [now] untuk testing.
+String formatDateRelative(DateTime d, {DateTime? now}) {
+  final n = now ?? DateTime.now();
+  final day = DateTime(d.year, d.month, d.day);
+  final today = DateTime(n.year, n.month, n.day);
+  final diff = day.difference(today).inDays;
+  return switch (diff) {
+    0 => 'Hari ini',
+    -1 => 'Kemarin',
+    1 => 'Besok',
+    _ => formatDate(d),
+  };
+}
+
 /// "Rp1.500.000" / "25 ribu" (angka saja) -> 1500000 / 25.
 /// Mengambil semua digit; teks seperti "25 ribu" jadi 25 (bukan 25000).
 int parseRp(String input) {

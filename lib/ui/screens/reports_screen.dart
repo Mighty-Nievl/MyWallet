@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
 import '../../data/providers.dart';
+import '../display.dart';
 import '../format.dart';
 
 /// Layar laporan: grafik 6 bulan + rincian kategori bulan berjalan.
@@ -14,6 +15,7 @@ class ReportsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final month = ref.watch(selectedMonthProvider);
     final byCat = ref.watch(monthExpenseByCategoryProvider);
+    final display = ref.watch(displayPrefsProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text('Laporan · ${monthLabel(month)}')),
@@ -74,18 +76,20 @@ class ReportsScreen extends ConsumerWidget {
                     ),
                     for (final c in list)
                       ListTile(
-                        leading: Text(c.icon,
-                            style:
-                                const TextStyle(fontSize: 20)),
+                        leading: display.showIcons
+                            ? Text(c.icon,
+                                style:
+                                    const TextStyle(fontSize: 20))
+                            : null,
                         title: Text(c.name),
-                        trailing: Text(formatRp(c.total),
+                        trailing: Text(display.money(c.total),
                             style: const TextStyle(
                                 fontWeight: FontWeight.bold)),
                       ),
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: Text(
-                        'Total keluar: ${formatRp(total)}',
+                        'Total keluar: ${display.money(total)}',
                         style: const TextStyle(
                             fontWeight: FontWeight.bold),
                       ),

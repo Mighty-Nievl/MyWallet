@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/actions.dart';
 import '../../data/providers.dart';
+import '../display.dart';
 import '../format.dart';
 
 /// Layar budget bulanan per kategori.
@@ -91,6 +92,7 @@ class BudgetScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 8),
                         Builder(builder: (context) {
+                          final display = ref.watch(displayPrefsProvider);
                           final pct = b.budget.limit == 0
                               ? 0.0
                               : (b.spent / b.budget.limit)
@@ -111,7 +113,7 @@ class BudgetScreen extends ConsumerWidget {
                                   minHeight: 8),
                               const SizedBox(height: 8),
                               Text(
-                                '${formatRp(b.spent)} / ${formatRp(b.budget.limit)}'
+                                '${display.money(b.spent)} / ${display.money(b.budget.limit)}'
                                 '${over ? ' · LEWAT ${(100 * b.spent / b.budget.limit).round()}%' : ' · ${(pct * 100).round()}%'}',
                                 style: TextStyle(
                                     color: color,

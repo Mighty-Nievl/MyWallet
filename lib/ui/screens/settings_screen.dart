@@ -15,6 +15,7 @@ import '../../data/lock_service.dart';
 import '../../data/providers.dart';
 import '../../data/reminder_service.dart';
 import '../../data/settings.dart';
+import '../app_theme.dart';
 import '../format.dart';
 
 /// Layar Pengaturan — dibuka dari ikon kanan atas Beranda.
@@ -26,6 +27,19 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     final hideBalance = ref.watch(hideBalanceProvider);
+    final privacyScope = ref.watch(privacyScopeProvider);
+    final accent = ref.watch(accentColorProvider);
+    final useDynamic = ref.watch(useDynamicColorProvider);
+    final trueBlack = ref.watch(trueBlackProvider);
+    final compactAmounts = ref.watch(compactAmountsProvider);
+    final showTop = ref.watch(showTopCategoriesProvider);
+    final showTotals = ref.watch(showMonthTotalsProvider);
+    final showRecent = ref.watch(showRecentProvider);
+    final recentCount = ref.watch(recentCountProvider);
+    final fontScale = ref.watch(fontScaleProvider);
+    final compactList = ref.watch(compactListProvider);
+    final relativeDates = ref.watch(relativeDatesProvider);
+    final showIcons = ref.watch(showCategoryIconsProvider);
     final starting = ref.watch(startingBalanceProvider);
     final appLock = ref.watch(appLockProvider);
     final reminder = ref.watch(reminderProvider);
@@ -56,14 +70,196 @@ class SettingsScreen extends ConsumerWidget {
                   onTap: () => _pickTheme(context, ref),
                 ),
                 const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.palette),
+                  title: const Text('Warna aksen'),
+                  subtitle: Text(accent.when(
+                    loading: () => '…',
+                    error: (_, _) => 'Gagal memuat',
+                    data: (a) => AppTheme.accentOptions[a]?.label ?? a,
+                  )),
+                  trailing: accent.when(
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, _) => const SizedBox.shrink(),
+                    data: (a) => CircleAvatar(
+                      backgroundColor: AppTheme.seedFor(a),
+                      radius: 12,
+                    ),
+                  ),
+                  onTap: () => _pickAccent(context, ref),
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  secondary: const Icon(Icons.wallpaper),
+                  title: const Text('Ikuti warna wallpaper HP'),
+                  subtitle: const Text(
+                      'Material You — Android 12 ke atas, menimpa warna aksen'),
+                  value: useDynamic.value ?? false,
+                  onChanged: (v) => ref
+                      .read(settingsServiceProvider)
+                      .setUseDynamicColor(v),
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  secondary: const Icon(Icons.dark_mode),
+                  title: const Text('Hitam pekat'),
+                  subtitle: const Text(
+                      'Background hitam total di mode gelap (hemat OLED)'),
+                  value: trueBlack.value ?? false,
+                  onChanged: (v) => ref
+                      .read(settingsServiceProvider)
+                      .setTrueBlack(v),
+                ),
+                const Divider(height: 1),
                 SwitchListTile(
                   secondary: const Icon(Icons.visibility_off),
                   title: const Text('Sembunyikan saldo'),
-                  subtitle: const Text('Nominal jadi Rp•••• di Beranda'),
+                  subtitle: Text(privacyScope.when(
+                    loading: () => 'Nominal jadi Rp••••',
+                    error: (_, _) => 'Nominal jadi Rp••••',
+                    data: (s) => s == 'all'
+                        ? 'Semua nominal jadi Rp••••'
+                        : 'Nominal jadi Rp•••• di Beranda',
+                  )),
                   value: hideBalance.value ?? false,
                   onChanged: (v) => ref
                       .read(settingsServiceProvider)
                       .setHideBalance(v),
+                ),
+                if (hideBalance.value ?? false)
+                  ListTile(
+                    leading: const Icon(Icons.privacy_tip),
+                    title: const Text('Cakupan sembunyikan'),
+                    subtitle: Text(privacyScope.when(
+                      loading: () => '…',
+                      error: (_, _) => 'Gagal memuat',
+                      data: (s) => s == 'all'
+                          ? 'Semua nominal (saldo + list + laporan)'
+                          : 'Hanya saldo Beranda',
+                    )),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _pickPrivacyScope(context, ref),
+                  ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  secondary: const Icon(Icons.short_text),
+                  title: const Text('Nominal ringkas'),
+                  subtitle: Text(compactAmounts.when(
+                    loading: () => '…',
+                    error: (_, _) => 'Gagal memuat',
+                    data: (c) => c ? 'Contoh: Rp1,5 jt' : 'Contoh: Rp1.500.000',
+                  )),
+                  value: compactAmounts.value ?? false,
+                  onChanged: (v) => ref
+                      .read(settingsServiceProvider)
+                      .setCompactAmounts(v),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.format_size),
+                  title: const Text('Ukuran font'),
+                  subtitle: Text(fontScale.when(
+                    loading: () => '…',
+                    error: (_, _) => 'Gagal memuat',
+                    data: (f) => fontScaleLabel(f),
+                  )),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _pickFontScale(context, ref),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _SectionTitle('Beranda'),
+          Card(
+            child: Column(
+              children: [
+                SwitchListTile(
+                  secondary: const Icon(Icons.bar_chart),
+                  title: const Text('Ringkasan masuk / keluar'),
+                  subtitle:
+                      const Text('Dua angka di bawah saldo bulan berjalan'),
+                  value: showTotals.value ?? true,
+                  onChanged: (v) => ref
+                      .read(settingsServiceProvider)
+                      .setShowMonthTotals(v),
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  secondary: const Icon(Icons.category),
+                  title: const Text('Top kategori bulan ini'),
+                  subtitle:
+                      const Text('Bar pengeluaran per kategori di Beranda'),
+                  value: showTop.value ?? true,
+                  onChanged: (v) => ref
+                      .read(settingsServiceProvider)
+                      .setShowTopCategories(v),
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  secondary: const Icon(Icons.history),
+                  title: const Text('Terakhir dicatat'),
+                  subtitle: Text(recentCount.when(
+                    loading: () => '…',
+                    error: (_, _) => 'Gagal memuat',
+                    data: (n) => 'Tampilkan $n transaksi terakhir',
+                  )),
+                  value: showRecent.value ?? true,
+                  onChanged: (v) => ref
+                      .read(settingsServiceProvider)
+                      .setShowRecent(v),
+                ),
+                if (showRecent.value ?? true)
+                  ListTile(
+                    leading: const Icon(Icons.format_list_numbered),
+                    title: const Text('Jumlah ditampilkan'),
+                    subtitle: Text(recentCount.when(
+                      loading: () => '…',
+                      error: (_, _) => 'Gagal memuat',
+                      data: (n) => '$n transaksi',
+                    )),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _pickRecentCount(context, ref),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _SectionTitle('List & tanggal (overkill)'),
+          Card(
+            child: Column(
+              children: [
+                SwitchListTile(
+                  secondary: const Icon(Icons.density_small),
+                  title: const Text('List rapat'),
+                  subtitle:
+                      const Text('Baris transaksi lebih padat, muat lebih banyak'),
+                  value: compactList.value ?? false,
+                  onChanged: (v) => ref
+                      .read(settingsServiceProvider)
+                      .setCompactList(v),
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  secondary: const Icon(Icons.today),
+                  title: const Text('Tanggal relatif'),
+                  subtitle: const Text(
+                      '"Hari ini / Kemarin" gantikan tanggal penuh di list'),
+                  value: relativeDates.value ?? true,
+                  onChanged: (v) => ref
+                      .read(settingsServiceProvider)
+                      .setRelativeDates(v),
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  secondary: const Icon(Icons.emoji_emotions),
+                  title: const Text('Ikon kategori'),
+                  subtitle:
+                      const Text('Emoji di tiap baris transaksi & laporan'),
+                  value: showIcons.value ?? true,
+                  onChanged: (v) => ref
+                      .read(settingsServiceProvider)
+                      .setShowCategoryIcons(v),
                 ),
               ],
             ),
@@ -259,6 +455,143 @@ class SettingsScreen extends ConsumerWidget {
         ThemeMode.dark => 'dark',
         ThemeMode.system => 'system',
       });
+    }
+  }
+
+  // ---------- Tampilan: aksen / privacy / font / jumlah ----------
+
+  Future<void> _pickAccent(BuildContext context, WidgetRef ref) async {
+    final current = ref.read(accentColorProvider).value ?? 'green';
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (c) => SimpleDialog(
+        title: const Text('Warna aksen'),
+        children: [
+          RadioGroup<String>(
+            groupValue: current,
+            onChanged: (v) => Navigator.pop(c, v),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final e in AppTheme.accentOptions.entries)
+                  RadioListTile<String>(
+                    title: Text(e.value.label),
+                    secondary: CircleAvatar(
+                      backgroundColor: e.value.color,
+                      radius: 12,
+                    ),
+                    value: e.key,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    if (picked != null) {
+      await ref.read(settingsServiceProvider).setAccentColor(picked);
+    }
+  }
+
+  Future<void> _pickPrivacyScope(BuildContext context, WidgetRef ref) async {
+    final current = ref.read(privacyScopeProvider).value ?? 'balance';
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (c) => SimpleDialog(
+        title: const Text('Cakupan sembunyikan'),
+        children: [
+          RadioGroup<String>(
+            groupValue: current,
+            onChanged: (v) => Navigator.pop(c, v),
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<String>(
+                  title: Text('Hanya saldo Beranda'),
+                  subtitle: Text('List & laporan tetap kelihatan'),
+                  value: 'balance',
+                ),
+                RadioListTile<String>(
+                  title: Text('Semua nominal'),
+                  subtitle: Text('Saldo + list + laporan jadi Rp••••'),
+                  value: 'all',
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    if (picked != null) {
+      await ref.read(settingsServiceProvider).setPrivacyScope(picked);
+    }
+  }
+
+  Future<void> _pickFontScale(BuildContext context, WidgetRef ref) async {
+    final current = ref.read(fontScaleProvider).value ?? 'normal';
+    const options = ['small', 'normal', 'large', 'xlarge'];
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (c) => SimpleDialog(
+        title: const Text('Ukuran font'),
+        children: [
+          RadioGroup<String>(
+            groupValue: current,
+            onChanged: (v) => Navigator.pop(c, v),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final o in options)
+                  RadioListTile<String>(
+                    title: Text(fontScaleLabel(o),
+                        style: TextStyle(
+                            fontSize: 16 * fontScaleValue(o))),
+                    value: o,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    if (picked != null) {
+      await ref.read(settingsServiceProvider).setFontScale(picked);
+    }
+  }
+
+  Future<void> _pickRecentCount(BuildContext context, WidgetRef ref) async {
+    final current = ref.read(recentCountProvider).value ?? 5;
+    final picked = await showDialog<int>(
+      context: context,
+      builder: (c) => SimpleDialog(
+        title: const Text('Jumlah ditampilkan'),
+        children: [
+          RadioGroup<int>(
+            groupValue: current,
+            onChanged: (v) => Navigator.pop(c, v),
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<int>(
+                  title: Text('3 transaksi'),
+                  value: 3,
+                ),
+                RadioListTile<int>(
+                  title: Text('5 transaksi'),
+                  value: 5,
+                ),
+                RadioListTile<int>(
+                  title: Text('10 transaksi'),
+                  value: 10,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    if (picked != null) {
+      await ref.read(settingsServiceProvider).setRecentCount(picked);
     }
   }
 

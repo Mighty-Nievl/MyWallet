@@ -39,5 +39,17 @@ Layout baru + P0 Pengaturan lengkap.
 | Backup DB (`VACUUM INTO`), restore, hapus semua data (konfirmasi dobel) | ✅ |
 | Versi otomatis di Tentang (`package_info_plus`) | ✅ |
 
+## v1.2.0 (7 Okt 2026 — sudah jadi)
+Tampilan full + overkill.
+
+| Fitur | Status |
+|---|---|
+| Warna aksen (6 pilihan) + ikuti wallpaper HP (Material You) | ✅ |
+| Hitam pekat mode gelap | ✅ |
+| Sembunyikan semua nominal (saldo + list + laporan) | ✅ |
+| Nominal ringkas (Rp1,5 jt) | ✅ |
+| Kustom Beranda (ringkasan / top kategori / terakhir 3-5-10) | ✅ |
+| Overkill: ukuran font, list rapat, tanggal relatif, ikon kategori on/off | ✅ |
+
 ## Bukan bagian MVP (lihat [[06-Roadmap]])
 Sinkronisasi cloud, multi-dompet/rekening, scan struk OCR, widget home screen, input cepat parsing.

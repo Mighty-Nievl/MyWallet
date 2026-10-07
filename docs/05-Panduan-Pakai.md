@@ -33,7 +33,9 @@
 - Pie + rincian pengeluaran per kategori bulan berjalan.
 
 ## Pengaturan (ikon ⚙️ kanan atas Beranda)
-- **Tampilan:** tema Terang/Gelap/Ikuti HP + sembunyikan saldo.
+- **Tampilan:** tema Terang/Gelap/Ikuti HP, warna aksen (6 pilihan) atau ikuti wallpaper HP (Material You, Android 12+), hitam pekat (mode gelap), sembunyikan saldo (hanya saldo / semua nominal), nominal ringkas (Rp1,5 jt), ukuran font (Kecil–Sangat besar).
+- **Beranda:** tampilkan/sembunyikan ringkasan masuk-keluar, top kategori, terakhir dicatat (3/5/10).
+- **List & tanggal:** list rapat, tanggal relatif (Hari ini/Kemarin), ikon kategori on/off.
 - **Keuangan:** saldo awal (uang yang sudah dipegang sebelum mulai mencatat).
 - **Kategori:** tambah/hapus. Menghapus kategori membuat transaksinya jadi "Tanpa kategori", bukan ikut terhapus.
 - **Keamanan:** kunci aplikasi PIN / biometrik.
