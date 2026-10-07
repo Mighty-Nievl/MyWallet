@@ -23,6 +23,8 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // Wajib untuk flutter_local_notifications (memakai API java.time di AAR).
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
@@ -65,6 +67,11 @@ kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
+}
+
+dependencies {
+    // Pasangan wajib isCoreLibraryDesugaringEnabled (lihat compileOptions di atas).
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 
 flutter {
