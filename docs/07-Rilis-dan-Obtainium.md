@@ -19,6 +19,10 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 4. Workflow **Release MyWallet** otomatis jalan: codegen → analyze → test → `flutter build apk --release` (signed) + AAB → membuat GitHub Release berisi `mywallet-v1.0.1.apk` (+ `.aab` untuk Play Console).
 5. Pantau di tab **Actions → Release MyWallet**.
 
+## Riwayat rilis
+- **v1.0.1** (7 Okt 2026): fix saldo reaktif (dulu `FutureProvider`, sekarang `StreamProvider`), total & grafik ikut ganti bulan, riwayat filter per bulan.
+- **v1.0.0** (7 Okt 2026): MVP awal.
+
 ## Pasang di HP via Obtainium
 1. Install Obtainium (dari F-Droid / GitHub).
 2. Obtainium → **+ Add App** → sumber **GitHub** → tempel `https://github.com/Mighty-Nievl/MyWallet` (atau URL halaman Releases-nya).
