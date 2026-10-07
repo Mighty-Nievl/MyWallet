@@ -25,13 +25,17 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] Input nominal otomatis bertitik (ketik `1000` → `1.000`) di form catat, budget, saldo awal (parse tetap via `parseRp`).
 - [x] Border input seragam global (radius 16 + `outlineVariant`, fokus aksen) via `inputDecorationTheme` — hapus semua border manual.
 
-## v1.5 — Redesign STEP 1 ✅ (rilis 8 Okt 2026 sebagai v1.5.0)
+## v1.5 — Redesign STEP 1 ✅ (rilis 7 Okt 2026 sebagai v1.5.0)
 - [x] Design tokens ala shadcn (`lib/ui/design/`: warna netral, spacing, radius, tipografi) + komponen (`lib/ui/components/`: kartu subtle, section, ikon kategori).
 - [x] TxTile baru (baris bersih: ikon subtle, judul, info muted, nominal tegas) — API tetap.
 - [x] Beranda baru (header custom, saldo kartu subtle, kategori tanpa kartu, riwayat tanpa kartu) — logika/provider/query tidak berubah.
 - [x] Tema: latar netral restrained, kartu tanpa shadow + border tipis, radius kartu 14 / input 12. Aksen, dynamic color, true black, compact, font scale tetap.
 
-## v1.6 — Uang lebih terkontrol
+## v1.6 — Redesign STEP 2 ✅ (rilis 7 Okt 2026 sebagai v1.6.0)
+- [x] Riwayat baru: header custom + navigasi bulan ala Beranda + chip filter kompak + empty/loading state minimal — search/filter/list/tap-edit/logika tidak berubah.
+- [x] Form transaksi baru: header kembali/hapus + tipe SegmentedButton diselaraskan + nominal hero (Rp + angka besar, formatter tetap) + kategori bottom sheet + tanggal tile + Simpan 52px + Hapus terpisah — CRUD/validasi/dialog/navigasi tidak berubah.
+
+## v1.7 — Uang lebih terkontrol
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).
 
