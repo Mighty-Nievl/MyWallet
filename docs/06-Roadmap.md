@@ -35,11 +35,17 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] Riwayat baru: header custom + navigasi bulan ala Beranda + chip filter kompak + empty/loading state minimal — search/filter/list/tap-edit/logika tidak berubah.
 - [x] Form transaksi baru: header kembali/hapus + tipe SegmentedButton diselaraskan + nominal hero (Rp + angka besar, formatter tetap) + kategori bottom sheet + tanggal tile + Simpan 52px + Hapus terpisah — CRUD/validasi/dialog/navigasi tidak berubah.
 
-## v1.7 — Uang lebih terkontrol
+## v1.7 — Redesign STEP 3 ✅ (rilis 7 Okt 2026 sebagai v1.7.0)
+- [x] Navigasi bawah custom MyWallet (bar ramping + garis subtle, aktif = pil aksen, Catat = tombol aksen penuh) — destinasi & perilaku tetap.
+- [x] Budget baru: header + month-nav + overview (total batas/terpakai/progress) + item per kategori + dialog tambah/edit — CRUD/perhitungan/threshold tidak berubah.
+- [x] Laporan baru: header + month-nav + ringkasan (Masuk/Keluar/Selisih) + bar 6 bulan + pie + rincian konsisten Home — fl_chart & data tetap.
+- [x] Komponen reuse baru: `app_header`, `app_month_nav`, `app_progress`, `app_empty_state`.
+
+## v1.8 — Uang lebih terkontrol
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).
 
-## v1.7 — Data aman & berguna
+## v1.9 — Data aman & berguna
 - [ ] Rencana menabung / target (sinking fund).
 - [ ] Insight sederhana: "pengeluaran makan naik 20% vs bulan lalu".
 

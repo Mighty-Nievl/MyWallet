@@ -4,104 +4,241 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
 import '../../data/providers.dart';
+import '../components/app_card.dart';
+import '../components/app_empty_state.dart';
+import '../components/app_header.dart';
+import '../components/app_month_nav.dart';
+import '../components/app_section.dart';
+import '../components/category_icon.dart';
+import '../design/app_spacing.dart';
+import '../design/app_typography.dart';
 import '../display.dart';
 import '../format.dart';
 
-/// Layar laporan: grafik 6 bulan + rincian kategori bulan berjalan.
+/// Layar laporan: ringkasan bulan + grafik 6 bulan + rincian kategori.
+///
+/// STEP 3 — hanya UI/presentasi yang diubah. Logika TETAP:
+/// fl_chart tetap, data bar 6 bulan (getTotals), pie + rincian
+/// (totalsByCategory), total, month provider, display prefs.
 class ReportsScreen extends ConsumerWidget {
   const ReportsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final month = ref.watch(selectedMonthProvider);
+    final totals = ref.watch(monthTotalsProvider);
     final byCat = ref.watch(monthExpenseByCategoryProvider);
     final display = ref.watch(displayPrefsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text('Laporan · ${monthLabel(month)}')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text('Arus 6 bulan terakhir',
-              style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: SizedBox(height: 220, child: _SixMonthChart()),
-            ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.page,
+            AppSpacing.s8,
+            AppSpacing.page,
+            96,
           ),
-          const SizedBox(height: 16),
-          Text('Rincian bulan ini',
-              style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          byCat.when(
-            loading: () => const Card(
-                child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: LinearProgressIndicator())),
-            error: (e, _) => Text('Gagal memuat: $e'),
-            data: (list) {
-              if (list.isEmpty) {
-                return const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('Belum ada pengeluaran bulan ini.'),
-                  ),
-                );
-              }
-              final total = list.fold<int>(0, (s, e) => s + e.total);
-              return Card(
-                child: Column(
-                  children: [
-                    SizedBox(
-                      height: 200,
-                      child: PieChart(
-                        PieChartData(
-                          sectionsSpace: 2,
-                          centerSpaceRadius: 40,
-                          sections: [
-                            for (var i = 0; i < list.length && i < 6; i++)
-                              PieChartSectionData(
-                                value: list[i].total.toDouble(),
-                                title:
-                                    '${(100 * list[i].total / total).round()}%',
-                                radius: 70,
-                                color: _pieColors[
-                                    i % _pieColors.length],
-                              ),
-                          ],
+          children: [
+            const AppHeader(title: 'Laporan'),
+            const SizedBox(height: AppSpacing.s8),
+            AppMonthNav(
+              month: month,
+              onShift: (d) => ref
+                  .read(selectedMonthProvider.notifier)
+                  .state = shiftMonth(month, d),
+            ),
+            const SizedBox(height: AppSpacing.s16),
+            AppSection(
+              title: 'Ringkasan bulan ini',
+              child: _SummaryCard(totals: totals),
+            ),
+            const SizedBox(height: AppSpacing.sectionGap),
+            AppSection(
+              title: 'Arus 6 bulan terakhir',
+              child: AppCard(
+                child: SizedBox(height: 220, child: _SixMonthChart()),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sectionGap),
+            AppSection(
+              title: 'Rincian bulan ini',
+              child: _Breakdown(
+                  byCat: byCat, display: display),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Ringkasan: Pemasukan / Pengeluaran / Selisih bulan berjalan.
+/// Nilai dari monthTotalsProvider — sama seperti Beranda.
+class _SummaryCard extends ConsumerWidget {
+  const _SummaryCard({required this.totals});
+  final AsyncValue<(int, int)> totals;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    final display = ref.watch(displayPrefsProvider);
+    return AppCard(
+      child: totals.when(
+        loading: () => const LinearProgressIndicator(),
+        error: (e, _) =>
+            Text('Gagal memuat: $e', style: AppType.secondary(context)),
+        data: (t) {
+          final net = t.$1 - t.$2;
+          return Row(
+            children: [
+              Expanded(
+                child: _SumItem(
+                  label: 'Pemasukan',
+                  value: display.signed(t.$1, isExpense: false),
+                  color: scheme.primary,
+                ),
+              ),
+              Expanded(
+                child: _SumItem(
+                  label: 'Pengeluaran',
+                  value: display.signed(t.$2, isExpense: true),
+                  color: scheme.error,
+                ),
+              ),
+              Expanded(
+                child: _SumItem(
+                  label: 'Selisih',
+                  value: display.signed(net.abs(),
+                      isExpense: net < 0),
+                  color: net < 0 ? scheme.error : scheme.primary,
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _SumItem extends StatelessWidget {
+  const _SumItem(
+      {required this.label, required this.value, required this.color});
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppType.labelMuted(context)),
+        const SizedBox(height: 2),
+        Text(value,
+            style: AppType.amount(context).copyWith(color: color),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis),
+      ],
+    );
+  }
+}
+
+/// Rincian kategori: pie + daftar konsisten dengan Beranda.
+/// Perhitungan & total sama dengan implementasi lama.
+class _Breakdown extends StatelessWidget {
+  const _Breakdown({required this.byCat, required this.display});
+  final AsyncValue<List<CategoryTotal>> byCat;
+  final DisplayPrefs display;
+
+  @override
+  Widget build(BuildContext context) {
+    return byCat.when(
+      loading: () =>
+          const AppCard(child: LinearProgressIndicator()),
+      error: (e, _) =>
+          Text('Gagal memuat: $e', style: AppType.secondary(context)),
+      data: (list) {
+        if (list.isEmpty) {
+          return const AppEmptyState(
+            icon: '📊',
+            title: 'Belum ada data laporan',
+            subtitle: 'Belum ada transaksi pada periode ini.',
+          );
+        }
+        final total = list.fold<int>(0, (s, e) => s + e.total);
+        return Column(
+          children: [
+            AppCard(
+              child: SizedBox(
+                height: 200,
+                child: PieChart(
+                  PieChartData(
+                    sectionsSpace: 2,
+                    centerSpaceRadius: 40,
+                    sections: [
+                      for (var i = 0;
+                          i < list.length && i < 6;
+                          i++)
+                        PieChartSectionData(
+                          value: list[i].total.toDouble(),
+                          title:
+                              '${(100 * list[i].total / total).round()}%',
+                          radius: 70,
+                          color: _pieColors[
+                              i % _pieColors.length],
+                          titleStyle: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s12),
+            for (final c in list)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.s8),
+                child: Row(
+                  children: [
+                    if (display.showIcons)
+                      CategoryIcon(
+                          icon: c.icon, size: 36, fontSize: 18),
+                    if (display.showIcons)
+                      const SizedBox(width: AppSpacing.s12),
+                    Expanded(
+                      child: Text(c.name,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                  fontWeight: FontWeight.w500),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
                     ),
-                    for (final c in list)
-                      ListTile(
-                        leading: display.showIcons
-                            ? Text(c.icon,
-                                style:
-                                    const TextStyle(fontSize: 20))
-                            : null,
-                        title: Text(c.name),
-                        trailing: Text(display.money(c.total),
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold)),
-                      ),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text(
-                        'Total keluar: ${display.money(total)}',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold),
-                      ),
+                    Text(
+                      '${(100 * c.total / total).round()}% · ${display.money(c.total)}',
+                      style: AppType.amount(context, size: 14),
                     ),
                   ],
                 ),
-              );
-            },
-          ),
-          const SizedBox(height: 80),
-        ],
-      ),
+              ),
+            const SizedBox(height: AppSpacing.s8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                'Total keluar: ${display.money(total)}',
+                style: AppType.amount(context, size: 14),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -123,6 +260,7 @@ class _SixMonthChart extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final db = ref.watch(dbProvider);
     final scheme = Theme.of(context).colorScheme;
+    final muted = scheme.onSurfaceVariant;
     return FutureBuilder<List<(String, int, int)>>(
       future: _lastSixMonths(db),
       builder: (context, snap) {
@@ -151,9 +289,13 @@ class _SixMonthChart extends ConsumerWidget {
                       return const SizedBox.shrink();
                     }
                     final parts = rows[i].$1.split('-');
-                    return Text(
-                      _short(parts[1]),
-                      style: const TextStyle(fontSize: 11),
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        _short(parts[1]),
+                        style:
+                            TextStyle(fontSize: 11, color: muted),
+                      ),
                     );
                   },
                 ),
@@ -168,11 +310,13 @@ class _SixMonthChart extends ConsumerWidget {
                     toY: rows[i].$3.toDouble(), // keluar
                     color: scheme.error,
                     width: 8,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                   BarChartRodData(
                     toY: rows[i].$2.toDouble(), // masuk
                     color: scheme.primary,
                     width: 8,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ]),
             ],
