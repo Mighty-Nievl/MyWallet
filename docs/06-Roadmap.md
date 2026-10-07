@@ -55,7 +55,14 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] Tombol tambah satu gaya Filled 52px + aksi cepat + di header; error ramah + "Coba lagi"; urutan stabil abjad (sort di `fetchBudgets`).
 - [x] Logika provider dicabut ke `fetchBudgets` + `monthRangeOf` (testable) + 6 test budget in-memory (upsert/update/bulan/delete/filter/spent). 33/33 hijau.
 
-## v1.9 — Uang lebih terkontrol
+## v1.9 — Redesign STEP 4 ✅ (rilis 7 Okt 2026 sebagai v1.9.0)
+- [x] Kategori: header custom + grup Pengeluaran/Pemasukan + baris konsisten TxTile + hapus 48px + dialog SegmentedButton semantik + validasi inline + hapus destruktif merah + error ramah + coba lagi.
+- [x] Pengaturan: `SettingRow` + `SettingsGroup` + `BackHeader` baru (ikon kotak subtle + judul + deskripsi + kontrol, divider otomatis, kembali berboder); hub + 4 sub-halaman + Tentang satu bahasa; navigasi, filter cari, semua setter TETAP.
+- [x] Dialog pilih: `_pickSingle` + `_PickRow` (ikon + cek) untuk tema/privacy-scale/recent/lock; aksen jadi grid dot kompak `_AccentDot`; PIN inline-error; destruktif merah konsisten; teks & urutan opsi TETAP.
+- [x] Lock Screen: hierarki MyWallet → 🔒 → "Aplikasi terkunci" → PIN 52px + biometrik; controller/validasi/auth/obscure/keyboard/error/loading TETAP.
+- [x] Aksen/dynamic/true-black/compact/font-scale/light/dark: semua lewat colorScheme + token lama, tidak ada hard-code. 33/33 hijau.
+
+## v1.10 — Berikutnya
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).
 

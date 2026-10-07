@@ -4,22 +4,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/providers.dart';
 import '../../data/settings.dart';
 import '../app_theme.dart';
+import '../components/setting_row.dart';
+import '../design/app_spacing.dart';
 import 'settings_about.dart';
 import 'settings_appearance.dart';
 import 'settings_manage.dart';
 import 'settings_privacy.dart';
 
 /// Hub Pengaturan (multi-page): 4 grup → tiap grup punya sub-halaman sendiri.
-/// User pilih grup yang mau dibuka, tidak perlu scroll satu halaman panjang.
 ///
-/// - Tampilan → [AppearanceSettingsPage]
-/// - Saldo & Privasi → [PrivacySettingsPage]
-/// - Kelola → [ManageSettingsPage]
-/// - Tentang → [AboutSettingsPage]
-///
-/// Kolom cari di hub memfilter item di semua grup; ketuk hasil
-/// untuk langsung lompat ke sub-halaman terkait (query ikut diteruskan
-/// agar filter di sana langsung aktif).
+/// STEP 4 — hanya presentasi yang diubah. Navigasi TETAP:
+/// Tampilan → [AppearanceSettingsPage], Saldo & Privasi →
+/// [PrivacySettingsPage], Kelola → [ManageSettingsPage],
+/// Tentang → [AboutSettingsPage]. Pencarian hub memfilter item
+/// di semua grup; ketuk hasil untuk lompat ke sub-halaman
+/// (query ikut diteruskan agar filter di sana langsung aktif).
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -134,99 +133,135 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         : <_HubEntry>[];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Pengaturan')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          TextField(
-            controller: _searchCtrl,
-            decoration: InputDecoration(
-              hintText: 'Cari pengaturan… (cth. font, backup)',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: searching
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchCtrl.clear();
-                        setState(() => _q = '');
-                      },
-                    )
-                  : null,
-            ),
-            onChanged: (v) => setState(() => _q = v.trim().toLowerCase()),
-          ),
-          const SizedBox(height: 16),
-          if (searching) ...[
-            Text('Hasil pencarian (${results.length})',
-                style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 8),
-            if (results.isEmpty)
-              const Card(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('Tidak ada pengaturan yang cocok.'),
-                ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.page,
+                AppSpacing.s8,
+                AppSpacing.page,
+                0,
               ),
-            Card(
-              child: Column(
+              child: BackHeader(title: 'Pengaturan'),
+            ),
+            const SizedBox(height: AppSpacing.s8),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.page,
+                  AppSpacing.s8,
+                  AppSpacing.page,
+                  96,
+                ),
                 children: [
-                  for (var i = 0; i < results.length; i++) ...[
-                    if (i > 0) const Divider(height: 1),
-                    ListTile(
-                      leading: Icon(_groupIcon(results[i].group)),
-                      title: Text(results[i].title),
-                      subtitle: Text(
-                          '${results[i].subtitle} · ${_groupLabel(results[i].group)}'),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => _openGroup(results[i].group),
+                  TextField(
+                    controller: _searchCtrl,
+                    decoration: InputDecoration(
+                      hintText: 'Cari pengaturan… (cth. font, backup)',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: searching
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                setState(() => _q = '');
+                              },
+                            )
+                          : null,
+                    ),
+                    onChanged: (v) =>
+                        setState(() => _q = v.trim().toLowerCase()),
+                  ),
+                  const SizedBox(height: AppSpacing.s16),
+                  if (searching) ...[
+                    Text(
+                        'Hasil pencarian (${results.length})',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall
+                            ?.copyWith(
+                                fontWeight: FontWeight.w600)),
+                    const SizedBox(height: AppSpacing.s8),
+                    if (results.isEmpty)
+                      const Card(
+                        child: Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Text(
+                              'Tidak ada pengaturan yang cocok.'),
+                        ),
+                      )
+                    else
+                      Card(
+                        child: Column(
+                          children: [
+                            for (var i = 0;
+                                i < results.length;
+                                i++) ...[
+                              if (i > 0)
+                                const Divider(
+                                    height: 1, indent: 52),
+                              SettingRow(
+                                icon: _groupIcon(
+                                    results[i].group),
+                                title: results[i].title,
+                                subtitle:
+                                    '${results[i].subtitle} · ${_groupLabel(results[i].group)}',
+                                onTap: () => _openGroup(
+                                    results[i].group),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                  ] else ...[
+                    Card(
+                      child: Column(
+                        children: [
+                          SettingRow(
+                            icon: Icons.palette_outlined,
+                            title: 'Tampilan',
+                            subtitle:
+                                'Tema: $themeLabel · $accentLabel',
+                            onTap: () =>
+                                _openGroup(_GroupKey.tampilan),
+                          ),
+                          const Divider(height: 1, indent: 52),
+                          SettingRow(
+                            icon: Icons.shield_outlined,
+                            title: 'Saldo & Privasi',
+                            subtitle:
+                                'Saldo awal · Kunci: $lockLabel',
+                            onTap: () =>
+                                _openGroup(_GroupKey.privasi),
+                          ),
+                          const Divider(height: 1, indent: 52),
+                          SettingRow(
+                            icon: Icons.folder_outlined,
+                            title: 'Kelola',
+                            subtitle: catCount == null
+                                ? 'Kategori · backup · restore'
+                                : '$catCount kategori · backup · restore',
+                            onTap: () =>
+                                _openGroup(_GroupKey.kelola),
+                          ),
+                          const Divider(height: 1, indent: 52),
+                          SettingRow(
+                            icon: Icons.info_outlined,
+                            title: 'Tentang',
+                            subtitle: 'Versi · changelog',
+                            onTap: () =>
+                                _openGroup(_GroupKey.tentang),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ],
               ),
             ),
-          ] else ...[
-            Card(
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.palette),
-                    title: const Text('Tampilan'),
-                    subtitle: Text('Tema: $themeLabel · $accentLabel'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => _openGroup(_GroupKey.tampilan),
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.shield),
-                    title: const Text('Saldo & Privasi'),
-                    subtitle: Text('Saldo awal · Kunci: $lockLabel'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => _openGroup(_GroupKey.privasi),
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.folder),
-                    title: const Text('Kelola'),
-                    subtitle: Text(catCount == null
-                        ? 'Kategori · backup · restore'
-                        : '$catCount kategori · backup · restore'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => _openGroup(_GroupKey.kelola),
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.info),
-                    title: const Text('Tentang'),
-                    subtitle: const Text('Versi · changelog'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => _openGroup(_GroupKey.tentang),
-                  ),
-                ],
-              ),
-            ),
           ],
-          const SizedBox(height: 80),
-        ],
+        ),
       ),
     );
   }
@@ -253,10 +288,10 @@ String _groupLabel(_GroupKey g) => switch (g) {
     };
 
 IconData _groupIcon(_GroupKey g) => switch (g) {
-      _GroupKey.tampilan => Icons.palette,
-      _GroupKey.privasi => Icons.shield,
-      _GroupKey.kelola => Icons.folder,
-      _GroupKey.tentang => Icons.info,
+      _GroupKey.tampilan => Icons.palette_outlined,
+      _GroupKey.privasi => Icons.shield_outlined,
+      _GroupKey.kelola => Icons.folder_outlined,
+      _GroupKey.tentang => Icons.info_outlined,
     };
 
 class _HubEntry {

@@ -3,10 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/settings.dart';
 import '../app_theme.dart';
+import '../components/setting_row.dart';
+import '../design/app_spacing.dart';
 import 'settings_actions.dart';
 
 /// Sub-halaman Tampilan: tema, aksen, wallpaper, hitam pekat, font,
 /// nominal ringkas + sub-bagian Isi Beranda + List & tanggal.
+///
+/// STEP 4 — hanya presentasi yang diubah. Semua provider, setter,
+/// dialog (via [SettingsActions]), filter cari, dan nilai TETAP.
 class AppearanceSettingsPage extends ConsumerStatefulWidget {
   const AppearanceSettingsPage({super.key, this.initialQuery = ''});
 
@@ -60,275 +65,342 @@ class _AppearanceSettingsPageState
     final relativeDates = ref.watch(relativeDatesProvider);
     final showIcons = ref.watch(showCategoryIconsProvider);
 
+    String themeLabel(ThemeMode m) => switch (m) {
+          ThemeMode.light => 'Terang',
+          ThemeMode.dark => 'Gelap',
+          ThemeMode.system => 'Ikuti HP',
+        };
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Tampilan')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          TextField(
-            controller: _searchCtrl,
-            decoration: InputDecoration(
-              hintText: 'Cari di Tampilan…',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _q.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchCtrl.clear();
-                        setState(() => _q = '');
-                      },
-                    )
-                  : null,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.page,
+                AppSpacing.s8,
+                AppSpacing.page,
+                0,
+              ),
+              child: BackHeader(title: 'Tampilan'),
             ),
-            onChanged: (v) => setState(() => _q = v.trim().toLowerCase()),
-          ),
-          const SizedBox(height: 16),
-          const _SubHead('Warna & tema'),
-          Card(
-            child: Column(
-              children: [
-                if (_match('tema', 'terang gelap ikuti hp',
-                    const ['theme', 'dark', 'light']))
-                  ListTile(
-                    leading: const Icon(Icons.brightness_auto),
-                    title: const Text('Tema'),
-                    subtitle: Text(themeMode.when(
-                      loading: () => '…',
-                      error: (_, _) => 'Gagal memuat',
-                      data: (m) => switch (m) {
-                        ThemeMode.light => 'Terang',
-                        ThemeMode.dark => 'Gelap',
-                        ThemeMode.system => 'Ikuti HP',
-                      },
-                    )),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: pickTheme,
-                  ),
-                if (_match('warna aksen', 'hijau biru ungu',
-                    const ['accent', 'color']))
-                  const Divider(height: 1),
-                if (_match('warna aksen', 'hijau biru ungu',
-                    const ['accent', 'color']))
-                  ListTile(
-                    leading: const Icon(Icons.palette),
-                    title: const Text('Warna aksen'),
-                    subtitle: Text(accent.when(
-                      loading: () => '…',
-                      error: (_, _) => 'Gagal memuat',
-                      data: (a) => AppTheme.accentOptions[a]?.label ?? a,
-                    )),
-                    trailing: accent.when(
-                      loading: () => const SizedBox.shrink(),
-                      error: (_, _) => const SizedBox.shrink(),
-                      data: (a) => CircleAvatar(
-                        backgroundColor: AppTheme.seedFor(a),
-                        radius: 12,
-                      ),
+            const SizedBox(height: AppSpacing.s8),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.page,
+                  AppSpacing.s8,
+                  AppSpacing.page,
+                  96,
+                ),
+                children: [
+                  TextField(
+                    controller: _searchCtrl,
+                    decoration: InputDecoration(
+                      hintText: 'Cari di Tampilan…',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _q.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                setState(() => _q = '');
+                              },
+                            )
+                          : null,
                     ),
-                    onTap: () => pickAccent(AppTheme.accentOptions),
+                    onChanged: (v) =>
+                        setState(() => _q = v.trim().toLowerCase()),
                   ),
-                if (_match(
-                    'wallpaper', 'material you', const ['dynamic', 'wallpaper']))
-                  const Divider(height: 1),
-                if (_match(
-                    'wallpaper', 'material you', const ['dynamic', 'wallpaper']))
-                  SwitchListTile(
-                    secondary: const Icon(Icons.wallpaper),
-                    title: const Text('Ikuti warna wallpaper HP'),
-                    subtitle: const Text(
-                        'Material You — Android 12 ke atas, menimpa warna aksen'),
-                    value: useDynamic.value ?? false,
-                    onChanged: (v) => ref
-                        .read(settingsServiceProvider)
-                        .setUseDynamicColor(v),
+                  const SizedBox(height: AppSpacing.s16),
+                  SettingsGroup(
+                    title: 'Warna & tema',
+                    children: [
+                      if (_match('tema', 'terang gelap ikuti hp',
+                          const ['theme', 'dark', 'light']))
+                        SettingRow(
+                          icon: Icons.brightness_auto_outlined,
+                          title: 'Tema',
+                          subtitle: themeMode.when(
+                            loading: () => '…',
+                            error: (_, _) => 'Gagal memuat',
+                            data: themeLabel,
+                          ),
+                          trailing: SettingValue(
+                            value: themeMode.when(
+                              loading: () => '…',
+                              error: (_, _) => '…',
+                              data: themeLabel,
+                            ),
+                          ),
+                          onTap: pickTheme,
+                        ),
+                      if (_match('warna aksen', 'hijau biru ungu',
+                          const ['accent', 'color']))
+                        SettingRow(
+                          icon: Icons.palette_outlined,
+                          title: 'Warna aksen',
+                          subtitle: accent.when(
+                            loading: () => '…',
+                            error: (_, _) => 'Gagal memuat',
+                            data: (a) =>
+                                AppTheme.accentOptions[a]?.label ?? a,
+                          ),
+                          trailing: accent.when(
+                            loading: () => const SizedBox.shrink(),
+                            error: (_, _) => const SizedBox.shrink(),
+                            data: (a) => CircleAvatar(
+                              backgroundColor: AppTheme.seedFor(a),
+                              radius: 12,
+                            ),
+                          ),
+                          onTap: () =>
+                              pickAccent(AppTheme.accentOptions),
+                        ),
+                      if (_match('wallpaper', 'material you',
+                          const ['dynamic', 'wallpaper']))
+                        SettingRow(
+                          icon: Icons.wallpaper_outlined,
+                          title: 'Ikuti warna wallpaper HP',
+                          subtitle:
+                              'Material You — Android 12 ke atas, menimpa warna aksen',
+                          trailing: Switch(
+                            value: useDynamic.value ?? false,
+                            onChanged: (v) => ref
+                                .read(settingsServiceProvider)
+                                .setUseDynamicColor(v),
+                          ),
+                          onTap: () => ref
+                              .read(settingsServiceProvider)
+                              .setUseDynamicColor(
+                                  !(useDynamic.value ?? false)),
+                        ),
+                      if (_match('hitam pekat', 'oled', const ['black']))
+                        SettingRow(
+                          icon: Icons.dark_mode_outlined,
+                          title: 'Hitam pekat',
+                          subtitle:
+                              'Background hitam total di mode gelap (hemat OLED)',
+                          trailing: Switch(
+                            value: trueBlack.value ?? false,
+                            onChanged: (v) => ref
+                                .read(settingsServiceProvider)
+                                .setTrueBlack(v),
+                          ),
+                          onTap: () => ref
+                              .read(settingsServiceProvider)
+                              .setTrueBlack(
+                                  !(trueBlack.value ?? false)),
+                        ),
+                      if (_match('font', 'ukuran huruf', const ['font']))
+                        SettingRow(
+                          icon: Icons.format_size,
+                          title: 'Ukuran font',
+                          subtitle: fontScale.when(
+                            loading: () => '…',
+                            error: (_, _) => 'Gagal memuat',
+                            data: fontScaleLabel,
+                          ),
+                          trailing: SettingValue(
+                            value: fontScale.when(
+                              loading: () => '…',
+                              error: (_, _) => '…',
+                              data: fontScaleLabel,
+                            ),
+                          ),
+                          onTap: pickFontScale,
+                        ),
+                      if (_match('nominal ringkas', 'rp jt rb',
+                          const ['compact']))
+                        SettingRow(
+                          icon: Icons.short_text,
+                          title: 'Nominal ringkas',
+                          subtitle: compactAmounts.when(
+                            loading: () => '…',
+                            error: (_, _) => 'Gagal memuat',
+                            data: (c) => c
+                                ? 'Contoh: Rp1,5 jt'
+                                : 'Contoh: Rp1.500.000',
+                          ),
+                          trailing: Switch(
+                            value: compactAmounts.value ?? false,
+                            onChanged: (v) => ref
+                                .read(settingsServiceProvider)
+                                .setCompactAmounts(v),
+                          ),
+                          onTap: () => ref
+                              .read(settingsServiceProvider)
+                              .setCompactAmounts(
+                                  !(compactAmounts.value ?? false)),
+                        ),
+                    ],
                   ),
-                if (_match('hitam pekat', 'oled', const ['black']))
-                  const Divider(height: 1),
-                if (_match('hitam pekat', 'oled', const ['black']))
-                  SwitchListTile(
-                    secondary: const Icon(Icons.dark_mode),
-                    title: const Text('Hitam pekat'),
-                    subtitle: const Text(
-                        'Background hitam total di mode gelap (hemat OLED)'),
-                    value: trueBlack.value ?? false,
-                    onChanged: (v) => ref
-                        .read(settingsServiceProvider)
-                        .setTrueBlack(v),
+                  const SizedBox(height: AppSpacing.sectionGap),
+                  SettingsGroup(
+                    title: 'Isi Beranda',
+                    children: [
+                      if (_match('ringkasan harian', 'hari ini',
+                          const ['daily', 'hari']))
+                        SettingRow(
+                          icon: Icons.today_outlined,
+                          title: 'Ringkasan hari ini',
+                          subtitle:
+                              'Masuk / keluar / selisih tanggal hari ini',
+                          trailing: Switch(
+                            value: showDaily.value ?? true,
+                            onChanged: (v) => ref
+                                .read(settingsServiceProvider)
+                                .setShowDailyTotals(v),
+                          ),
+                          onTap: () => ref
+                              .read(settingsServiceProvider)
+                              .setShowDailyTotals(
+                                  !(showDaily.value ?? true)),
+                        ),
+                      if (_match('ringkasan', 'masuk keluar',
+                          const ['home']))
+                        SettingRow(
+                          icon: Icons.bar_chart_outlined,
+                          title: 'Ringkasan masuk / keluar',
+                          subtitle:
+                              'Dua angka di bawah saldo bulan berjalan',
+                          trailing: Switch(
+                            value: showTotals.value ?? true,
+                            onChanged: (v) => ref
+                                .read(settingsServiceProvider)
+                                .setShowMonthTotals(v),
+                          ),
+                          onTap: () => ref
+                              .read(settingsServiceProvider)
+                              .setShowMonthTotals(
+                                  !(showTotals.value ?? true)),
+                        ),
+                      if (_match('top kategori', 'bar pengeluaran',
+                          const ['category']))
+                        SettingRow(
+                          icon: Icons.category_outlined,
+                          title: 'Top kategori bulan ini',
+                          subtitle:
+                              'Bar pengeluaran per kategori di Beranda',
+                          trailing: Switch(
+                            value: showTop.value ?? true,
+                            onChanged: (v) => ref
+                                .read(settingsServiceProvider)
+                                .setShowTopCategories(v),
+                          ),
+                          onTap: () => ref
+                              .read(settingsServiceProvider)
+                              .setShowTopCategories(
+                                  !(showTop.value ?? true)),
+                        ),
+                      if (_match('terakhir', 'riwayat jumlah',
+                          const ['recent']))
+                        SettingRow(
+                          icon: Icons.history,
+                          title: 'Terakhir dicatat',
+                          subtitle: recentCount.when(
+                            loading: () => '…',
+                            error: (_, _) => 'Gagal memuat',
+                            data: (n) =>
+                                'Tampilkan $n transaksi terakhir',
+                          ),
+                          trailing: Switch(
+                            value: showRecent.value ?? true,
+                            onChanged: (v) => ref
+                                .read(settingsServiceProvider)
+                                .setShowRecent(v),
+                          ),
+                          onTap: () => ref
+                              .read(settingsServiceProvider)
+                              .setShowRecent(
+                                  !(showRecent.value ?? true)),
+                        ),
+                      if ((showRecent.value ?? true) &&
+                          _match('terakhir', 'jumlah',
+                              const ['recent']))
+                        SettingRow(
+                          icon: Icons.format_list_numbered,
+                          title: 'Jumlah ditampilkan',
+                          subtitle: recentCount.when(
+                            loading: () => '…',
+                            error: (_, _) => 'Gagal memuat',
+                            data: (n) => '$n transaksi',
+                          ),
+                          trailing: SettingValue(
+                            value: recentCount.when(
+                              loading: () => '…',
+                              error: (_, _) => '…',
+                              data: (n) => '$n',
+                            ),
+                          ),
+                          onTap: pickRecentCount,
+                        ),
+                    ],
                   ),
-                if (_match('font', 'ukuran huruf', const ['font']))
-                  const Divider(height: 1),
-                if (_match('font', 'ukuran huruf', const ['font']))
-                  ListTile(
-                    leading: const Icon(Icons.format_size),
-                    title: const Text('Ukuran font'),
-                    subtitle: Text(fontScale.when(
-                      loading: () => '…',
-                      error: (_, _) => 'Gagal memuat',
-                      data: (f) => fontScaleLabel(f),
-                    )),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: pickFontScale,
+                  const SizedBox(height: AppSpacing.sectionGap),
+                  SettingsGroup(
+                    title: 'List & tanggal',
+                    children: [
+                      if (_match('list rapat', 'padat', const ['dense']))
+                        SettingRow(
+                          icon: Icons.density_small_outlined,
+                          title: 'List rapat',
+                          subtitle:
+                              'Baris transaksi lebih padat, muat lebih banyak',
+                          trailing: Switch(
+                            value: compactList.value ?? false,
+                            onChanged: (v) => ref
+                                .read(settingsServiceProvider)
+                                .setCompactList(v),
+                          ),
+                          onTap: () => ref
+                              .read(settingsServiceProvider)
+                              .setCompactList(
+                                  !(compactList.value ?? false)),
+                        ),
+                      if (_match('tanggal relatif', 'hari ini kemarin',
+                          const ['date']))
+                        SettingRow(
+                          icon: Icons.today_outlined,
+                          title: 'Tanggal relatif',
+                          subtitle:
+                              '"Hari ini / Kemarin" gantikan tanggal penuh di list',
+                          trailing: Switch(
+                            value: relativeDates.value ?? true,
+                            onChanged: (v) => ref
+                                .read(settingsServiceProvider)
+                                .setRelativeDates(v),
+                          ),
+                          onTap: () => ref
+                              .read(settingsServiceProvider)
+                              .setRelativeDates(
+                                  !(relativeDates.value ?? true)),
+                        ),
+                      if (_match('ikon kategori', 'emoji', const ['icon']))
+                        SettingRow(
+                          icon: Icons.emoji_emotions_outlined,
+                          title: 'Ikon kategori',
+                          subtitle:
+                              'Emoji di tiap baris transaksi & laporan',
+                          trailing: Switch(
+                            value: showIcons.value ?? true,
+                            onChanged: (v) => ref
+                                .read(settingsServiceProvider)
+                                .setShowCategoryIcons(v),
+                          ),
+                          onTap: () => ref
+                              .read(settingsServiceProvider)
+                              .setShowCategoryIcons(
+                                  !(showIcons.value ?? true)),
+                        ),
+                    ],
                   ),
-                if (_match('nominal ringkas', 'rp jt rb', const ['compact']))
-                  const Divider(height: 1),
-                if (_match('nominal ringkas', 'rp jt rb', const ['compact']))
-                  SwitchListTile(
-                    secondary: const Icon(Icons.short_text),
-                    title: const Text('Nominal ringkas'),
-                    subtitle: Text(compactAmounts.when(
-                      loading: () => '…',
-                      error: (_, _) => 'Gagal memuat',
-                      data: (c) =>
-                          c ? 'Contoh: Rp1,5 jt' : 'Contoh: Rp1.500.000',
-                    )),
-                    value: compactAmounts.value ?? false,
-                    onChanged: (v) => ref
-                        .read(settingsServiceProvider)
-                        .setCompactAmounts(v),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          const _SubHead('Isi Beranda'),
-          Card(
-            child: Column(
-              children: [
-                if (_match('ringkasan harian', 'hari ini',
-                    const ['daily', 'hari']))
-                  SwitchListTile(
-                    secondary: const Icon(Icons.today),
-                    title: const Text('Ringkasan hari ini'),
-                    subtitle: const Text(
-                        'Masuk / keluar / selisih tanggal hari ini'),
-                    value: showDaily.value ?? true,
-                    onChanged: (v) => ref
-                        .read(settingsServiceProvider)
-                        .setShowDailyTotals(v),
-                  ),
-                if (_match('ringkasan', 'masuk keluar', const ['home']))
-                  const Divider(height: 1),
-                if (_match('ringkasan', 'masuk keluar', const ['home']))
-                  SwitchListTile(
-                    secondary: const Icon(Icons.bar_chart),
-                    title: const Text('Ringkasan masuk / keluar'),
-                    subtitle: const Text(
-                        'Dua angka di bawah saldo bulan berjalan'),
-                    value: showTotals.value ?? true,
-                    onChanged: (v) => ref
-                        .read(settingsServiceProvider)
-                        .setShowMonthTotals(v),
-                  ),
-                if (_match('top kategori', 'bar pengeluaran',
-                    const ['category']))
-                  const Divider(height: 1),
-                if (_match('top kategori', 'bar pengeluaran',
-                    const ['category']))
-                  SwitchListTile(
-                    secondary: const Icon(Icons.category),
-                    title: const Text('Top kategori bulan ini'),
-                    subtitle:
-                        const Text('Bar pengeluaran per kategori di Beranda'),
-                    value: showTop.value ?? true,
-                    onChanged: (v) => ref
-                        .read(settingsServiceProvider)
-                        .setShowTopCategories(v),
-                  ),
-                if (_match('terakhir', 'riwayat jumlah', const ['recent']))
-                  const Divider(height: 1),
-                if (_match('terakhir', 'riwayat jumlah', const ['recent']))
-                  SwitchListTile(
-                    secondary: const Icon(Icons.history),
-                    title: const Text('Terakhir dicatat'),
-                    subtitle: Text(recentCount.when(
-                      loading: () => '…',
-                      error: (_, _) => 'Gagal memuat',
-                      data: (n) => 'Tampilkan $n transaksi terakhir',
-                    )),
-                    value: showRecent.value ?? true,
-                    onChanged: (v) => ref
-                        .read(settingsServiceProvider)
-                        .setShowRecent(v),
-                  ),
-                if ((showRecent.value ?? true) &&
-                    _match('terakhir', 'jumlah', const ['recent']))
-                  ListTile(
-                    leading: const Icon(Icons.format_list_numbered),
-                    title: const Text('Jumlah ditampilkan'),
-                    subtitle: Text(recentCount.when(
-                      loading: () => '…',
-                      error: (_, _) => 'Gagal memuat',
-                      data: (n) => '$n transaksi',
-                    )),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: pickRecentCount,
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          const _SubHead('List & tanggal'),
-          Card(
-            child: Column(
-              children: [
-                if (_match('list rapat', 'padat', const ['dense']))
-                  SwitchListTile(
-                    secondary: const Icon(Icons.density_small),
-                    title: const Text('List rapat'),
-                    subtitle: const Text(
-                        'Baris transaksi lebih padat, muat lebih banyak'),
-                    value: compactList.value ?? false,
-                    onChanged: (v) => ref
-                        .read(settingsServiceProvider)
-                        .setCompactList(v),
-                  ),
-                if (_match('tanggal relatif', 'hari ini kemarin',
-                    const ['date']))
-                  const Divider(height: 1),
-                if (_match('tanggal relatif', 'hari ini kemarin',
-                    const ['date']))
-                  SwitchListTile(
-                    secondary: const Icon(Icons.today),
-                    title: const Text('Tanggal relatif'),
-                    subtitle: const Text(
-                        '"Hari ini / Kemarin" gantikan tanggal penuh di list'),
-                    value: relativeDates.value ?? true,
-                    onChanged: (v) => ref
-                        .read(settingsServiceProvider)
-                        .setRelativeDates(v),
-                  ),
-                if (_match('ikon kategori', 'emoji', const ['icon']))
-                  const Divider(height: 1),
-                if (_match('ikon kategori', 'emoji', const ['icon']))
-                  SwitchListTile(
-                    secondary: const Icon(Icons.emoji_emotions),
-                    title: const Text('Ikon kategori'),
-                    subtitle:
-                        const Text('Emoji di tiap baris transaksi & laporan'),
-                    value: showIcons.value ?? true,
-                    onChanged: (v) => ref
-                        .read(settingsServiceProvider)
-                        .setShowCategoryIcons(v),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 80),
-        ],
+          ],
+        ),
       ),
-    );
-  }
-}
-
-class _SubHead extends StatelessWidget {
-  const _SubHead(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8, top: 4),
-      child: Text(text, style: Theme.of(context).textTheme.titleSmall),
     );
   }
 }
