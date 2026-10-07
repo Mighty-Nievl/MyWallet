@@ -19,6 +19,7 @@ abstract final class SettingsKeys {
   static const privacyScope = 'privacy_scope'; // 'balance' | 'all'
   static const showTopCategories = 'show_top_categories'; // bool
   static const showMonthTotals = 'show_month_totals'; // bool
+  static const showDailyTotals = 'show_daily_totals'; // bool (ringkasan hari ini)
   static const showRecent = 'show_recent'; // bool
   static const recentCount = 'recent_count'; // int (3/5/10)
   static const compactAmounts = 'compact_amounts'; // bool (Rp25 jt)
@@ -102,6 +103,11 @@ class SettingsService {
   Future<void> setShowMonthTotals(bool v) async {
     (await _prefs).setBool(SettingsKeys.showMonthTotals, v);
     _ref.invalidate(showMonthTotalsProvider);
+  }
+
+  Future<void> setShowDailyTotals(bool v) async {
+    (await _prefs).setBool(SettingsKeys.showDailyTotals, v);
+    _ref.invalidate(showDailyTotalsProvider);
   }
 
   Future<void> setShowRecent(bool v) async {
@@ -219,6 +225,12 @@ final showTopCategoriesProvider = FutureProvider<bool>((ref) async {
 final showMonthTotalsProvider = FutureProvider<bool>((ref) async {
   final p = await ref.watch(prefsProvider.future);
   return p.getBool(SettingsKeys.showMonthTotals) ?? true;
+});
+
+/// Tampilkan ringkasan harian (hari ini) di Beranda.
+final showDailyTotalsProvider = FutureProvider<bool>((ref) async {
+  final p = await ref.watch(prefsProvider.future);
+  return p.getBool(SettingsKeys.showDailyTotals) ?? true;
 });
 
 /// Tampilkan seksi terakhir dicatat di Beranda.

@@ -20,7 +20,7 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 5. Pantau di tab **Actions → Release MyWallet**.
 
 ## Riwayat rilis
-- **v1.2.1** (7 Okt 2026): Seragamkan warna semantik ikut colorScheme (pemasukan = primary, keluar = error, warning 80% = tertiary) + palet pie fix tanpa hijau + border form radius 16/outlineVariant.
+- **v1.3.0** (7 Okt 2026): Restruktur Pengaturan (kolom cari, 4 grup, Isi Beranda sub-bagian, Kelola kategori halaman sendiri, hirarki Data, Tentang tap-to-copy + changelog) + ringkasan harian di Beranda + warna semantik ikut colorScheme (pemasukan = primary, keluar = error, warning 80% = tertiary) + palet pie tanpa hijau.
 - **v1.2.0** (7 Okt 2026): Tampilan full — warna aksen (6) + Material You + hitam pekat + privacy semua nominal + nominal ringkas + kustom Beranda + overkill (font/list/tanggal/ikon).
 - **v1.1.0** (7 Okt 2026): P0 Pengaturan (tema, sembunyikan saldo, saldo awal, kunci PIN/biometrik, pengingat harian, backup/restore/hapus data) + bottom bar [home][history][+][budget][laporan] + settings pindah ke kanan atas Beranda.
 - **v1.0.1** (7 Okt 2026): fix saldo reaktif (dulu `FutureProvider`, sekarang `StreamProvider`), total & grafik ikut ganti bulan, riwayat filter per bulan.

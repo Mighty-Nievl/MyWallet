@@ -2,6 +2,7 @@
 
 ## Beranda
 - Kartu hijau = **saldo** (saldo awal + total masuk − total keluar sepanjang waktu) + ringkasan masuk/keluar **bulan yang dipilih**.
+- Kartu **Hari ini** = masuk / keluar / selisih **tanggal berjalan** (00:00–23:59 waktu HP). Ikut mode privacy + nominal ringkas. Bisa dimatikan dari Pengaturan → Tampilan → Isi Beranda → Ringkasan hari ini.
 - Ikon mata di kartu = sembunyikan/tampilkan saldo cepat (mode privacy).
 - Ikon ⚙️ kanan atas = **Pengaturan**.
 - Panah `<` `>` untuk pindah bulan.
@@ -33,14 +34,12 @@
 - Pie + rincian pengeluaran per kategori bulan berjalan.
 
 ## Pengaturan (ikon ⚙️ kanan atas Beranda)
-- **Tampilan:** tema Terang/Gelap/Ikuti HP, warna aksen (6 pilihan) atau ikuti wallpaper HP (Material You, Android 12+), hitam pekat (mode gelap), sembunyikan saldo (hanya saldo / semua nominal), nominal ringkas (Rp1,5 jt), ukuran font (Kecil–Sangat besar).
-- **Beranda:** tampilkan/sembunyikan ringkasan masuk-keluar, top kategori, terakhir dicatat (3/5/10).
-- **List & tanggal:** list rapat, tanggal relatif (Hari ini/Kemarin), ikon kategori on/off.
-- **Keuangan:** saldo awal (uang yang sudah dipegang sebelum mulai mencatat).
-- **Kategori:** tambah/hapus. Menghapus kategori membuat transaksinya jadi "Tanpa kategori", bukan ikut terhapus.
-- **Keamanan:** kunci aplikasi PIN / biometrik.
-- **Pengingat harian:** notifikasi "sudah catat belum?" tiap hari di jam pilihan.
-- **Data:**
+Kolom cari di atas untuk filter cepat (cth. ketik "font" / "backup"). Struktur 4 grup:
+- **Tampilan:** tema Terang/Gelap/Ikuti HP, warna aksen (6 pilihan) atau ikuti wallpaper HP (Material You, Android 12+), hitam pekat (mode gelap), ukuran font, nominal ringkas (Rp1,5 jt).
+  - *Isi Beranda:* ringkasan hari ini, ringkasan masuk-keluar, top kategori, terakhir dicatat (3/5/10).
+  - *List & tanggal:* list rapat, tanggal relatif (Hari ini/Kemarin), ikon kategori on/off.
+- **Saldo & Privasi:** sembunyikan saldo (hanya saldo / semua nominal), saldo awal, kunci aplikasi PIN/biometrik, pengingat harian.
+- **Kelola:** kelola kategori (halaman sendiri: tambah/hapus), export CSV, backup database, restore (kuning: menimpa semua data), hapus semua data (merah, konfirmasi 2x ketik HAPUS).
   - **Export CSV**: membuat file `mywallet-<timestamp>.csv` (kolom: tanggal, tipe, kategori, nominal, catatan) lalu dibuka lewat share sheet.
   - **Backup database**: salinan konsisten `mywallet.sqlite` ke file pilihan.
   - **Restore database**: kembalikan dari file backup, lalu tutup total aplikasi + buka lagi.

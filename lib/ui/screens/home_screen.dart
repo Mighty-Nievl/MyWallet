@@ -10,7 +10,8 @@ import '../widgets/tx_tile.dart';
 import 'settings_screen.dart';
 import 'tx_form_screen.dart';
 
-/// Beranda: saldo, ringkasan bulan ini, top kategori, transaksi terakhir.
+/// Beranda: saldo, ringkasan hari ini, ringkasan bulan ini, top kategori,
+/// transaksi terakhir.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -19,9 +20,11 @@ class HomeScreen extends ConsumerWidget {
     final month = ref.watch(selectedMonthProvider);
     final balance = ref.watch(balanceProvider);
     final totals = ref.watch(monthTotalsProvider);
+    final dayTotals = ref.watch(dayTotalsProvider);
     final byCat = ref.watch(monthExpenseByCategoryProvider);
     final display = ref.watch(displayPrefsProvider);
     final showTop = ref.watch(showTopCategoriesProvider).value ?? true;
+    final showDaily = ref.watch(showDailyTotalsProvider).value ?? true;
     final showRecent = ref.watch(showRecentProvider).value ?? true;
     final recentCount = ref.watch(recentCountProvider).value ?? 5;
 
@@ -48,6 +51,13 @@ class HomeScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           _BalanceCard(balance: balance, totals: totals),
+          if (showDaily) ...[
+            const SizedBox(height: 16),
+            Text('Hari ini',
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            _DailyCard(dayTotals: dayTotals),
+          ],
           if (showTop) ...[
             const SizedBox(height: 16),
             Text('Pengeluaran bulan ini',
@@ -237,6 +247,68 @@ class _MiniStat extends StatelessWidget {
         Text(value,
             style: TextStyle(fontWeight: FontWeight.bold, color: color)),
       ],
+    );
+  }
+}
+
+/// Kartu ringkasan HARI INI: masuk / keluar / selisih + jumlah transaksi.
+/// Ikut privacy scope 'all' (nominal jadi Rp••••) + nominal ringkas.
+class _DailyCard extends ConsumerWidget {
+  const _DailyCard({required this.dayTotals});
+  final AsyncValue<(int, int)> dayTotals;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    final display = ref.watch(displayPrefsProvider);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: dayTotals.when(
+          loading: () => const _Skeleton(lines: 2),
+          error: (e, _) => Text('Gagal memuat: $e'),
+          data: (t) {
+            final net = t.$1 - t.$2;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(formatDate(DateTime.now()),
+                    style: Theme.of(context).textTheme.bodySmall),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _MiniStat(
+                        label: 'Masuk',
+                        value:
+                            display.signed(t.$1, isExpense: false),
+                        color: scheme.primary,
+                      ),
+                    ),
+                    Expanded(
+                      child: _MiniStat(
+                        label: 'Keluar',
+                        value: display.signed(t.$2, isExpense: true),
+                        color: scheme.error,
+                      ),
+                    ),
+                    Expanded(
+                      child: _MiniStat(
+                        label: 'Selisih',
+                        value: display.signed(net.abs(),
+                            isExpense: net < 0),
+                        color: net < 0
+                            ? scheme.error
+                            : scheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }

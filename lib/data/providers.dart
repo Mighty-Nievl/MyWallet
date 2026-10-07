@@ -68,6 +68,19 @@ final monthRangeProvider = Provider<(DateTime, DateTime)>((ref) {
   return (from, to);
 });
 
+/// Total (pemasukan, pengeluaran) HARI INI. Auto-refresh tiap ada perubahan.
+/// Batas: 00:00:00 hari ini s/d 23:59:59 hari ini (waktu lokal HP).
+final dayTotalsProvider = StreamProvider<(int, int)>((ref) {
+  final db = ref.watch(dbProvider);
+  final now = DateTime.now();
+  final from = DateTime(now.year, now.month, now.day);
+  final to = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+  return db
+      .select(db.transactions)
+      .watch()
+      .asyncMap((_) => db.getTotals(from, to));
+});
+
 /// Total (pemasukan, pengeluaran) bulan yang dipilih. Auto-refresh tiap ada perubahan.
 final monthTotalsProvider = StreamProvider<(int, int)>((ref) {
   final db = ref.watch(dbProvider);

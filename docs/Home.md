@@ -18,7 +18,7 @@
 - **Penyimpanan:** 100% lokal, SQLite via Drift — tanpa login, tanpa server.
 - **State:** flutter_riverpod 3.x (`StreamProvider` auto-refresh, `StateProvider` via `legacy.dart`).
 - **File DB:** `mywallet.sqlite` di folder dokumen aplikasi.
-- **Status:** v1.2.1 — Seragamkan warna semantik ikut colorScheme (pemasukan/warning) + rapikan palet pie & border form · 23 test hijau.
+- **Status:** v1.3.0 — Restruktur Pengaturan (kolom cari, 4 grup, Isi Beranda jadi sub-bagian, Kelola kategori halaman sendiri, hirarki Data, Tentang tap-to-copy + changelog) + ringkasan harian di Beranda · 23 test hijau.
 
 ## Peta kode
 

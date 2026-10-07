@@ -16,11 +16,15 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] Kustom Beranda (ringkasan / top kategori / terakhir 3-5-10).
 - [x] Overkill: ukuran font, list rapat, tanggal relatif, ikon kategori on/off.
 
-## v1.3 — Uang lebih terkontrol
+## v1.3 — Pengaturan rapi + ringkasan harian ✅ (rilis 7 Okt 2026 sebagai v1.3.0)
+- [x] Restruktur Pengaturan: kolom cari, 4 grup (Tampilan / Saldo & Privasi / Kelola / Tentang), Isi Beranda jadi sub-bagian, Kelola kategori halaman sendiri, hirarki Data, Tentang tap-to-copy + changelog.
+- [x] Ringkasan harian di Beranda (masuk / keluar / selisih hari ini, ikut privacy + nominal ringkas, toggle di Isi Beranda).
+
+## v1.4 — Uang lebih terkontrol
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).
 
-## v1.3 — Data aman & berguna
+## v1.4 — Data aman & berguna
 - [ ] Rencana menabung / target (sinking fund).
 - [ ] Insight sederhana: "pengeluaran makan naik 20% vs bulan lalu".
 
