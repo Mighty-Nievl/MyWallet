@@ -97,14 +97,13 @@ class CategoriesScreen extends ConsumerWidget {
                 controller: nameCtrl,
                 autofocus: true,
                 decoration: const InputDecoration(
-                    labelText: 'Nama', border: OutlineInputBorder()),
+                    labelText: 'Nama'),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: iconCtrl,
                 decoration: const InputDecoration(
-                    labelText: 'Ikon emoji (opsional)',
-                    border: OutlineInputBorder()),
+                    labelText: 'Ikon emoji (opsional)'),
               ),
               const SizedBox(height: 12),
               SegmentedButton<bool>(

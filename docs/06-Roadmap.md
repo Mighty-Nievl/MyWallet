@@ -20,11 +20,16 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] Restruktur Pengaturan: kolom cari, 4 grup (Tampilan / Saldo & Privasi / Kelola / Tentang), Isi Beranda jadi sub-bagian, Kelola kategori halaman sendiri, hirarki Data, Tentang tap-to-copy + changelog.
 - [x] Ringkasan harian di Beranda (masuk / keluar / selisih hari ini, ikut privacy + nominal ringkas, toggle di Isi Beranda).
 
-## v1.4 — Uang lebih terkontrol
+## v1.4 — Pengaturan multi-halaman + input rapi ✅ (rilis 7 Okt 2026 sebagai v1.4.0)
+- [x] Pengaturan multi-halaman: hub 4 grup (Tampilan / Saldo & Privasi / Kelola / Tentang) + cari global yang lompat ke sub-halaman + query ikut diteruskan.
+- [x] Input nominal otomatis bertitik (ketik `1000` → `1.000`) di form catat, budget, saldo awal (parse tetap via `parseRp`).
+- [x] Border input seragam global (radius 16 + `outlineVariant`, fokus aksen) via `inputDecorationTheme` — hapus semua border manual.
+
+## v1.5 — Uang lebih terkontrol
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).
 
-## v1.4 — Data aman & berguna
+## v1.5 — Data aman & berguna
 - [ ] Rencana menabung / target (sinking fund).
 - [ ] Insight sederhana: "pengeluaran makan naik 20% vs bulan lalu".
 

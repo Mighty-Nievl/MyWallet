@@ -13,7 +13,14 @@ void main() {
   group('parseRp', () {
     test('angka polos', () => expect(parseRp('25000'), 25000));
     test('dengan Rp dan titik', () => expect(parseRp('Rp1.500.000'), 1500000));
+    test('dengan titik input', () => expect(parseRp('1.500.000'), 1500000));
     test('kosong', () => expect(parseRp(''), 0));
+  });
+
+  group('formatAmountField', () {
+    test('nol', () => expect(formatAmountField(0), '0'));
+    test('ribuan', () => expect(formatAmountField(25000), '25.000'));
+    test('jutaan', () => expect(formatAmountField(1500000), '1.500.000'));
   });
 
   group('formatRpCompact', () {

@@ -14,7 +14,7 @@
 
 ## Mencatat (tombol + tengah)
 1. Pilih **Keluar** / **Masuk**.
-2. Isi nominal (angka saja, cth. `25000`).
+2. Isi nominal (ketik angka saja — titik otomatis muncul, cth. ketik `25000` jadi `25.000`).
 3. Pilih kategori (atau "+ Tambah kategori baru").
 4. Catatan opsional, tanggal bisa diubah (default hari ini).
 5. Simpan. Saldo & ringkasan langsung berubah.
@@ -34,7 +34,7 @@
 - Pie + rincian pengeluaran per kategori bulan berjalan.
 
 ## Pengaturan (ikon ⚙️ kanan atas Beranda)
-Kolom cari di atas untuk filter cepat (cth. ketik "font" / "backup"). Struktur 4 grup:
+Halaman hub berisi 4 grup — ketuk untuk buka sub-halaman masing-masing. Kolom cari di hub memfilter semua item; ketuk hasil untuk lompat ke sub-halamannya.
 - **Tampilan:** tema Terang/Gelap/Ikuti HP, warna aksen (6 pilihan) atau ikuti wallpaper HP (Material You, Android 12+), hitam pekat (mode gelap), ukuran font, nominal ringkas (Rp1,5 jt).
   - *Isi Beranda:* ringkasan hari ini, ringkasan masuk-keluar, top kategori, terakhir dicatat (3/5/10).
   - *List & tanggal:* list rapat, tanggal relatif (Hari ini/Kemarin), ikon kategori on/off.

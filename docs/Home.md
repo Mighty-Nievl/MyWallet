@@ -18,11 +18,11 @@
 - **Penyimpanan:** 100% lokal, SQLite via Drift — tanpa login, tanpa server.
 - **State:** flutter_riverpod 3.x (`StreamProvider` auto-refresh, `StateProvider` via `legacy.dart`).
 - **File DB:** `mywallet.sqlite` di folder dokumen aplikasi.
-- **Status:** v1.3.0 — Restruktur Pengaturan (kolom cari, 4 grup, Isi Beranda jadi sub-bagian, Kelola kategori halaman sendiri, hirarki Data, Tentang tap-to-copy + changelog) + ringkasan harian di Beranda · 23 test hijau.
+- **Status:** v1.4.0 — Pengaturan multi-halaman (hub + 4 sub-halaman + cari global) + input nominal otomatis bertitik + border input seragam · 27 test hijau.
 
 ## Peta kode
 
 - `lib/main.dart` — entry point (`ProviderScope` + `MyWalletApp` + pulihkan jadwal pengingat)
-- `lib/ui/` — tema, shell 4 tab + tombol + tengah, 7 layar (home, tx_form, history, budget, reports, settings, lock), widget, format rupiah/tanggal
+- `lib/ui/` — tema, shell 4 tab + tombol + tengah, 12 layar (home, tx_form, history, budget, reports, settings hub + 4 sub-halaman, categories, lock), widget, format rupiah/tanggal + formatter input nominal
 - `lib/data/` — `tables.dart` (skema), `database.dart` (query), `providers.dart`, `actions.dart`, `settings.dart` (semua pengaturan + providers tampilan), `lock_service.dart` (PIN/biometrik), `reminder_service.dart` (notifikasi harian), `backup_service.dart` (backup/restore/wipe)
-- `test/widget_test.dart` — test helper format (23 test)
+- `test/widget_test.dart` — test helper format (27 test)

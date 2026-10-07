@@ -54,6 +54,11 @@ String formatDateRelative(DateTime d, {DateTime? now}) {
   };
 }
 
+/// Digit tergrup untuk kolom input nominal (tanpa "Rp"): 1500000 -> "1.500.000".
+/// Dipakai sebagai teks awal + hasil formatter saat mengetik.
+/// Parse kembali dengan [parseRp] (ambil digit saja).
+String formatAmountField(int amount) => _group(amount.abs());
+
 /// "Rp1.500.000" / "25 ribu" (angka saja) -> 1500000 / 25.
 /// Mengambil semua digit; teks seperti "25 ribu" jadi 25 (bukan 25000).
 int parseRp(String input) {

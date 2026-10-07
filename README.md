@@ -2,10 +2,10 @@
 
 Aplikasi pencatat pemasukan & pengeluaran. Data **100% lokal** (SQLite via Drift) — tanpa login, tanpa server.
 
-## Status: v1.3.0 ✅
-- `flutter analyze` → No issues found · `flutter test` → 23/23 passed
-- Beranda: kartu **Hari ini** (masuk / keluar / selisih tanggal berjalan, ikut privacy + nominal ringkas) + ringkasan bulan + top kategori + terakhir dicatat
-- Pengaturan: kolom cari + 4 grup (Tampilan / Saldo & Privasi / Kelola / Tentang), Kelola kategori halaman sendiri, Tentang tap-to-copy + changelog
+## Status: v1.4.0 ✅
+- `flutter analyze` → No issues found · `flutter test` → 27/27 passed
+- Pengaturan **multi-halaman**: hub 4 grup → sub-halaman sendiri (Tampilan / Saldo & Privasi / Kelola / Tentang) + cari global yang lompat ke halaman terkait
+- Input nominal **otomatis bertitik** (ketik `1000` → `1.000`) di form catat, budget, saldo awal · border input seragam radius 16 + fokus aksen
 - Bottom bar [home] [history] [+] [budget] [laporan] · settings di kanan atas Beranda
 - Catat / edit / hapus transaksi · kategori custom · riwayat + filter
 - Budget bulanan per kategori · laporan 6 bulan + pie · export CSV

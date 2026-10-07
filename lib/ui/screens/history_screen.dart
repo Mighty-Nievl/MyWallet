@@ -63,7 +63,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         },
                       )
                     : null,
-                border: const OutlineInputBorder(),
                 isDense: true,
               ),
               onChanged: (v) =>

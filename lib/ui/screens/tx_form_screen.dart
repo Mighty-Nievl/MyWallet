@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/actions.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
+import '../amount_input.dart';
 import '../format.dart';
 
 /// Form tambah / edit transaksi.
@@ -28,8 +29,8 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
     super.initState();
     final e = widget.existing;
     _isExpense = e?.isExpense ?? true;
-    _amountCtrl =
-        TextEditingController(text: e != null ? e.amount.toString() : '');
+    _amountCtrl = TextEditingController(
+        text: e != null ? formatAmountField(e.amount) : '');
     _noteCtrl = TextEditingController(text: e?.note ?? '');
     _date = e?.date ?? DateTime.now();
     _categoryId = e?.categoryId;
@@ -149,11 +150,11 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
           TextField(
             controller: _amountCtrl,
             keyboardType: TextInputType.number,
+            inputFormatters: [ThousandSeparatorInputFormatter()],
             decoration: const InputDecoration(
               labelText: 'Nominal (Rp)',
-              hintText: 'cth. 25000',
+              hintText: 'cth. 25.000',
               prefixText: 'Rp ',
-              border: OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 12),
@@ -164,7 +165,6 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
               initialValue: _categoryId,
               decoration: const InputDecoration(
                 labelText: 'Kategori',
-                border: OutlineInputBorder(),
               ),
               items: [
                 const DropdownMenuItem(
@@ -182,7 +182,6 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
             decoration: const InputDecoration(
               labelText: 'Catatan (opsional)',
               hintText: 'cth. makan siang di warteg',
-              border: OutlineInputBorder(),
             ),
             maxLines: 2,
           ),
@@ -227,7 +226,7 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
             TextField(
               controller: nameCtrl,
               decoration: const InputDecoration(
-                  labelText: 'Nama', border: OutlineInputBorder()),
+                  labelText: 'Nama'),
               autofocus: true,
             ),
             const SizedBox(height: 12),
@@ -236,7 +235,6 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
               decoration: const InputDecoration(
                 labelText: 'Ikon emoji (opsional)',
                 hintText: 'cth. 🍜',
-                border: OutlineInputBorder(),
               ),
             ),
           ],

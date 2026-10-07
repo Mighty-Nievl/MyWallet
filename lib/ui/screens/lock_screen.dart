@@ -103,7 +103,6 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                   decoration: InputDecoration(
                     labelText: 'PIN',
                     errorText: _error,
-                    border: const OutlineInputBorder(),
                   ),
                   onSubmitted: (_) => _submitPin(),
                 ),

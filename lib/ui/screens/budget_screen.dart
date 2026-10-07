@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/actions.dart';
 import '../../data/providers.dart';
+import '../amount_input.dart';
 import '../display.dart';
 import '../format.dart';
 
@@ -157,8 +158,7 @@ class BudgetScreen extends ConsumerWidget {
               DropdownButtonFormField<int?>(
                 initialValue: catId,
                 decoration: const InputDecoration(
-                    labelText: 'Kategori',
-                    border: OutlineInputBorder()),
+                    labelText: 'Kategori'),
                 items: [
                   for (final cat in cats)
                     DropdownMenuItem(
@@ -171,10 +171,11 @@ class BudgetScreen extends ConsumerWidget {
               TextField(
                 controller: limitCtrl,
                 keyboardType: TextInputType.number,
+                inputFormatters: [ThousandSeparatorInputFormatter()],
                 decoration: const InputDecoration(
                   labelText: 'Batas (Rp)',
+                  hintText: 'cth. 1.500.000',
                   prefixText: 'Rp ',
-                  border: OutlineInputBorder(),
                 ),
               ),
             ],
