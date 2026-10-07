@@ -21,7 +21,10 @@ LazyDatabase _openConnection() {
 
 @DriftDatabase(tables: [Categories, Transactions, Budgets])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  /// [executor] opsional agar bisa di-test in-memory
+  /// (`NativeDatabase.memory()`) — default tetap file HP.
+  AppDatabase([QueryExecutor? executor])
+      : super(executor ?? _openConnection());
 
   @override
   int get schemaVersion => 1;

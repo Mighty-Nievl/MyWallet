@@ -607,7 +607,7 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
         title: Text('Changelog'),
         content: SingleChildScrollView(
           child: Text(
-            'v1.7.2 — Fix list budget tidak refresh setelah simpan (trigger dengarkan tabel budgets) + SnackBar "Budget tersimpan.".\n\n'
+            'v1.8.0 — Budget P0+P1: item bisa di-tap (dialog edit prefill + kategori dikunci), hapus konfirmasi + undo 5 detik, validasi inline, kategori via bottom sheet, overview "aman nggak", tombol tambah satu gaya, error ramah + coba lagi, urutan stabil, 6 test budget.\n\n'
             'v1.3.0 — Restruktur Pengaturan (cari, 4 grup, kelola kategori sendiri, tentang tap-to-copy) + ringkasan harian di Beranda.\n\n'
             'v1.2.1 — Warna semantik ikut colorScheme + palet pie tanpa hijau.\n\n'
             'v1.2.0 — Tampilan full (aksen, Material You, true black, privacy all, nominal ringkas, kustom Beranda, overkill).\n\n'

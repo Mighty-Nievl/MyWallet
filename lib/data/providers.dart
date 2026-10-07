@@ -58,14 +58,20 @@ final selectedMonthProvider = StateProvider<String>((ref) {
   return '${now.year}-${now.month.toString().padLeft(2, '0')}';
 });
 
-/// Batas awal-akhir bulan yang dipilih.
-final monthRangeProvider = Provider<(DateTime, DateTime)>((ref) {
-  final parts = ref.watch(selectedMonthProvider).split('-');
+/// Batas awal-akhir sebuah kunci bulan "yyyy-MM".
+/// Fungsi murni agar bisa dipakai provider maupun [fetchBudgets].
+(DateTime, DateTime) monthRangeOf(String monthKey) {
+  final parts = monthKey.split('-');
   final y = int.parse(parts[0]);
   final m = int.parse(parts[1]);
   final from = DateTime(y, m, 1);
   final to = DateTime(y, m + 1, 1).subtract(const Duration(milliseconds: 1));
   return (from, to);
+}
+
+/// Batas awal-akhir bulan yang dipilih.
+final monthRangeProvider = Provider<(DateTime, DateTime)>((ref) {
+  return monthRangeOf(ref.watch(selectedMonthProvider));
 });
 
 /// Total (pemasukan, pengeluaran) HARI INI. Auto-refresh tiap ada perubahan.
@@ -129,45 +135,56 @@ final historyProvider = StreamProvider<List<TxWithCategory>>((ref) {
 });
 
 /// Stream budget bulan yang dipilih + total terpakai per kategori.
+/// Trigger dengarkan budgets + transactions (fix v1.7.2) —
+/// hitung beratnya di [fetchBudgets] (fungsi murni, testable).
 final budgetsProvider =
     StreamProvider<List<({Budget budget, String name, String icon, int spent})>>(
         (ref) {
   final db = ref.watch(dbProvider);
   final month = ref.watch(selectedMonthProvider);
-  // Trigger: dengarkan perubahan tabel budgets ATAU transactions
-  // (keduanya via readsFrom) — simpan/hapus budget langsung
-  // refresh list tanpa restart aplikasi.
+  final (from, to) = ref.watch(monthRangeProvider);
   final result = db
       .customSelect('SELECT 1', readsFrom: {db.budgets, db.transactions})
       .watch()
-      .asyncMap((_) async {
-    final (from, to) = ref.read(monthRangeProvider);
-    final rows = await (db.select(db.budgets)
-          ..where((b) => b.month.equals(month)))
-        .get();
-    final out = <({Budget budget, String name, String icon, int spent})>[];
-    for (final b in rows) {
-      final cat = await (db.select(db.categories)
-            ..where((c) => c.id.equals(b.categoryId)))
-          .getSingleOrNull();
-      final spentRows = await db.customSelect(
-        'SELECT COALESCE(SUM(amount),0) AS s FROM transactions '
-        'WHERE is_expense = 1 AND category_id = ? AND date BETWEEN ? AND ?',
-        variables: [
-          Variable.withInt(b.categoryId),
-          Variable.withDateTime(from),
-          Variable.withDateTime(to),
-        ],
-        readsFrom: {db.transactions},
-      ).getSingle();
-      out.add((
-        budget: b,
-        name: cat?.name ?? '?',
-        icon: cat?.icon ?? '📦',
-        spent: spentRows.read<int>('s'),
-      ));
-    }
-    return out;
-  });
+      .asyncMap((_) => fetchBudgets(db, month: month, from: from, to: to));
   return result;
 });
+
+/// Ambil budget + spent per kategori, urutan stabil abjad.
+/// Fungsi murni (tanpa ref) agar bisa di-test langsung dengan db in-memory.
+Future<List<({Budget budget, String name, String icon, int spent})>>
+    fetchBudgets(
+  AppDatabase db, {
+  required String month,
+  required DateTime from,
+  required DateTime to,
+}) async {
+  final rows = await (db.select(db.budgets)
+        ..where((b) => b.month.equals(month)))
+      .get();
+  final out = <({Budget budget, String name, String icon, int spent})>[];
+  for (final b in rows) {
+    final cat = await (db.select(db.categories)
+          ..where((c) => c.id.equals(b.categoryId)))
+        .getSingleOrNull();
+    final spentRows = await db.customSelect(
+      'SELECT COALESCE(SUM(amount),0) AS s FROM transactions '
+      'WHERE is_expense = 1 AND category_id = ? AND date BETWEEN ? AND ?',
+      variables: [
+        Variable.withInt(b.categoryId),
+        Variable.withDateTime(from),
+        Variable.withDateTime(to),
+      ],
+      readsFrom: {db.transactions},
+    ).getSingle();
+    out.add((
+      budget: b,
+      name: cat?.name ?? '?',
+      icon: cat?.icon ?? '📦',
+      spent: spentRows.read<int>('s'),
+    ));
+  }
+  // Urutan stabil abjad — posisi item tidak lompat tiap refresh.
+  out.sort((a, b) => a.name.compareTo(b.name));
+  return out;
+}

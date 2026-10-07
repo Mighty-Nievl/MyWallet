@@ -20,6 +20,7 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 5. Pantau di tab **Actions → Release MyWallet**.
 
 ## Riwayat rilis
+- **v1.8.0** (7 Okt 2026): Budget P0+P1 — dialog edit beneran (prefill + kategori dikunci) + hapus konfirmasi + undo 5 detik + validasi inline + kategori bottom sheet + overview "X dari Y aman" + urutan stabil + 6 test budget in-memory. Logika simpan/hitung tidak berubah.
 - **v1.7.2** (7 Okt 2026): Fix list tetap "Belum ada budget" setelah simpan — trigger `budgetsProvider` dengarkan tabel budgets + transactions + SnackBar "Budget tersimpan.".
 - **v1.7.1** (7 Okt 2026): Fix tombol Tambah Budget — dialog terbuka instan (kategori dimuat di dalam dialog) + SnackBar bila belum lengkap.
 - **v1.7.0** (7 Okt 2026): Redesign STEP 3 (visual saja) — navigasi bawah custom + Budget baru (overview + item + progress) + Laporan baru (ringkasan + bar 6 bulan + pie + rincian). Logika/provider/query tidak berubah.

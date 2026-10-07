@@ -47,7 +47,15 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 ## v1.7.2 — Fix Budget refresh ✅ (rilis 7 Okt 2026 sebagai v1.7.2)
 - [x] Fix list tetap "Belum ada budget" setelah simpan: trigger `budgetsProvider` dengarkan tabel budgets + transactions (sebelumnya cuma transactions) + SnackBar "Budget tersimpan.".
 
-## v1.8 — Uang lebih terkontrol
+## v1.8 — Budget P0+P1 ✅ (rilis 7 Okt 2026 sebagai v1.8.0)
+- [x] Item bisa di-tap → dialog edit beneran (kategori dikunci, batas prefill, judul bulan dinamis) + info timpa eksplisit (bukan diam-diam).
+- [x] Hapus: konfirmasi ala TxForm + SnackBar undo 5 detik (hapus langsung di list dihapus).
+- [x] Validasi inline (errorText) + kategori tambah via bottom sheet ala TxForm + lompat ke Kelola kategori bila kosong + autofocus + submit keyboard + cegah double-tap.
+- [x] Overview jawab "aman nggak": label bulan dinamis + total sisa/lewat + progress tebal + "X dari Y budget aman"; aman = muted.
+- [x] Tombol tambah satu gaya Filled 52px + aksi cepat + di header; error ramah + "Coba lagi"; urutan stabil abjad (sort di `fetchBudgets`).
+- [x] Logika provider dicabut ke `fetchBudgets` + `monthRangeOf` (testable) + 6 test budget in-memory (upsert/update/bulan/delete/filter/spent). 33/33 hijau.
+
+## v1.9 — Uang lebih terkontrol
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).
 
