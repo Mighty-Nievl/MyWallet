@@ -22,9 +22,12 @@ import '../format.dart';
 /// kategori + tambah kategori, tanggal, catatan, simpan + validasi,
 /// dialog konfirmasi hapus, provider/action, navigasi.
 class TxFormScreen extends ConsumerStatefulWidget {
-  const TxFormScreen({super.key, this.existing});
+  const TxFormScreen({super.key, this.existing, this.startAsExpense});
 
   final TxWithCategory? existing;
+
+  /// Tipe awal saat dibuka dari pintasan Beranda (diabaikan saat edit).
+  final bool? startAsExpense;
 
   @override
   ConsumerState<TxFormScreen> createState() => _TxFormScreenState();
@@ -42,9 +45,10 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
   void initState() {
     super.initState();
     final e = widget.existing;
-    _isExpense = e?.isExpense ?? true;
+    _isExpense = e?.isExpense ?? widget.startAsExpense ?? true;
     _amountCtrl = TextEditingController(
-        text: e != null ? formatAmountField(e.amount) : '');
+      text: e != null ? formatAmountField(e.amount) : '',
+    );
     _noteCtrl = TextEditingController(text: e?.note ?? '');
     _date = e?.date ?? DateTime.now();
     _categoryId = e?.categoryId;
@@ -69,7 +73,12 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
     if (picked != null) {
       setState(() {
         _date = DateTime(
-            picked.year, picked.month, picked.day, _date.hour, _date.minute);
+          picked.year,
+          picked.month,
+          picked.day,
+          _date.hour,
+          _date.minute,
+        );
       });
     }
   }
@@ -120,11 +129,13 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
         content: const Text('Transaksi yang dihapus tidak bisa dikembalikan.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: const Text('Batal')),
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Batal'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(c, true),
-              child: const Text('Hapus')),
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Hapus'),
+          ),
         ],
       ),
     );
@@ -137,7 +148,8 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
   @override
   Widget build(BuildContext context) {
     final catsAsync = ref.watch(
-        _isExpense ? expenseCategoriesProvider : incomeCategoriesProvider);
+      _isExpense ? expenseCategoriesProvider : incomeCategoriesProvider,
+    );
 
     return Scaffold(
       body: SafeArea(
@@ -149,10 +161,7 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
             AppSpacing.s32,
           ),
           children: [
-            _Header(
-              editing: _editing,
-              onDelete: _editing ? _delete : null,
-            ),
+            _Header(editing: _editing, onDelete: _editing ? _delete : null),
             const SizedBox(height: AppSpacing.s16),
             _TypeSelector(
               isExpense: _isExpense,
@@ -184,18 +193,18 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
             Text('Kategori', style: AppType.labelMuted(context)),
             const SizedBox(height: AppSpacing.s8),
             catsAsync.when(
-              loading: () => const SizedBox(
-                  height: 56, child: AppSkeleton(lines: 1)),
-              error: (e, _) =>
-                  const Text('Gagal memuat kategori.',
-                      style: TextStyle(fontSize: 13)),
+              loading: () =>
+                  const SizedBox(height: 56, child: AppSkeleton(lines: 1)),
+              error: (e, _) => const Text(
+                'Gagal memuat kategori.',
+                style: TextStyle(fontSize: 13),
+              ),
               data: (cats) => Column(
                 children: [
                   _CategoryTile(
                     categoryId: _categoryId,
                     cats: cats,
-                    onTap: () =>
-                        _pickCategory(cats, _categoryId),
+                    onTap: () => _pickCategory(cats, _categoryId),
                   ),
                   Align(
                     alignment: Alignment.centerLeft,
@@ -234,8 +243,7 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.check),
-                label:
-                    Text(_editing ? 'Simpan Perubahan' : 'Simpan Transaksi'),
+                label: Text(_editing ? 'Simpan Perubahan' : 'Simpan Transaksi'),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(52),
                   shape: RoundedRectangleBorder(
@@ -253,10 +261,8 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
                   icon: const Icon(Icons.delete_outline, size: 20),
                   label: const Text('Hapus transaksi'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor:
-                        Theme.of(context).colorScheme.error,
-                    side: BorderSide(
-                        color: AppColors.borderOf(context)),
+                    foregroundColor: Theme.of(context).colorScheme.error,
+                    side: BorderSide(color: AppColors.borderOf(context)),
                     minimumSize: const Size.fromHeight(48),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppRadius.md),
@@ -321,9 +327,7 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
           children: [
             TextField(
               controller: nameCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Nama',
-              ),
+              decoration: const InputDecoration(labelText: 'Nama'),
               autofocus: true,
             ),
             const SizedBox(height: 12),
@@ -338,11 +342,13 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: const Text('Batal')),
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Batal'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(c, true),
-              child: const Text('Tambah')),
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Tambah'),
+          ),
         ],
       ),
     );
@@ -410,13 +416,15 @@ class _TypeSelector extends StatelessWidget {
       child: SegmentedButton<bool>(
         segments: const [
           ButtonSegment(
-              value: true,
-              label: Text('Keluar'),
-              icon: Icon(Icons.arrow_upward, size: 18)),
+            value: true,
+            label: Text('Keluar'),
+            icon: Icon(Icons.arrow_upward, size: 18),
+          ),
           ButtonSegment(
-              value: false,
-              label: Text('Masuk'),
-              icon: Icon(Icons.arrow_downward, size: 18)),
+            value: false,
+            label: Text('Masuk'),
+            icon: Icon(Icons.arrow_downward, size: 18),
+          ),
         ],
         selected: {isExpense},
         onSelectionChanged: (s) => onChanged(s.first),
@@ -468,8 +476,7 @@ class _QuickAdd extends StatelessWidget {
         for (final p in presets)
           ActionChip(
             label: Text(p.label),
-            avatar: Icon(Icons.bolt_outlined,
-                size: 16, color: scheme.primary),
+            avatar: Icon(Icons.bolt_outlined, size: 16, color: scheme.primary),
             onPressed: () => onPick(p.amount, ''),
           ),
       ],
@@ -496,18 +503,19 @@ class _AmountField extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: AppColors.borderOf(context)),
       ),
-      padding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.baseline,
         textBaseline: TextBaseline.alphabetic,
         children: [
-          Text('Rp',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: scheme.onSurfaceVariant,
-              )),
+          Text(
+            'Rp',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(width: AppSpacing.s8),
           Expanded(
             child: TextField(
@@ -517,8 +525,7 @@ class _AmountField extends StatelessWidget {
               // tambah dibuka. Mode edit tidak autofocus (nominal sudah ada).
               autofocus: autofocus,
               inputFormatters: [ThousandSeparatorInputFormatter()],
-              style: const TextStyle(
-                  fontSize: 28, fontWeight: FontWeight.w700),
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
               decoration: const InputDecoration(
                 hintText: '0',
                 border: InputBorder.none,
@@ -540,8 +547,11 @@ class _AmountField extends StatelessWidget {
 /// Baris kategori tappable: ikon subtle + nama + chevron.
 /// Menggantikan DropdownButtonFormField (logika pilih sama).
 class _CategoryTile extends StatelessWidget {
-  const _CategoryTile(
-      {required this.categoryId, required this.cats, required this.onTap});
+  const _CategoryTile({
+    required this.categoryId,
+    required this.cats,
+    required this.onTap,
+  });
   final int? categoryId;
   final List<Category> cats;
   final VoidCallback onTap;
@@ -566,16 +576,18 @@ class _CategoryTile extends StatelessWidget {
               Expanded(
                 child: Text(
                   current?.name ?? 'Tanpa kategori',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w500),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Icon(Icons.chevron_right,
-                  size: 20, color: AppColors.mutedOf(context)),
+              Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: AppColors.mutedOf(context),
+              ),
             ],
           ),
         ),
@@ -607,18 +619,24 @@ class _DateTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(formatDateTime(date),
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(fontWeight: FontWeight.w500)),
-                    Text('Tanggal transaksi',
-                        style: AppType.secondary(context)),
+                    Text(
+                      formatDateTime(date),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      'Tanggal transaksi',
+                      style: AppType.secondary(context),
+                    ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right,
-                  size: 20, color: AppColors.mutedOf(context)),
+              Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: AppColors.mutedOf(context),
+              ),
             ],
           ),
         ),
@@ -629,11 +647,12 @@ class _DateTile extends StatelessWidget {
 
 /// Satu baris di bottom sheet kategori.
 class _SheetRow extends StatelessWidget {
-  const _SheetRow(
-      {required this.icon,
-      required this.name,
-      required this.selected,
-      required this.onTap});
+  const _SheetRow({
+    required this.icon,
+    required this.name,
+    required this.selected,
+    required this.onTap,
+  });
   final String icon;
   final String name;
   final bool selected;
@@ -652,14 +671,14 @@ class _SheetRow extends StatelessWidget {
             CategoryGlyph(emoji: icon, size: 36, iconSize: 18),
             const SizedBox(width: AppSpacing.s12),
             Expanded(
-              child: Text(name,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w500)),
+              child: Text(
+                name,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+              ),
             ),
-            if (selected)
-              Icon(Icons.check, size: 20, color: scheme.primary),
+            if (selected) Icon(Icons.check, size: 20, color: scheme.primary),
           ],
         ),
       ),

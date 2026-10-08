@@ -98,7 +98,13 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] CTA "Atur budget" saat budget kosong (lompat ke tab Budget) + strip hari ini satu baris jelas saat nol transaksi + hero berboder di dark mode agar tidak menyatu latar.
 - [x] Golden test Beranda (`test/home_design_test.dart` + `test/goldens/`): hero light + hero dark tanpa budget + uji kontras; README baru ala landing page (logo + badge + tabel fitur). 38/38 hijau.
 
-## v1.13 — Berikutnya
+## v1.13 — Beranda GoPay ✅ (rilis 8 Okt 2026 sebagai v1.13.0)
+- [x] Kepala sapaan berwarna aksen (lebih gelap dari kartu) + kartu saldo gradien 2-stop IKUT warna aksen tema (hijau default, biru ala GoPay, dst via Pengaturan → Tampilan); tiap stop digelapkan sampai teks putih lolos kontras ≥5.0 (margin atas WCAG 4.5).
+- [x] Kartu ringkas (saldo + tombol Catat/Riwayat) + deretan aksi cepat (Catat/Riwayat/Budget/Laporan) + banner insight gelap (delta % via provider + pacing budget Aman/Hampir habis/Lewat + CTA Atur budget) + tile metrik (Masuk bulan / Keluar bulan / Hari ini).
+- [x] Test kontras 6 aksen × 2 tema × (2 stop gradien + kepala) = 48 pengukuran dari widget yang benar-benar dirender (minimum 5.04:1 blue/dark); golden regen pola baru. 38/38 hijau.
+- [x] Regresi overflow CI (font fallback Linux lebih lebar): Row hero + status budget + kategori cepat dibungkus Expanded/Flexible + ellipsis; test viewport sempit 300px permanen agar jebol duluan di lokal. 39/39 hijau.
+
+## v1.14 — Berikutnya
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).
 

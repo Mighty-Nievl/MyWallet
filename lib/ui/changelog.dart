@@ -11,6 +11,11 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String text})>[
   (
+    version: 'v1.13.0',
+    text:
+        'Beranda pola GoPay: kepala sapaan berwarna aksen + kartu saldo gradien ikut warna tema (kontras putih ≥4.5:1, 48 pengukuran 6 aksen × 2 tema), aksi cepat Catat/Riwayat/Budget/Laporan, banner insight (delta vs bulan lalu + pacing budget + CTA), tile metrik Masuk/Keluar/Hari ini. Logika/provider/query tidak berubah.',
+  ),
+  (
     version: 'v1.12.1',
     text:
         'Polish Beranda: semantik nominal satu sumber (AppColors income/expense + varian hero), delta % via provider (tanpa query ulang tiap rebuild), CTA "Atur budget" saat kosong, strip hari ini jelas saat nol, hero berboder di dark mode, golden test + uji kontras WCAG 4.5:1. README baru ala landing page.',

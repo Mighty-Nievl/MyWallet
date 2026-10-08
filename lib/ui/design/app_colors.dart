@@ -60,17 +60,4 @@ abstract final class AppColors {
   /// Pengeluaran di atas permukaan biasa.
   static Color expenseOf(BuildContext context) =>
       Theme.of(context).colorScheme.error;
-
-  /// [incomeOf] untuk di atas permukaan GELAP (hero #171717):
-  /// mode terang → dinaikkan kecerahannya (tone primary masih gelap),
-  /// mode gelap → tone primary sudah terang, jadi dipakai apa adanya
-  /// (tidak perlu di-lagi ke putih supaya hijaunya tidak pudar).
-  static Color incomeOnDark(BuildContext context) => isDark(context)
-      ? incomeOf(context)
-      : Color.lerp(incomeOf(context), Colors.white, 0.45)!;
-
-  /// [expenseOf] untuk di atas permukaan gelap (logika sama).
-  static Color expenseOnDark(BuildContext context) => isDark(context)
-      ? expenseOf(context)
-      : Color.lerp(expenseOf(context), Colors.white, 0.35)!;
 }

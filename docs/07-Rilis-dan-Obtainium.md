@@ -22,6 +22,7 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 7. Pantau di tab **Actions → Release MyWallet**.
 
 ## Riwayat rilis
+- **v1.13.0** (8 Okt 2026): Beranda pola GoPay (visual saja) — kepala sapaan berwarna aksen + kartu saldo gradien ikut warna tema + aksi cepat + banner insight (delta/pacing/CTA) + tile metrik; kontras putih ≥4.5:1 di 48 pengukuran (6 aksen × 2 tema × kartu/kepala). Logika/provider/query/navigasi tidak berubah.
 - **v1.12.1** (8 Okt 2026): Polish Beranda — semantik nominal satu sumber (`AppColors` income/expense + varian hero, kontras WCAG ≥4.5:1), delta % via provider, CTA "Atur budget" saat kosong, strip hari ini jelas saat nol, hero berboder dark mode, golden test Beranda + README landing page. Logika/provider/query/navigasi tidak berubah.
 - **v1.12.0** (8 Okt 2026): Beranda Insight (visual saja) — header sapaan pinned, hero netral + arus semantik + delta vs bulan lalu + pacing budget, kategori proporsional + persen, strip hari ini ringkas, riwayat tergrup + chevron, navigasi M3 NavigationBar, skeleton shimmer + error ramah semua layar, shared AppHeader/AppMonthNav, token bottomPad/touchMin. Logika/provider/query/navigasi tidak berubah.
 - **v1.11.0** (8 Okt 2026): Logo MyWallet + Micro-UX premium — FAB Container Transform jadi form Catat, nominal autofocus + quick-add chips, haptic FAB/kategori/simpan, empty state memotivasi, nama aplikasi MyWallet. Logika/provider/query/navigasi tidak berubah.
