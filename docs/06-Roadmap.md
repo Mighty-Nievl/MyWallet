@@ -85,7 +85,14 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] Haptic: FAB + pilih kategori (`selectionClick`) + simpan sukses (`lightImpact`).
 - [x] Empty state memotivasi: Beranda top-kategori + terakhir (ramah, ajak catat), Riwayat (ubah bulan/filter) — via `AppEmptyState` generik.
 
-## v1.12 — Berikutnya
+## v1.12 — Beranda Insight ✅ (rilis 8 Okt 2026 sebagai v1.12.0)
+- [x] Header sapaan pinned ("Selamat pagi/siang/sore/malam" + tanggal) — tombol Pengaturan tidak ikut scroll hilang; hero netral gelap (#171717) + arus bulan semantik (masuk hijau terang / keluar merah terang) + delta % vs bulan lalu + pacing budget (Aman/Hampir habis/Lewat, ambang 80% sama kayak Budget).
+- [x] Bahasa visual satu: top kategori proporsional thd total + persen per baris; "Hari ini" jadi strip ringkas masuk/keluar/selisih; terakhir dikelompokkan per tanggal + chevron (seluruh baris tap→edit kelihatan affordancenya).
+- [x] Navigasi M3: `BottomAppBar` + notch + spacer manual → `NavigationBar` + FAB endFloat mengambang (OpenContainer transform TETAP); magic numbers dicairkan jadi token (`bottomPad`, `touchMin`); `circular(10)` liar → `AppRadius.mdAll`; label chart 11px → 12px.
+- [x] Feedback konsisten: `AppSkeleton` shimmer + `AppErrorState` ("…gagal dimuat." + Coba lagi, tanpa bocor `$e`) di Beranda/Riwayat/Budget/Laporan/Form/Kategori/Pengaturan; `AppHeader` + `AppMonthNav` shared dipakai semua layar (duplikat `_Header`/`_MonthNav` dihapus); label hero eksplisit "Saldo semua waktu" agar tidak dikira saldo bulan.
+- [x] Logika/provider/query/CRUD/perhitungan/navigasi TIDAK berubah — 35/35 hijau.
+
+## v1.13 — Berikutnya
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).
 

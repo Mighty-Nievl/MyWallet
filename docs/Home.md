@@ -18,7 +18,7 @@
 - **Penyimpanan:** 100% lokal, SQLite via Drift — tanpa login, tanpa server.
 - **State:** flutter_riverpod 3.x (`StreamProvider` auto-refresh, `StateProvider` via `legacy.dart`).
 - **File DB:** `mywallet.sqlite` di folder dokumen aplikasi.
-- **Status:** v1.11.0 — Logo MyWallet + Micro-UX premium (FAB transform + autofocus + chips + haptic + empty state) · 35 test hijau.
+- **Status:** v1.12.0 — Beranda Insight (header pinned + hero netral + pacing budget + kategori proporsional + nav M3 + skeleton/error konsisten) · 35 test hijau.
 
 ## Peta kode
 

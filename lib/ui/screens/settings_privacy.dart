@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/settings.dart';
+import '../components/app_feedback.dart';
 import '../components/setting_row.dart';
 import '../design/app_spacing.dart';
 import '../format.dart';
@@ -205,7 +206,7 @@ class _PrivacySettingsPageState extends ConsumerState<PrivacySettingsPage>
                         reminder.when(
                           loading: () => const Padding(
                               padding: EdgeInsets.all(16),
-                              child: LinearProgressIndicator()),
+                              child: AppSkeleton(lines: 2)),
                           error: (_, _) => const Padding(
                               padding: EdgeInsets.all(16),
                               child: Text(

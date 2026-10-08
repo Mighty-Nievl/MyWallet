@@ -7,6 +7,7 @@ import '../../data/providers.dart';
 import '../amount_input.dart';
 import '../components/app_card.dart';
 import '../components/app_empty_state.dart';
+import '../components/app_feedback.dart';
 import '../components/app_header.dart';
 import '../components/app_month_nav.dart';
 import '../components/app_progress.dart';
@@ -85,36 +86,16 @@ class BudgetScreen extends ConsumerWidget {
               child: budgets.when(
                 loading: () => const Padding(
                   padding: EdgeInsets.all(AppSpacing.page),
-                  child: AppCard(child: LinearProgressIndicator()),
+                  child: AppCard(child: AppSkeleton(lines: 3)),
                 ),
                 error: (e, _) => Center(
                   child: Padding(
                     padding:
                         const EdgeInsets.all(AppSpacing.s24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Gagal memuat budget.',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(
-                                  fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: AppSpacing.s4),
-                        Text(
-                          'Periksa lagi sebentar.',
-                          style: AppType.secondary(context),
-                        ),
-                        const SizedBox(height: AppSpacing.s16),
-                        OutlinedButton.icon(
-                          onPressed: () => ref
-                              .invalidate(budgetsProvider),
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Coba lagi'),
-                        ),
-                      ],
+                    child: AppErrorState(
+                      title: 'Budget gagal dimuat.',
+                      onRetry: () =>
+                          ref.invalidate(budgetsProvider),
                     ),
                   ),
                 ),
@@ -146,7 +127,7 @@ class BudgetScreen extends ConsumerWidget {
                       AppSpacing.page,
                       AppSpacing.s8,
                       AppSpacing.page,
-                      96,
+                      AppSpacing.bottomPad,
                     ),
                     children: [
                       _OverviewCard(list: list, month: month),

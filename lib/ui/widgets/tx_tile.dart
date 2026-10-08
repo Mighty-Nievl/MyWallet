@@ -66,6 +66,15 @@ class TxTile extends ConsumerWidget {
               display.signed(tx.amount, isExpense: tx.isExpense),
               style: AppType.amount(context).copyWith(color: amountColor),
             ),
+            // Seluruh baris tap → edit: chevron sebagai affordance.
+            if (onTap != null) ...[
+              const SizedBox(width: AppSpacing.s4),
+              Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: scheme.onSurfaceVariant,
+              ),
+            ],
           ],
         ),
       ),

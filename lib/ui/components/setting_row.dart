@@ -210,7 +210,7 @@ class BackHeader extends StatelessWidget {
       children: [
         Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: AppRadius.mdAll,
             border: Border.all(
                 color: AppColors.borderOf(context)),
           ),

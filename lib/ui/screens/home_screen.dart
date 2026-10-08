@@ -6,10 +6,12 @@ import '../../data/providers.dart';
 import '../../data/settings.dart';
 import '../components/app_card.dart';
 import '../components/app_empty_state.dart';
+import '../components/app_feedback.dart';
+import '../components/app_header.dart';
+import '../components/app_month_nav.dart';
 import '../components/app_progress.dart';
 import '../components/app_section.dart';
 import '../components/category_glyph.dart';
-import '../design/app_colors.dart';
 import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
@@ -19,21 +21,34 @@ import '../widgets/tx_tile.dart';
 import 'settings_screen.dart';
 import 'tx_form_screen.dart';
 
-/// Beranda: saldo, ringkasan hari ini, ringkasan bulan ini, top kategori,
-/// transaksi terakhir.
+/// Ambang waspada budget di hero (sama dengan layar Budget).
+const _warnAt = 0.8;
+
+/// Hero selalu gelap netral (terang maupun mode gelap) agar hirarki
+/// konsisten. Di atasnya teks putih + varian semantik TERANG
+/// (bukan primary/error mentah yang tenggelam di atas hitam).
+/// Seluruh aplikasi lain tetap pakai scheme.primary/error.
+const _heroBg = Color(0xFF171717);
+const _heroText = Colors.white;
+const _heroSoft = Color(0xB3FFFFFF);
+const _heroOk = Color(0xFF4ADE80);
+const _heroWarn = Color(0xFFFBBF24);
+const _heroOver = Color(0xFFF87171);
+
+/// Beranda: sapaan pinned, hero saldo + insight budget, strip hari ini,
+/// top kategori proporsional, terakhir dikelompokkan per tanggal.
 ///
-/// Struktur scroll: [CustomScrollView] dengan TEPAT SATU
-/// [SliverToBoxAdapter] per section (masing-masing berkunci [ValueKey]).
-/// Tidak ada [ListView]/scroll bersarang di dalam section — baris-baris
-/// kategori & transaksi memakai [Column] biasa — sehingga tidak ada jalur
-/// yang bisa me-render "Pengeluaran bulan ini" / "Terakhir dicatat"
-/// dua kali. Kalau suatu section terlihat dobel, itu rebuild stream
-/// (skeleton → data), bukan dua widget: tiap key hanya ada satu.
+/// Header PINNED (di luar scroll) — pintu Pengaturan tidak pernah hilang.
+/// Scroll: CustomScrollView dengan TEPAT SATU SliverToBoxAdapter per
+/// section (berkunci ValueKey), baris memakai Column biasa.
 ///
-/// Logika bisnis TETAP: provider, perhitungan saldo, query transaksi,
-/// navigasi bulan, navigasi ke Pengaturan & form transaksi tidak disentuh.
+/// Logika bisnis TETAP: provider, perhitungan, query, navigasi bulan,
+/// navigasi ke Pengaturan & form tidak disentuh.
 class HomeScreen extends ConsumerWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.onGoTab});
+
+  /// Lompat tab shell (0=Beranda, 1=Riwayat, 2=Budget, 3=Laporan).
+  final ValueChanged<int>? onGoTab;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -48,93 +63,112 @@ class HomeScreen extends ConsumerWidget {
     final showRecent = ref.watch(showRecentProvider).value ?? true;
     final recentCount = ref.watch(recentCountProvider).value ?? 5;
 
+    final now = DateTime.now();
+
+    void shift(int d) => ref.read(selectedMonthProvider.notifier).state =
+        shiftMonth(month, d);
+
     return Scaffold(
       body: SafeArea(
-        // Satu viewport, satu sliver per section — tidak ada yang ganda.
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              key: const ValueKey('home:header'),
-              child: _pad(
-                _Header(
-                  onOpenSettings: () =>
-                      Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (_) => const SettingsScreen()),
+        child: Column(
+          children: [
+            _pad(
+              AppHeader(
+                title: _greeting(now.hour),
+                subtitle: '${_weekday(now.weekday)}, ${formatDate(now)}',
+                actionIcon: Icons.settings_outlined,
+                actionTooltip: 'Pengaturan',
+                onAction: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (_) => const SettingsScreen()),
+                ),
+              ),
+              top: AppSpacing.s8,
+            ),
+            const SizedBox(height: AppSpacing.s8),
+            Expanded(
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    key: const ValueKey('home:monthnav'),
+                    child: _pad(
+                      AppMonthNav(month: month, onShift: shift),
+                    ),
                   ),
-                ),
-                top: AppSpacing.s8,
-              ),
-            ),
-            const SliverToBoxAdapter(
-              child: SizedBox(height: AppSpacing.s8),
-            ),
-            SliverToBoxAdapter(
-              key: const ValueKey('home:monthnav'),
-              child: _pad(
-                _MonthNav(
-                  month: month,
-                  onShift: (d) => ref
-                      .read(selectedMonthProvider.notifier)
-                      .state = shiftMonth(month, d),
-                ),
-              ),
-            ),
-            const SliverToBoxAdapter(
-              child: SizedBox(height: AppSpacing.s16),
-            ),
-            SliverToBoxAdapter(
-              key: const ValueKey('home:balance'),
-              child: _pad(
-                  _BalanceCard(balance: balance, totals: totals)),
-            ),
-            if (showDaily) ...[
-              const SliverToBoxAdapter(
-                child: SizedBox(height: AppSpacing.sectionGap),
-              ),
-              SliverToBoxAdapter(
-                key: const ValueKey('home:daily'),
-                child: _pad(
-                  AppSection(
-                    title: 'Hari ini',
-                    child: _DailyCard(dayTotals: dayTotals),
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: AppSpacing.s16),
                   ),
-                ),
-              ),
-            ],
-            if (showTop) ...[
-              const SliverToBoxAdapter(
-                child: SizedBox(height: AppSpacing.sectionGap),
-              ),
-              SliverToBoxAdapter(
-                key: const ValueKey('home:topcats'),
-                child: _pad(
-                  AppSection(
-                    title: 'Pengeluaran bulan ini',
-                    child:
-                        _CategoryList(byCat: byCat, display: display),
+                  SliverToBoxAdapter(
+                    key: const ValueKey('home:balance'),
+                    child: _pad(_BalanceCard(
+                      balance: balance,
+                      totals: totals,
+                      month: month,
+                    )),
                   ),
-                ),
-              ),
-            ],
-            if (showRecent) ...[
-              const SliverToBoxAdapter(
-                child: SizedBox(height: AppSpacing.sectionGap),
-              ),
-              SliverToBoxAdapter(
-                key: const ValueKey('home:recent'),
-                child: _pad(
-                  AppSection(
-                    title: 'Terakhir dicatat',
-                    child: _RecentList(count: recentCount),
+                  if (showDaily) ...[
+                    const SliverToBoxAdapter(
+                      child:
+                          SizedBox(height: AppSpacing.sectionGap),
+                    ),
+                    SliverToBoxAdapter(
+                      key: const ValueKey('home:daily'),
+                      child: _pad(
+                        AppSection(
+                          title: 'Hari ini',
+                          child: _DailyCard(dayTotals: dayTotals),
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (showTop) ...[
+                    const SliverToBoxAdapter(
+                      child:
+                          SizedBox(height: AppSpacing.sectionGap),
+                    ),
+                    SliverToBoxAdapter(
+                      key: const ValueKey('home:topcats'),
+                      child: _pad(
+                        AppSection(
+                          title: 'Pengeluaran bulan ini',
+                          trailing: onGoTab == null
+                              ? null
+                              : TextButton(
+                                  onPressed: () => onGoTab!(3),
+                                  child: const Text('Lihat semua'),
+                                ),
+                          child: _CategoryList(
+                              byCat: byCat, display: display),
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (showRecent) ...[
+                    const SliverToBoxAdapter(
+                      child:
+                          SizedBox(height: AppSpacing.sectionGap),
+                    ),
+                    SliverToBoxAdapter(
+                      key: const ValueKey('home:recent'),
+                      child: _pad(
+                        AppSection(
+                          title: 'Terakhir dicatat',
+                          trailing: onGoTab == null
+                              ? null
+                              : TextButton(
+                                  onPressed: () => onGoTab!(1),
+                                  child: const Text('Lihat semua'),
+                                ),
+                          child: _RecentList(count: recentCount),
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: AppSpacing.bottomPad),
                   ),
-                ),
+                ],
               ),
-            ],
-            // Ruang napas di bawah agar konten terakhir tidak
-            // tertutup FAB + BottomAppBar yang docked.
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 96),
             ),
           ],
         ),
@@ -143,9 +177,7 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-/// Padding horizontal halaman untuk satu sliver section.
-/// Satu-satunya tempat padding diatur — section tidak mengatur
-/// padding sendiri, jadi tidak ada celah ganda / menumpuk.
+/// Padding horizontal halaman untuk satu section.
 Widget _pad(Widget child, {double top = 0}) {
   return Padding(
     padding: EdgeInsets.fromLTRB(
@@ -154,95 +186,51 @@ Widget _pad(Widget child, {double top = 0}) {
   );
 }
 
-/// Judul layar + ikon aksi Pengaturan (navigasi tidak berubah).
-class _Header extends StatelessWidget {
-  const _Header({required this.onOpenSettings});
-  final VoidCallback onOpenSettings;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text('MyWallet', style: AppType.screenTitle(context)),
-        const Spacer(),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border:
-                Border.all(color: AppColors.borderOf(context)),
-          ),
-          child: IconButton(
-            onPressed: onOpenSettings,
-            icon: const Icon(Icons.settings_outlined, size: 20),
-            tooltip: 'Pengaturan',
-            constraints: const BoxConstraints.tightFor(
-              width: 40,
-              height: 40,
-            ),
-            padding: EdgeInsets.zero,
-          ),
-        ),
-      ],
-    );
-  }
+String _greeting(int hour) {
+  if (hour < 11) return 'Selamat pagi';
+  if (hour < 15) return 'Selamat siang';
+  if (hour < 19) return 'Selamat sore';
+  return 'Selamat malam';
 }
 
-class _MonthNav extends StatelessWidget {
-  const _MonthNav({required this.month, required this.onShift});
-  final String month;
-  final void Function(int) onShift;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        IconButton(
-          onPressed: () => onShift(-1),
-          icon: const Icon(Icons.chevron_left),
-          constraints: const BoxConstraints.tightFor(width: 40, height: 40),
-          padding: EdgeInsets.zero,
-        ),
-        Text(monthLabel(month),
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.w600)),
-        IconButton(
-          onPressed: () => onShift(1),
-          icon: const Icon(Icons.chevron_right),
-          constraints: const BoxConstraints.tightFor(width: 40, height: 40),
-          padding: EdgeInsets.zero,
-        ),
-      ],
-    );
-  }
+String _weekday(int w) {
+  const names = [
+    '', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'
+  ];
+  return (w >= 1 && w <= 7) ? names[w] : '';
 }
 
-/// Saldo: kartu hero dengan background aksen utama + teks putih —
-/// elemen visual terkuat di layar, jauh di atas kartu "Hari ini"
-/// yang tetap putih. Label kecil, nominal besar, lalu ringkasan
-/// pemasukan/pengeluaran bulan berjalan (teks putih lembut).
+/// Hero: saldo SEMUA WAKTU (label eksplisit, bukan "bulan ini") +
+/// arus bulan berjalan (semantik terang) + delta vs bulan lalu +
+/// pacing budget ("bulan ini aman nggak?").
+///
+/// Query tambahan hanya baca ulang via method DB yang sudah ada
+/// (getTotals, budgetsProvider) — tidak ada logika baru.
 class _BalanceCard extends ConsumerWidget {
-  const _BalanceCard({required this.balance, required this.totals});
+  const _BalanceCard({
+    required this.balance,
+    required this.totals,
+    required this.month,
+  });
   final AsyncValue<int> balance;
   final AsyncValue<(int, int)> totals;
+  final String month;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
-    // Aksen utama yang adaptif: ikut pilihan user (pengaturan Tampilan)
-    // maupun Material You — bukan hijau hard-code.
-    final onAccent = scheme.onPrimary;
-    final onAccentSoft = onAccent.withValues(alpha: 0.85);
-    final divider = onAccent.withValues(alpha: 0.25);
     final hide = ref.watch(hideBalanceProvider).value ?? false;
     final display = ref.watch(displayPrefsProvider);
-    final showTotals = ref.watch(showMonthTotalsProvider).value ?? true;
+    final showTotals =
+        ref.watch(showMonthTotalsProvider).value ?? true;
+    final budgets = ref.watch(budgetsProvider);
+    final db = ref.watch(dbProvider);
+    final prevKey = shiftMonth(month, -1);
+    final (prevFrom, prevTo) = monthRangeOf(prevKey);
+
     return Container(
       padding: AppSpacing.cardPadding,
-      decoration: BoxDecoration(
-        color: scheme.primary,
+      decoration: const BoxDecoration(
+        color: _heroBg,
         borderRadius: AppRadius.lgAll,
       ),
       child: Column(
@@ -250,22 +238,29 @@ class _BalanceCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Text('Saldo saat ini',
+              Text('Saldo semua waktu',
                   style: AppType.labelMuted(context)
-                      .copyWith(color: onAccentSoft)),
+                      .copyWith(color: _heroSoft)),
               const Spacer(),
-              InkWell(
-                onTap: () => ref
+              IconButton(
+                onPressed: () => ref
                     .read(settingsServiceProvider)
                     .setHideBalance(!hide),
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.s4),
-                  child: Icon(
-                    hide ? Icons.visibility_off : Icons.visibility,
-                    size: 18,
-                    color: onAccentSoft,
+                icon: Icon(
+                  hide
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  size: 20,
+                ),
+                tooltip:
+                    hide ? 'Tampilkan saldo' : 'Sembunyikan saldo',
+                color: _heroSoft,
+                style: IconButton.styleFrom(
+                  minimumSize: const Size(
+                    AppSpacing.touchMin,
+                    AppSpacing.touchMin,
                   ),
+                  foregroundColor: _heroSoft,
                 ),
               ),
             ],
@@ -273,49 +268,171 @@ class _BalanceCard extends ConsumerWidget {
           const SizedBox(height: AppSpacing.s4),
           balance.when(
             loading: () => Text('…',
-                style:
-                    AppType.balance(context).copyWith(color: onAccent)),
-            error: (e, _) => Text('Error: $e',
-                style: TextStyle(color: onAccent)),
+                style: AppType.balance(context)
+                    .copyWith(color: _heroText)),
+            error: (e, _) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Saldo gagal dimuat.',
+                    style: AppType.balance(context)
+                        .copyWith(color: _heroText, fontSize: 20)),
+                TextButton(
+                  onPressed: () =>
+                      ref.invalidate(balanceProvider),
+                  style: TextButton.styleFrom(
+                      foregroundColor: _heroText),
+                  child: const Text('Coba lagi'),
+                ),
+              ],
+            ),
             data: (b) => Text(
               hide ? 'Rp••••••' : display.money(b),
-              style:
-                  AppType.balance(context).copyWith(color: onAccent),
+              style: AppType.balance(context)
+                  .copyWith(color: _heroText),
             ),
           ),
           if (showTotals) ...[
             const SizedBox(height: AppSpacing.s16),
-            Container(height: 1, color: divider),
+            Container(
+                height: 1, color: _heroText.withValues(alpha: 0.15)),
             const SizedBox(height: AppSpacing.s12),
             totals.when(
               loading: () => Text('Memuat ringkasan…',
                   style: AppType.secondary(context)
-                      .copyWith(color: onAccentSoft)),
-              error: (e, _) =>
-                  Text('Error: $e', style: TextStyle(color: onAccent)),
-              data: (t) => Row(
+                      .copyWith(color: _heroSoft)),
+              error: (e, _) => Text('Ringkasan gagal dimuat.',
+                  style: AppType.secondary(context)
+                      .copyWith(color: _heroSoft)),
+              data: (t) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: _MiniStat(
-                      label: 'Pemasukan',
-                      value: display.signed(t.$1, isExpense: false),
-                      labelColor: onAccentSoft,
-                      valueColor: onAccent,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _MiniStat(
+                          label: 'Masuk ${monthLabel(month)}',
+                          value: display.signed(t.$1,
+                              isExpense: false),
+                          labelColor: _heroSoft,
+                          valueColor: _heroOk,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.s16),
+                      Expanded(
+                        child: _MiniStat(
+                          label: 'Keluar ${monthLabel(month)}',
+                          value: display.signed(t.$2,
+                              isExpense: true),
+                          labelColor: _heroSoft,
+                          valueColor: _heroOver,
+                        ),
+                      ),
+                    ],
                   ),
-                  Container(
-                    width: 1,
-                    height: 32,
-                    color: divider,
+                  FutureBuilder<(int, int)>(
+                    future: db.getTotals(prevFrom, prevTo),
+                    builder: (ctx, snap) {
+                      if (!snap.hasData) {
+                        return const SizedBox.shrink();
+                      }
+                      final prev = snap.data!.$2;
+                      final cur = t.$2;
+                      if (prev <= 0) {
+                        return const SizedBox.shrink();
+                      }
+                      final diff =
+                          ((cur - prev) / prev * 100).round();
+                      final txt = diff == 0
+                          ? 'Pengeluaran sama seperti ${monthLabel(prevKey)}'
+                          : diff > 0
+                              ? 'Pengeluaran naik $diff% vs ${monthLabel(prevKey)}'
+                              : 'Pengeluaran turun ${-diff}% vs ${monthLabel(prevKey)}';
+                      return Padding(
+                        padding: const EdgeInsets.only(
+                            top: AppSpacing.s8),
+                        child: Text(txt,
+                            style: AppType.secondary(context)
+                                .copyWith(color: _heroSoft)),
+                      );
+                    },
                   ),
-                  const SizedBox(width: AppSpacing.s16),
-                  Expanded(
-                    child: _MiniStat(
-                      label: 'Pengeluaran',
-                      value: display.signed(t.$2, isExpense: true),
-                      labelColor: onAccentSoft,
-                      valueColor: onAccent,
-                    ),
+                  budgets.when(
+                    loading: () => const SizedBox.shrink(),
+                    error: (e, _) => const SizedBox.shrink(),
+                    data: (b) {
+                      if (b.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+                      final limit = b.fold<int>(
+                          0, (s, e) => s + e.budget.limit);
+                      final spent = b.fold<int>(
+                          0, (s, e) => s + e.spent);
+                      final pct = limit == 0
+                          ? 0.0
+                          : (spent / limit).clamp(0.0, 1.0);
+                      final over = spent > limit;
+                      final warn = !over && pct >= _warnAt;
+                      final barColor = over
+                          ? _heroOver
+                          : warn
+                              ? _heroWarn
+                              : _heroOk;
+                      final status = over
+                          ? 'Lewat budget'
+                          : warn
+                              ? 'Hampir habis'
+                              : 'Aman bulan ini';
+                      final remain = limit - spent;
+                      return Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(
+                              height: AppSpacing.s12),
+                          Container(
+                              height: 1,
+                              color: _heroText.withValues(
+                                  alpha: 0.15)),
+                          const SizedBox(
+                              height: AppSpacing.s12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Budget ${monthLabel(month)}',
+                                  style: AppType.secondary(
+                                          context)
+                                      .copyWith(
+                                          color: _heroSoft),
+                                ),
+                              ),
+                              Text(status,
+                                  style: AppType.secondary(
+                                          context)
+                                      .copyWith(
+                                    color: barColor,
+                                    fontWeight: FontWeight.w600,
+                                  )),
+                            ],
+                          ),
+                          const SizedBox(
+                              height: AppSpacing.s8),
+                          AppProgress(
+                              value: pct,
+                              color: barColor,
+                              height: 8),
+                          const SizedBox(
+                              height: AppSpacing.s4),
+                          Text(
+                            over
+                                ? '${display.money(-remain)} lewat dari ${display.money(limit)}'
+                                : '${display.money(remain)} tersisa dari ${display.money(limit)}',
+                            style: AppType.secondary(context)
+                                .copyWith(color: _heroSoft),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -338,8 +455,7 @@ class _MiniStat extends StatelessWidget {
   final String label;
   final String value;
 
-  /// Warna semantik tunggal (mode lama: Pemasukan=primary,
-  /// Pengeluaran=error). Diabaikan bila [valueColor] diisi.
+  /// Warna semantik tunggal. Diabaikan bila [valueColor] diisi.
   final Color? color;
   final Color? labelColor;
   final Color? valueColor;
@@ -352,18 +468,22 @@ class _MiniStat extends StatelessWidget {
         Text(
             label,
             style: AppType.labelMuted(context)
-                .copyWith(color: labelColor)),
+                .copyWith(color: labelColor),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis),
         const SizedBox(height: 2),
         Text(value,
             style: AppType.amount(context)
-                .copyWith(color: valueColor ?? color)),
+                .copyWith(color: valueColor ?? color),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis),
       ],
     );
   }
 }
 
-/// Ringkasan HARI INI: masuk / keluar / selisih.
-/// Ikut privacy scope 'all' (nominal jadi Rp••••) + nominal ringkas.
+/// Strip HARI INI yang ringkas: masuk / keluar / selisih sebaris.
+/// Tanggal tidak diulang (sudah di judul section + header sapaan).
 class _DailyCard extends ConsumerWidget {
   const _DailyCard({required this.dayTotals});
   final AsyncValue<(int, int)> dayTotals;
@@ -374,42 +494,37 @@ class _DailyCard extends ConsumerWidget {
     final display = ref.watch(displayPrefsProvider);
     return AppCard(
       child: dayTotals.when(
-        loading: () => const _Skeleton(lines: 2),
-        error: (e, _) => Text('Gagal memuat: $e'),
+        loading: () => const AppSkeleton(lines: 2),
+        error: (e, _) => AppErrorState(
+          title: 'Ringkasan hari ini gagal dimuat.',
+          onRetry: () => ref.invalidate(dayTotalsProvider),
+        ),
         data: (t) {
           final net = t.$1 - t.$2;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          return Row(
             children: [
-              Text(formatDate(DateTime.now()),
-                  style: AppType.secondary(context)),
-              const SizedBox(height: AppSpacing.s8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _MiniStat(
-                      label: 'Masuk',
-                      value: display.signed(t.$1, isExpense: false),
-                      color: scheme.primary,
-                    ),
-                  ),
-                  Expanded(
-                    child: _MiniStat(
-                      label: 'Keluar',
-                      value: display.signed(t.$2, isExpense: true),
-                      color: scheme.error,
-                    ),
-                  ),
-                  Expanded(
-                    child: _MiniStat(
-                      label: 'Selisih',
-                      value: display.signed(net.abs(),
-                          isExpense: net < 0),
-                      color:
-                          net < 0 ? scheme.error : scheme.primary,
-                    ),
-                  ),
-                ],
+              Expanded(
+                child: _MiniStat(
+                  label: 'Masuk',
+                  value: display.signed(t.$1, isExpense: false),
+                  color: scheme.primary,
+                ),
+              ),
+              Expanded(
+                child: _MiniStat(
+                  label: 'Keluar',
+                  value: display.signed(t.$2, isExpense: true),
+                  color: scheme.error,
+                ),
+              ),
+              Expanded(
+                child: _MiniStat(
+                  label: 'Selisih',
+                  value: display.signed(net.abs(),
+                      isExpense: net < 0),
+                  color:
+                      net < 0 ? scheme.error : scheme.primary,
+                ),
               ),
             ],
           );
@@ -419,8 +534,8 @@ class _DailyCard extends ConsumerWidget {
   }
 }
 
-/// Daftar top kategori bulan ini: glyph aksen, nama lebih besar,
-/// progress dengan track abu terang (batas 100% kelihatan), nominal.
+/// Top kategori PROPORSIONAL terhadap total (bukan terhadap maksimum):
+/// bar terpanjang = porsi terbesar, plus persen per baris.
 /// Perhitungan & query tidak berubah — hanya presentasi.
 class _CategoryList extends ConsumerWidget {
   const _CategoryList({required this.byCat, required this.display});
@@ -431,8 +546,12 @@ class _CategoryList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     return byCat.when(
-      loading: () => const _Skeleton(lines: 3),
-      error: (e, _) => Text('Gagal memuat: $e'),
+      loading: () => const AppSkeleton(lines: 3),
+      error: (e, _) => AppErrorState(
+        title: 'Kategori gagal dimuat.',
+        onRetry: () =>
+            ref.invalidate(monthExpenseByCategoryProvider),
+      ),
       data: (list) {
         if (list.isEmpty) {
           return const AppEmptyState(
@@ -442,7 +561,7 @@ class _CategoryList extends ConsumerWidget {
                 'Setiap rupiah yang dicatat bikin gambaran keuanganmu makin jelas. Yuk mulai dari satu transaksi!',
           );
         }
-        final max = list.first.total;
+        final total = list.fold<int>(0, (s, e) => s + e.total);
         return Column(
           children: [
             for (final c in list.take(5))
@@ -456,19 +575,40 @@ class _CategoryList extends ConsumerWidget {
                     const SizedBox(width: AppSpacing.s12),
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
                         children: [
-                          Text(c.name,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyLarge
-                                  ?.copyWith(
-                                      fontWeight: FontWeight.w600)),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(c.name,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge
+                                        ?.copyWith(
+                                            fontWeight:
+                                                FontWeight.w600),
+                                    maxLines: 1,
+                                    overflow:
+                                        TextOverflow.ellipsis),
+                              ),
+                              const SizedBox(
+                                  width: AppSpacing.s8),
+                              Text(
+                                total == 0
+                                    ? '0%'
+                                    : '${(100 * c.total / total).round()}%',
+                                style: AppType.secondaryStrong(
+                                    context),
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 6),
                           AppProgress(
-                            value: max == 0
+                            value: total == 0
                                 ? 0
-                                : (c.total / max).clamp(0.0, 1.0),
+                                : (c.total / total)
+                                    .clamp(0.0, 1.0),
                             color: scheme.primary,
                           ),
                         ],
@@ -476,7 +616,8 @@ class _CategoryList extends ConsumerWidget {
                     ),
                     const SizedBox(width: AppSpacing.s12),
                     Text(display.money(c.total),
-                        style: AppType.amount(context, size: 14)),
+                        style:
+                            AppType.amount(context, size: 14)),
                   ],
                 ),
               ),
@@ -487,6 +628,8 @@ class _CategoryList extends ConsumerWidget {
   }
 }
 
+/// Transaksi terakhir dikelompokkan per tanggal (header tanggal +
+/// baris ber-chevron). Seluruh baris tap → edit, affordance kelihatan.
 class _RecentList extends ConsumerWidget {
   const _RecentList({required this.count});
   final int count;
@@ -494,10 +637,16 @@ class _RecentList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final db = ref.watch(dbProvider);
+    final display = ref.watch(displayPrefsProvider);
     return StreamBuilder<List<TxWithCategory>>(
       stream: db.watchHistory(limit: count),
       builder: (context, snap) {
-        if (!snap.hasData) return const _Skeleton(lines: 3);
+        if (snap.hasError) {
+          return const AppErrorState(
+            title: 'Transaksi gagal dimuat.',
+          );
+        }
+        if (!snap.hasData) return const AppSkeleton(lines: 3);
         final list = snap.data!;
         if (list.isEmpty) {
           return const AppEmptyState(
@@ -507,40 +656,41 @@ class _RecentList extends ConsumerWidget {
                 'Belum ada transaksi — hari yang tenang juga patut dirayakan. Ketuk “Catat” saat ada pemasukan atau pengeluaran.',
           );
         }
-        // Tanpa kartu pembungkus — TxTile tampil sebagai baris bersih.
+        final groups = <DateTime, List<TxWithCategory>>{};
+        for (final tx in list) {
+          final d = DateTime(
+              tx.date.year, tx.date.month, tx.date.day);
+          (groups[d] ??= []).add(tx);
+        }
+        final entries = groups.entries.toList();
         return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            for (final tx in list)
-              TxTile(
-                tx: tx,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                      builder: (_) => TxFormScreen(existing: tx)),
+            for (var i = 0; i < entries.length; i++) ...[
+              Padding(
+                padding: EdgeInsets.only(
+                  top: i == 0 ? 0 : AppSpacing.s12,
+                  bottom: AppSpacing.s4,
+                ),
+                child: Text(
+                  display.date(entries[i].key),
+                  style:
+                      AppType.secondaryStrong(context),
                 ),
               ),
+              for (final tx in entries[i].value)
+                TxTile(
+                  tx: tx,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (_) =>
+                            TxFormScreen(existing: tx)),
+                  ),
+                ),
+            ],
           ],
         );
       },
-    );
-  }
-}
-
-class _Skeleton extends StatelessWidget {
-  const _Skeleton({required this.lines});
-  final int lines;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      child: Column(
-        children: List.generate(
-          lines,
-          (_) => const Padding(
-            padding: EdgeInsets.symmetric(vertical: 6),
-            child: LinearProgressIndicator(),
-          ),
-        ),
-      ),
     );
   }
 }

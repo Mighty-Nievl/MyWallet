@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/actions.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
+import '../components/app_card.dart';
 import '../components/app_empty_state.dart';
+import '../components/app_feedback.dart';
 import '../components/category_glyph.dart';
 import '../components/setting_row.dart';
 import '../design/app_colors.dart';
@@ -317,7 +319,7 @@ class _LoadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Card(child: LinearProgressIndicator());
+    return const AppCard(child: AppSkeleton(lines: 3));
   }
 }
 

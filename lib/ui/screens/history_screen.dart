@@ -4,9 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/providers.dart';
 import '../components/app_card.dart';
 import '../components/app_empty_state.dart';
+import '../components/app_feedback.dart';
+import '../components/app_header.dart';
+import '../components/app_month_nav.dart';
 import '../design/app_colors.dart';
+import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
-import '../design/app_typography.dart';
 import '../format.dart';
 import '../widgets/tx_tile.dart';
 import 'tx_form_screen.dart';
@@ -50,12 +53,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 AppSpacing.page,
                 0,
               ),
-              child: _Header(
-                onPickMonth: () => _pickMonth(context, month),
+              child: AppHeader(
+                title: 'Riwayat',
+                actionIcon: Icons.calendar_month_outlined,
+                actionTooltip: 'Pilih bulan',
+                onAction: () => _pickMonth(context, month),
               ),
             ),
             const SizedBox(height: AppSpacing.s8),
-            _MonthNav(
+            AppMonthNav(
               month: month,
               onShift: (d) => ref
                   .read(selectedMonthProvider.notifier)
@@ -155,15 +161,18 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               child: history.when(
                 loading: () => const _LoadingState(),
                 error: (e, s) => Center(
-                    child: Text('Gagal memuat: $e',
-                        style: AppType.secondary(context))),
+                    child: AppErrorState(
+                  title: 'Riwayat gagal dimuat.',
+                  onRetry: () =>
+                      ref.invalidate(historyProvider),
+                )),
                 data: (list) {
                   if (list.isEmpty) {
                     return const _EmptyState();
                   }
                   return ListView.separated(
-                    padding:
-                        const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                    padding: const EdgeInsets.fromLTRB(
+                        16, 8, 16, AppSpacing.bottomPad),
                     itemCount: list.length,
                     separatorBuilder: (context, i) =>
                         const Divider(height: 1),
@@ -211,73 +220,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 }
 
-/// Judul layar + tombol kalender — bahasa yang sama dengan header Beranda.
-class _Header extends StatelessWidget {
-  const _Header({required this.onPickMonth});
-  final VoidCallback onPickMonth;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text('Riwayat', style: AppType.screenTitle(context)),
-        const Spacer(),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.borderOf(context)),
-          ),
-          child: IconButton(
-            onPressed: onPickMonth,
-            icon: const Icon(Icons.calendar_month_outlined, size: 20),
-            tooltip: 'Pilih bulan',
-            constraints:
-                const BoxConstraints.tightFor(width: 40, height: 40),
-            padding: EdgeInsets.zero,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Navigasi bulan — sama persis dengan Beranda.
-class _MonthNav extends StatelessWidget {
-  const _MonthNav({required this.month, required this.onShift});
-  final String month;
-  final void Function(int) onShift;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        IconButton(
-          onPressed: () => onShift(-1),
-          icon: const Icon(Icons.chevron_left),
-          constraints:
-              const BoxConstraints.tightFor(width: 40, height: 40),
-          padding: EdgeInsets.zero,
-        ),
-        Text(monthLabel(month),
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.w600)),
-        IconButton(
-          onPressed: () => onShift(1),
-          icon: const Icon(Icons.chevron_right),
-          constraints:
-              const BoxConstraints.tightFor(width: 40, height: 40),
-          padding: EdgeInsets.zero,
-        ),
-      ],
-    );
-  }
-}
+/// Judul layar Riwayat sudah via [AppHeader] shared.
+/// Kalender aksi langsung jadi bagian header (tanpa _Header lokal).
 
 /// Chip filter kompak: jelas saat aktif, tenang saat tidak.
-/// Bukan pil besar — radius 10 mengikuti token.
+/// Radius ikut token (md = 12).
 class _FilterChip extends StatelessWidget {
   const _FilterChip(
       {required this.label, required this.selected, required this.onTap});
@@ -290,12 +237,12 @@ class _FilterChip extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: AppRadius.mdAll,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: selected ? scheme.primaryContainer : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: AppRadius.mdAll,
           border: Border.all(
             color: selected ? scheme.primary : AppColors.borderOf(context),
           ),
@@ -321,33 +268,18 @@ class _LoadingState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+      padding: const EdgeInsets.fromLTRB(
+          16, 8, 16, AppSpacing.bottomPad),
       children: const [
         AppCard(
-          child: Column(
-            children: [
-              _LoadingBar(),
-              _LoadingBar(),
-              _LoadingBar(),
-            ],
-          ),
+          child: AppSkeleton(lines: 3),
         ),
       ],
     );
   }
 }
 
-class _LoadingBar extends StatelessWidget {
-  const _LoadingBar();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 6),
-      child: LinearProgressIndicator(),
-    );
-  }
-}
+/// Skeleton shimmer shared sudah di [AppSkeleton] (app_feedback.dart).
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();

@@ -22,4 +22,18 @@ abstract final class AppSpacing {
 
   /// Padding dalam kartu.
   static const EdgeInsets cardPadding = EdgeInsets.all(s16);
+
+  /// Ruang kosong selebar FAB + margin notch (56 + 2×8).
+  /// Tanpa ini tab Budget/Laporan ketindih cekungan (legacy BottomAppBar).
+  /// M3 NavigationBar tidak butuh ini — dipertahankan untuk kompatibilitas.
+  static const double navFabGap = 72;
+
+  /// Tinggi bar navigasi custom legacy (M3 NavigationBar atur sendiri).
+  static const double navBarHeight = 56;
+
+  /// Ruang napas bawah agar konten terakhir tidak tertutup FAB + bar.
+  static const double bottomPad = 96;
+
+  /// Target sentuh minimum Material (48×48).
+  static const double touchMin = 48;
 }

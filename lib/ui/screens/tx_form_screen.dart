@@ -7,6 +7,7 @@ import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../amount_input.dart';
 import '../components/app_card.dart';
+import '../components/app_feedback.dart';
 import '../components/category_glyph.dart';
 import '../design/app_colors.dart';
 import '../design/app_radius.dart';
@@ -184,10 +185,10 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
             const SizedBox(height: AppSpacing.s8),
             catsAsync.when(
               loading: () => const SizedBox(
-                  height: 56, child: LinearProgressIndicator()),
+                  height: 56, child: AppSkeleton(lines: 1)),
               error: (e, _) =>
-                  Text('Gagal memuat kategori: $e',
-                      style: AppType.secondary(context)),
+                  const Text('Gagal memuat kategori.',
+                      style: TextStyle(fontSize: 13)),
               data: (cats) => Column(
                 children: [
                   _CategoryTile(
@@ -358,7 +359,7 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
 }
 
 /// Header form: tombol kembali + judul + (mode edit) tombol hapus.
-/// Navigasi tidak berubah (pop).
+/// Navigasi tidak berubah (pop). Tombol via [AppIconButton] shared.
 class _Header extends StatelessWidget {
   const _Header({required this.editing, this.onDelete});
   final bool editing;
@@ -368,19 +369,10 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.borderOf(context)),
-          ),
-          child: IconButton(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.arrow_back, size: 20),
-            tooltip: 'Kembali',
-            constraints:
-                const BoxConstraints.tightFor(width: 40, height: 40),
-            padding: EdgeInsets.zero,
-          ),
+        AppIconButton(
+          icon: Icons.arrow_back,
+          tooltip: 'Kembali',
+          onPressed: () => Navigator.of(context).pop(),
         ),
         const SizedBox(width: AppSpacing.s12),
         Expanded(
@@ -392,20 +384,11 @@ class _Header extends StatelessWidget {
           ),
         ),
         if (onDelete != null)
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.borderOf(context)),
-            ),
-            child: IconButton(
-              onPressed: onDelete,
-              icon: Icon(Icons.delete_outline,
-                  size: 20, color: Theme.of(context).colorScheme.error),
-              tooltip: 'Hapus',
-              constraints:
-                  const BoxConstraints.tightFor(width: 40, height: 40),
-              padding: EdgeInsets.zero,
-            ),
+          AppIconButton(
+            icon: Icons.delete_outline,
+            tooltip: 'Hapus',
+            color: Theme.of(context).colorScheme.error,
+            onPressed: onDelete,
           ),
       ],
     );

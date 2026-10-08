@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/providers.dart';
+import '../components/app_feedback.dart';
 import '../components/setting_row.dart';
 import '../design/app_spacing.dart';
 import 'categories_screen.dart';
@@ -100,7 +101,7 @@ class _ManageSettingsPageState extends ConsumerState<ManageSettingsPage>
                         cats.when(
                           loading: () => const Padding(
                               padding: EdgeInsets.all(16),
-                              child: LinearProgressIndicator()),
+                              child: AppSkeleton(lines: 2)),
                           error: (_, _) => const Padding(
                               padding: EdgeInsets.all(16),
                               child:

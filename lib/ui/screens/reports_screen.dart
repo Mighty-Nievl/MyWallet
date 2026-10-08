@@ -6,6 +6,7 @@ import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../components/app_card.dart';
 import '../components/app_empty_state.dart';
+import '../components/app_feedback.dart';
 import '../components/app_header.dart';
 import '../components/app_month_nav.dart';
 import '../components/app_section.dart';
@@ -37,7 +38,7 @@ class ReportsScreen extends ConsumerWidget {
             AppSpacing.page,
             AppSpacing.s8,
             AppSpacing.page,
-            96,
+            AppSpacing.bottomPad,
           ),
           children: [
             const AppHeader(title: 'Laporan'),
@@ -85,9 +86,11 @@ class _SummaryCard extends ConsumerWidget {
     final display = ref.watch(displayPrefsProvider);
     return AppCard(
       child: totals.when(
-        loading: () => const LinearProgressIndicator(),
-        error: (e, _) =>
-            Text('Gagal memuat: $e', style: AppType.secondary(context)),
+        loading: () => const AppSkeleton(lines: 2),
+        error: (e, _) => AppErrorState(
+          title: 'Ringkasan gagal dimuat.',
+          onRetry: () => ref.invalidate(monthTotalsProvider),
+        ),
         data: (t) {
           final net = t.$1 - t.$2;
           return Row(
@@ -156,9 +159,10 @@ class _Breakdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return byCat.when(
       loading: () =>
-          const AppCard(child: LinearProgressIndicator()),
-      error: (e, _) =>
-          Text('Gagal memuat: $e', style: AppType.secondary(context)),
+          const AppCard(child: AppSkeleton(lines: 3)),
+      error: (e, _) => const AppErrorState(
+        title: 'Rincian gagal dimuat.',
+      ),
       data: (list) {
         if (list.isEmpty) {
           return const AppEmptyState(
@@ -294,7 +298,7 @@ class _SixMonthChart extends ConsumerWidget {
                       child: Text(
                         _short(parts[1]),
                         style:
-                            TextStyle(fontSize: 11, color: muted),
+                            TextStyle(fontSize: 12, color: muted),
                       ),
                     );
                   },
