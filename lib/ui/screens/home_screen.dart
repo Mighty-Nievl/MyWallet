@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
@@ -37,10 +38,8 @@ const _darkBanner = Color(0xFF171717);
 /// (Pengaturan → Tampilan): default hijau, bisa biru ala GoPay,
 /// ungu, oranye, dll tanpa kode terpisah.
 ///
-/// Cerah seperti mockup (digelapkan 0% / 15% / 35% ala GoPay), tapi
-/// setiap ujung LALU digelapkan tambahan hanya sampai teks putih
-/// lolos kontras ≥4.5:1 (margin 5.0): hijau/biru tetap cerah,
-/// aksen terang (oranye/toska) baru dibuat lebih pekat.
+/// Dipakai hero kartu + kotak banner: dasar dijenuhkan dulu, lalu
+/// digelapkan HANYA sampai teks putih lolos kontras ≥4.5:1.
 double _whiteContrast(Color c) {
   double f(double v) =>
       v <= 0.03928 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4).toDouble();
@@ -66,16 +65,35 @@ Color _accentStop(BuildContext context, double amount) {
 /// gradien tetap terbaca di mode gelap — versi loop per-stop bikin
 /// semua stop mentok di lantai kontras yang sama (kartu jadi rata).
 LinearGradient _accentGradient(BuildContext context) {
-  final base = _accentStop(context, 0.00);
+  final base = _heroBase(context);
   return LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
       base,
-      Color.lerp(base, Colors.black, 0.15)!,
-      Color.lerp(base, Colors.black, 0.35)!,
+      Color.lerp(base, Colors.black, 0.12)!,
+      Color.lerp(base, Colors.black, 0.25)!,
     ],
   );
+}
+
+/// Dasar kartu saldo: aksen tema DJENUHKAN (+35%) lalu kontras putih
+/// disetel ke lantai 4.7:1.
+///
+/// Kenapa: `colorScheme.primary` hasil tonal Material 3 kurang jenuh
+/// (#1C684E) sedangkan mockup ala GoPay memakai warna seed murni
+/// (#0E795A ≈ seed hijau kita) — bedanya bikin kartu terasa kusam.
+/// Boost jenuh + lantai kontras = warna seliar mockup DAN teks putih
+/// tetap WCAG AA (diuji 6 aksen × 2 tema di home_design_test).
+Color _heroBase(BuildContext context) {
+  final hsl = HSLColor.fromColor(Theme.of(context).colorScheme.primary);
+  var c = hsl.withSaturation((hsl.saturation * 1.35).clamp(0.0, 1.0)).toColor();
+  var guard = 0;
+  while (_whiteContrast(c) < 4.7 && guard++ < 24) {
+    final h = HSLColor.fromColor(c);
+    c = h.withLightness((h.lightness - 0.03).clamp(0.0, 1.0)).toColor();
+  }
+  return c;
 }
 
 /// Latar band kepala — lebih gelap dari kartu supaya kartu saldo
@@ -124,94 +142,223 @@ class HomeScreen extends ConsumerWidget {
     final showRecent = ref.watch(showRecentProvider).value ?? true;
     final recentCount = ref.watch(recentCountProvider).value ?? 5;
 
+    final name = ref.watch(displayNameProvider).value ?? 'Nievi';
+    final showDaily = ref.watch(showDailyTotalsProvider).value ?? true;
     final now = DateTime.now();
+    // Tinggi bar status perangkat (0 di golden/mockup) — konten kepala
+    // didorong ke bawah supaya tidak tertimpa jam/baterai.
+    final statusPad = MediaQuery.paddingOf(context).top;
 
     void shift(int d) =>
         ref.read(selectedMonthProvider.notifier).state = shiftMonth(month, d);
 
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // Kepala GELAP dari tepi atas → ikon status selalu TERANG
+      // (kedua mode; halaman di bawahnya tidak mempengaruhi bar atas).
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        body: Column(
+          // Stretch → Stack kepala selebar layar (SizedBox penanda
+          // tinggi hero tidak punya lebar bawaan).
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Band kepala: sapaan + kartu saldo MENUMPUK di atasnya
-            // (pola GoPay — kartu terlihat naik ke area berwarna).
-            // Pinned: saldo & pintu Pengaturan tak pernah hilang.
-            Container(
-              key: const ValueKey('home:header'),
-              width: double.infinity,
-              color: _topColor(context),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.page,
-                      AppSpacing.s8,
-                      AppSpacing.page,
-                      0,
+            // Kepala mockup (referensi 8 Okt): blok gelap menepi dari
+            // tepi atas (radius atas = kelengkungan layar), kartu saldo
+            // MENUMPUK separuh masuk ke blok & separuh keluar ke halaman
+            // terang. Ruang 390: blok y0-126, kartu y73-219 — kartu
+            // ber-padding horizontal 16px di dalam blok gelap.
+            Stack(
+              children: [
+                SizedBox(height: statusPad + 219),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(AppRadius.xxl),
                     ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                _greeting(now.hour),
-                                style: AppType.screenTitle(
-                                  context,
-                                ).copyWith(color: Colors.white),
+                    child: Container(
+                      key: const ValueKey('home:header'),
+                      color: _topColor(context),
+                      padding: EdgeInsets.only(
+                        top: statusPad + 18,
+                        bottom: 60,
+                        left: AppSpacing.page,
+                        right: 8,
+                      ),
+                      child: Row(
+                        children: [
+                          // Avatar inisial ala mockup — lingkaran hijau
+                          // solid di kiri sapaan; ketuk = Pengaturan.
+                          // Tombol dipaksa 48px oleh framework (min
+                          // sentuh) → bungkus SizedBox lebar 40 supaya
+                          // lingkaran mulai di x16 dan nama di x68.
+                          SizedBox(
+                            width: 40,
+                            child: IconButton(
+                              constraints: const BoxConstraints(
+                                minWidth: 40,
+                                minHeight: 48,
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${_weekday(now.weekday)}, ${formatDate(now)}',
-                                style: AppType.secondary(context).copyWith(
-                                  color: Colors.white.withValues(alpha: 0.9),
+                              onPressed: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const SettingsScreen(),
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const SettingsScreen(),
+                              tooltip: 'Profil',
+                              icon: CircleAvatar(
+                                radius: 20,
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary,
+                                child: Text(
+                                  _avatarInitial(name),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                              style: IconButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                foregroundColor: Colors.white,
+                              ),
                             ),
                           ),
-                          tooltip: 'Pengaturan',
-                          icon: const Icon(Icons.settings_outlined),
-                          style: IconButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            minimumSize: const Size(
-                              AppSpacing.touchMin,
-                              AppSpacing.touchMin,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: AppRadius.mdAll,
+                          const SizedBox(width: AppSpacing.s12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        _greeting(name),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppType.screenTitle(context)
+                                            .copyWith(
+                                              color: Colors.white,
+                                              fontSize: 18,
+                                            ),
+                                      ),
+                                    ),
+                                    if (name.isNotEmpty) ...[
+                                      const SizedBox(width: 4),
+                                      // Mahkota kecil ala mockup.
+                                      const Text(
+                                        '👑',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          height: 1,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${_weekday(now.weekday)}, '
+                                  '${formatDateLong(now)}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppType.secondary(context).copyWith(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                      ],
+                          // Lonceng + gear rapat ala mockup (pusat ikon
+                          // 40px) — dibungkus SizedBox karena IconButton
+                          // selalu melebar ke 48px.
+                          SizedBox(
+                            width: 40,
+                            child: IconButton(
+                              constraints: const BoxConstraints(
+                                minWidth: 40,
+                                minHeight: 48,
+                              ),
+                              onPressed: () => ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Belum ada notifikasi.'),
+                                  ),
+                                ),
+                              tooltip: 'Notifikasi',
+                              icon: const Icon(
+                                Icons.notifications_none_outlined,
+                              ),
+                              style: IconButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                iconSize: 24,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ),
+                          // Gear: pusat 40px dari lonceng, ala mockup.
+                          SizedBox(
+                            width: 40,
+                            child: IconButton(
+                              constraints: const BoxConstraints(
+                                minWidth: 40,
+                                minHeight: 48,
+                              ),
+                              onPressed: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const SettingsScreen(),
+                                ),
+                              ),
+                              tooltip: 'Pengaturan',
+                              icon: const Icon(Icons.settings_outlined),
+                              style: IconButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                iconSize: 24,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: AppRadius.mdAll,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.s16),
-                  _pad(_HeroCard(balance: balance, onGoTab: onGoTab)),
-                  const SizedBox(height: AppSpacing.s16),
-                ],
-              ),
+                ),
+                Positioned(
+                  top: statusPad + 73,
+                  left: AppSpacing.page,
+                  right: AppSpacing.page,
+                  child: _HeroCard(balance: balance, onGoTab: onGoTab),
+                ),
+              ],
             ),
             Expanded(
               child: CustomScrollView(
                 slivers: [
-                  SliverToBoxAdapter(
-                    key: const ValueKey('home:monthnav'),
-                    child: _pad(
-                      AppMonthNav(month: month, onShift: shift),
-                      top: AppSpacing.s16,
+                  // Nav bulan hanya tampil saat menjelajah bulan LAIN —
+                  // tampilan default mengikuti mockup: sapaan → kartu →
+                  // aksi cepat. Saat aktif, chip "Bulan ini" di dalamnya
+                  // menjadi jalan pulang ke bulan berjalan.
+                  if (month != currentMonthKey())
+                    SliverToBoxAdapter(
+                      key: const ValueKey('home:monthnav'),
+                      child: _pad(
+                        AppMonthNav(month: month, onShift: shift),
+                        top: AppSpacing.s16,
+                      ),
                     ),
-                  ),
                   SliverToBoxAdapter(
                     key: const ValueKey('home:quickactions'),
                     child: _pad(_QuickActions(onGoTab: onGoTab)),
@@ -232,13 +379,7 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   SliverToBoxAdapter(
                     key: const ValueKey('home:tiles'),
-                    child: _pad(
-                      _StatTiles(
-                        month: month,
-                        totals: totals,
-                        dayTotals: dayTotals,
-                      ),
-                    ),
+                    child: _pad(_StatTiles(month: month, totals: totals)),
                   ),
                   if (showTop) ...[
                     const SliverToBoxAdapter(
@@ -275,7 +416,13 @@ class HomeScreen extends ConsumerWidget {
                                   onPressed: () => onGoTab!(1),
                                   child: const Text('Lihat semua'),
                                 ),
-                          child: _RecentList(count: recentCount),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (showDaily) _DailyStrip(dayTotals: dayTotals),
+                              _RecentList(count: recentCount),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -301,11 +448,28 @@ Widget _pad(Widget child, {double top = 0}) {
   );
 }
 
-String _greeting(int hour) {
-  if (hour < 11) return 'Selamat pagi';
-  if (hour < 15) return 'Selamat siang';
-  if (hour < 19) return 'Selamat sore';
-  return 'Selamat malam';
+/// Sapaan personal ala mockup ("Hai, Nievi" + mahkota) — nama di
+/// Pengaturan → Tampilan → Nama sapaan. Kosong = sapaan polos "Hai!".
+String _greeting(String name) => name.isEmpty ? 'Hai!' : 'Hai, $name';
+
+/// Inisial avatar header (mockup: lingkaran inisial di kiri sapaan).
+/// Nama kosong → 'M' (MyWallet).
+String _avatarInitial(String name) {
+  final t = name.trim();
+  return t.isEmpty ? 'M' : t[0].toUpperCase();
+}
+
+/// Sisa hari dalam bulan [key] — sub-label tile "SISA BUDGET".
+int _daysLeftInMonth(String key) {
+  final parts = key.split('-');
+  final y = int.tryParse(parts[0]) ?? DateTime.now().year;
+  final m = int.tryParse(parts[1]) ?? DateTime.now().month;
+  if (m < 1 || m > 12) return 0;
+  final last = DateTime(y, m + 1, 0).day;
+  final nowKey = currentMonthKey();
+  if (key == nowKey) return last - DateTime.now().day + 1;
+  if (key.compareTo(nowKey) > 0) return last;
+  return 0;
 }
 
 String _weekday(int w) {
@@ -339,118 +503,137 @@ class _HeroCard extends ConsumerWidget {
 
     return Container(
       key: const ValueKey('home:hero'),
-      padding: AppSpacing.cardPadding,
+      // Padat ala mockup referensi: padding 16px di semua sisi —
+      // label/angka/pil sejajar rapi, kartu punya napas horizontal.
+      padding: const EdgeInsets.all(AppSpacing.s16),
       decoration: BoxDecoration(
         gradient: _accentGradient(context),
-        borderRadius: AppRadius.xxlAll,
+        // Menumpuk di blok kepala: radius 16 sama di empat sudut
+        // (mockup) — separuh kartu di blok gelap, separuh di halaman.
+        borderRadius: AppRadius.xlAll,
         boxShadow: [
           BoxShadow(
-            color: scheme.primary.withValues(alpha: 0.35),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            color: scheme.primary.withValues(alpha: 0.22),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      // Stack: ikon mata di luar alur teks supaya baris label setinggi
+      // teksnya sendiri (padat ala mockup) — target sentuh 48px utuh.
+      child: Stack(
         children: [
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  'Saldo semua waktu',
-                  style: AppType.labelMuted(
-                    context,
-                  ).copyWith(color: Colors.white.withValues(alpha: 0.9)),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              Text(
+                'SALDO MYWALLET',
+                style: AppType.labelMuted(context).copyWith(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  letterSpacing: 0.8,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              const Spacer(),
-              IconButton(
-                onPressed: () =>
-                    ref.read(settingsServiceProvider).setHideBalance(!hide),
-                icon: Icon(
-                  hide
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  size: 20,
+              const SizedBox(height: AppSpacing.s4),
+              balance.when(
+                loading: () => Text(
+                  '…',
+                  style: AppType.balance(context).copyWith(color: Colors.white),
                 ),
-                tooltip: hide ? 'Tampilkan saldo' : 'Sembunyikan saldo',
-                color: Colors.white,
-                style: IconButton.styleFrom(
-                  minimumSize: const Size(
-                    AppSpacing.touchMin,
-                    AppSpacing.touchMin,
-                  ),
-                  foregroundColor: Colors.white,
+                error: (e, _) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Saldo gagal dimuat.',
+                      style: AppType.balance(
+                        context,
+                      ).copyWith(color: Colors.white, fontSize: 20),
+                    ),
+                    TextButton(
+                      onPressed: () => ref.invalidate(balanceProvider),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Coba lagi'),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.s4),
-          balance.when(
-            loading: () => Text(
-              '…',
-              style: AppType.balance(context).copyWith(color: Colors.white),
-            ),
-            error: (e, _) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Saldo gagal dimuat.',
-                  style: AppType.balance(
-                    context,
-                  ).copyWith(color: Colors.white, fontSize: 20),
-                ),
-                TextButton(
-                  onPressed: () => ref.invalidate(balanceProvider),
-                  style: TextButton.styleFrom(foregroundColor: Colors.white),
-                  child: const Text('Coba lagi'),
-                ),
-              ],
-            ),
-            data: (b) => Text(
-              hide ? 'Rp••••••' : display.money(b),
-              style: AppType.balance(context).copyWith(color: Colors.white),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.s16),
-          Row(
-            children: [
-              Expanded(
-                child: _pillButton(
-                  context,
-                  label: '＋ Catat',
-                  solid: true,
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const TxFormScreen()),
+                data: (b) => Text(
+                  hide ? 'Rp••••••' : display.money(b),
+                  style: AppType.balance(context).copyWith(
+                    color: Colors.white,
+                    // 29px: lebar angka menyamai mockup (32 terlalu lebar).
+                    fontSize: 29,
                   ),
                 ),
               ),
-              const SizedBox(width: AppSpacing.s8),
-              Expanded(
-                child: _pillButton(
-                  context,
-                  label: '− Pengeluaran',
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const TxFormScreen(startAsExpense: true),
+              const SizedBox(height: AppSpacing.s16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _pillButton(
+                      context,
+                      label: '+ Catat',
+                      solid: true,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const TxFormScreen()),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              if (onGoTab != null) ...[
-                const SizedBox(width: AppSpacing.s8),
-                Expanded(
-                  child: _pillButton(
-                    context,
-                    label: 'Detail',
-                    onTap: () => onGoTab!(3),
+                  const SizedBox(width: AppSpacing.s16),
+                  Expanded(
+                    child: _pillButton(
+                      context,
+                      label: '- Pengeluaran',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const TxFormScreen(startAsExpense: true),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                  if (onGoTab != null) ...[
+                    const SizedBox(width: AppSpacing.s16),
+                    Expanded(
+                      child: _pillButton(
+                        context,
+                        label: 'Detail',
+                        onTap: () => onGoTab!(3),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ],
+          ),
+          // Mata toggle saldo — mockup: ikon terlipat saat saldo tampil,
+          // di baris label tepi kanan (right -16 dari tepi kartu).
+          Positioned(
+            top: 0,
+            right: -14,
+            child: IconButton(
+              alignment: Alignment.centerRight,
+              onPressed: () =>
+                  ref.read(settingsServiceProvider).setHideBalance(!hide),
+              icon: Icon(
+                hide
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+                size: 16,
+              ),
+              tooltip: hide ? 'Tampilkan saldo' : 'Sembunyikan saldo',
+              color: Colors.white,
+              style: IconButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(
+                  AppSpacing.touchMin,
+                  AppSpacing.touchMin,
+                ),
+                foregroundColor: Colors.white,
+              ),
+            ),
           ),
         ],
       ),
@@ -458,28 +641,36 @@ class _HeroCard extends ConsumerWidget {
   }
 }
 
-/// Tombol pil: solid (putih, di atas gradien) atau transparan
-/// berbingkai putih. Transparan = hitam 30% (menggelapkan latar,
-/// bukan mencerahkan) supaya teks putih tetap ≥4.5:1 di mode gelap.
-/// Tinggi `touchMin` (48px) — nyaman disentuh.
+/// Tombol pil ala mockup: solid putih (teks aksen gelap) atau ghost
+/// putih 15% di atas gradien. Bila aksen tema terang sehingga teks
+/// putih di ghost <4.5:1, fallback hitam 30% (menggelapkan) — kontras
+/// terjaga di semua aksen. Tinggi 40px (mockup 39px).
 Widget _pillButton(
   BuildContext context, {
   required String label,
   required VoidCallback onTap,
   bool solid = false,
 }) {
+  // Perkiraan latar ghost: putih 15% di atas tengah gradien.
+  final ghostOver = Color.lerp(_accentStop(context, 0.5), Colors.white, 0.15)!;
+  final whiteOk = _whiteContrast(ghostOver) >= 4.5;
+  final ghost = whiteOk
+      ? Colors.white.withValues(alpha: 0.15)
+      : Colors.black.withValues(alpha: 0.30);
   final shape = RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(999),
-    side: BorderSide(color: Colors.white.withValues(alpha: solid ? 0 : 0.40)),
+    side: BorderSide(
+      color: Colors.white.withValues(alpha: solid || whiteOk ? 0 : 0.40),
+    ),
   );
   return Material(
-    color: solid ? Colors.white : Colors.black.withValues(alpha: 0.30),
+    color: solid ? Colors.white : ghost,
     shape: shape,
     child: InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(999),
       child: SizedBox(
-        height: AppSpacing.touchMin,
+        height: 40,
         child: Center(
           child: Text(
             label,
@@ -530,16 +721,6 @@ class _QuickActions extends ConsumerWidget {
         onTap: () => Navigator.of(
           context,
         ).push(MaterialPageRoute(builder: (_) => const CategoriesScreen())),
-      ),
-      (
-        icon: Icons.event_outlined,
-        label: 'Bulan ini',
-        // Kembali ke bulan berjalan — pembatal jelajah bulan.
-        onTap: () {
-          final now = DateTime.now();
-          ref.read(selectedMonthProvider.notifier).state =
-              '${now.year}-${now.month.toString().padLeft(2, '0')}';
-        },
       ),
     ];
     return Padding(
@@ -649,9 +830,7 @@ class _QuickCategories extends ConsumerWidget {
                         name: c.name,
                         tint: tint,
                         onTap: () {
-                          ref
-                                  .read(historyFilterProvider.notifier)
-                                  .state =
+                          ref.read(historyFilterProvider.notifier).state =
                               HistoryFilter(categoryId: c.id);
                           goTab(1);
                         },
@@ -943,25 +1122,21 @@ Widget _bannerPill(
   );
 }
 
-/// Tile metrik sebaris (gantikan arus di hero + strip "Hari ini"):
-/// Masuk / Keluar bulan + Hari ini. Nilai memakai palet semantik
-/// tunggal (incomeOf/expenseOf); di-gate pengaturan tampilan.
+/// Tile metrik sebaris (mockup ala GoPay): Masuk / Keluar bulan +
+/// Sisa budget. Nilai memakai palet semantik tunggal
+/// (incomeOf/expenseOf); Masuk/Keluar di-gate pengaturan tampilan,
+/// ringkasan harian pindah ke [_DailyStrip].
 class _StatTiles extends ConsumerWidget {
-  const _StatTiles({
-    required this.month,
-    required this.totals,
-    required this.dayTotals,
-  });
+  const _StatTiles({required this.month, required this.totals});
 
   final String month;
   final AsyncValue<(int, int)> totals;
-  final AsyncValue<(int, int)> dayTotals;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final display = ref.watch(displayPrefsProvider);
     final showTotals = ref.watch(showMonthTotalsProvider).value ?? true;
-    final showDaily = ref.watch(showDailyTotalsProvider).value ?? true;
+    final budgets = ref.watch(budgetsProvider);
 
     final tiles = <Widget>[];
     final t = totals.value;
@@ -970,7 +1145,7 @@ class _StatTiles extends ConsumerWidget {
         _tile(
           context,
           child: _MiniStat(
-            label: 'Masuk ${monthLabel(month)}',
+            label: 'Masuk ${monthAbbrLabel(month)}',
             value: display.signed(t.$1, isExpense: false),
             valueColor: AppColors.incomeOf(context),
           ),
@@ -980,35 +1155,49 @@ class _StatTiles extends ConsumerWidget {
         _tile(
           context,
           child: _MiniStat(
-            label: 'Keluar ${monthLabel(month)}',
+            label: 'Keluar ${monthAbbrLabel(month)}',
             value: display.signed(t.$2, isExpense: true),
             valueColor: AppColors.expenseOf(context),
           ),
         ),
       );
     }
-    final d = dayTotals.value;
-    if (showDaily && d != null) {
-      final empty = d.$1 == 0 && d.$2 == 0;
-      final net = d.$1 - d.$2;
-      tiles.add(
-        _tile(
-          context,
-          child: _MiniStat(
-            label: 'Hari ini',
-            value: empty
-                ? 'Belum ada'
-                : display.signed(net.abs(), isExpense: net < 0),
-            valueColor: empty
-                ? AppColors.mutedOf(context)
-                : net < 0
-                ? AppColors.expenseOf(context)
-                : AppColors.incomeOf(context),
-            sub: empty ? 'transaksi' : 'keluar ${display.money(d.$2)}',
-          ),
+    // Tile ketiga: SISA BUDGET (mockup ala GoPay). Ringkasan "Hari ini"
+    // pindah ke seksi Terakhir dicatat supaya baris ini tetap 3 kolom.
+    final items = budgets.value;
+    final totalLimit = (items ?? const []).fold<int>(
+      0,
+      (s, b) => s + b.budget.limit,
+    );
+    final totalSpent = (items ?? const []).fold<int>(0, (s, b) => s + b.spent);
+    final hasBudget = items?.isNotEmpty ?? false;
+    final sisa = totalLimit - totalSpent;
+    final daysLeft = _daysLeftInMonth(month);
+    tiles.add(
+      _tile(
+        context,
+        child: _MiniStat(
+          label: 'SISA BUDGET',
+          value: !hasBudget
+              ? '—'
+              : sisa < 0
+              ? '-${display.money(sisa.abs())}'
+              : display.money(sisa),
+          valueColor: !hasBudget
+              ? AppColors.mutedOf(context)
+              : sisa < 0
+              ? AppColors.expenseOf(context)
+              : null,
+          sub: !hasBudget
+              ? 'belum diatur'
+              : sisa < 0
+              ? 'lewat batas'
+              : daysLeft <= 0
+              ? 'selesai'
+              : '$daysLeft hari lagi',
         ),
-      );
-    }
+      ),
+    );
 
     if (tiles.isEmpty) return const SizedBox.shrink();
     return Padding(
@@ -1169,6 +1358,44 @@ class _CategoryList extends ConsumerWidget {
                 ),
               ),
           ],
+        );
+      },
+    );
+  }
+}
+
+/// Ringkasan masuk/keluar HARI INI — pindahan dari tile metrik ketiga
+/// (mockup: baris metrik khusus Masuk/Keluar/Sisa budget). Ikut toggle
+/// "Ringkasan hari ini" di Pengaturan → Tampilan.
+class _DailyStrip extends ConsumerWidget {
+  const _DailyStrip({required this.dayTotals});
+  final AsyncValue<(int, int)> dayTotals;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final display = ref.watch(displayPrefsProvider);
+    return dayTotals.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (d) {
+        if (d.$1 == 0 && d.$2 == 0) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.s8),
+          child: Row(
+            children: [
+              Text('Hari ini', style: AppType.labelMuted(context)),
+              const SizedBox(width: AppSpacing.s8),
+              Expanded(
+                child: Text(
+                  'masuk ${display.signed(d.$1, isExpense: false)} · '
+                  'keluar ${display.signed(d.$2, isExpense: true)}',
+                  style: AppType.secondary(context),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         );
       },
     );

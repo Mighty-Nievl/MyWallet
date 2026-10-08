@@ -78,6 +78,11 @@ const _fullMonths = [
 
 String formatDate(DateTime d) => '${d.day} ${_shortMonths[d.month - 1]} ${d.year}';
 
+/// "8 Oktober 2026" — versi bulan panjang tanpa nol di depan, persis
+/// tanggal sapaan mockup: "Rabu, 8 Oktober 2026".
+String formatDateLong(DateTime d) =>
+    '${d.day} ${_fullMonths[d.month - 1]} ${d.year}';
+
 String formatDateTime(DateTime d) {
   final hh = d.hour.toString().padLeft(2, '0');
   final mm = d.minute.toString().padLeft(2, '0');
@@ -92,6 +97,16 @@ String monthLabel(String key) {
   final m = int.tryParse(parts[1]) ?? 0;
   if (y == 0 || m < 1 || m > 12) return key;
   return '${_fullMonths[m - 1]} $y';
+}
+
+/// "2026-10" -> "OKT" — label bulan singkat kapital untuk tile metrik
+/// Beranda (mockup ala GoPay: "MASUK OKT" / "KELUAR OKT").
+String monthAbbrLabel(String key) {
+  final parts = key.split('-');
+  if (parts.length != 2) return key.toUpperCase();
+  final m = int.tryParse(parts[1]) ?? 0;
+  if (m < 1 || m > 12) return key.toUpperCase();
+  return _shortMonths[m - 1].toUpperCase();
 }
 
 String monthKey(DateTime d) =>

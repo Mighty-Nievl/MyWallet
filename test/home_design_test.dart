@@ -92,13 +92,21 @@ Future<void> _seed(AppDatabase db) async {
     DateTime(now.year, now.month - 1, 5),
     note: 'Beban bulan lalu',
   );
-  // Bulan ini.
+  // Bulan ini. Total harus pas Rp8.925.000 ala mockup:
+  // 8.500.000 + 1.688.000 − 45.000 − 18.000 − 1.200.000 (bulan lalu).
   await tx(
     8500000,
     false,
     9,
     DateTime(now.year, now.month, 9, 8),
     note: 'Gaji',
+  );
+  await tx(
+    1688000,
+    false,
+    9,
+    DateTime(now.year, now.month, 2),
+    note: 'Bonus',
   );
   await tx(45000, true, 1, bulanIni, note: 'Makan siang');
   await tx(
@@ -147,7 +155,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
 
-    expect(find.text('Saldo semua waktu'), findsOneWidget);
+    expect(find.text('SALDO MYWALLET'), findsOneWidget);
+    expect(find.text('Hai, Nievi'), findsOneWidget);
+    expect(find.text('SISA BUDGET'), findsOneWidget);
     // Delta dari provider (bukan FutureBuilder) — harus ter-render.
     expect(find.textContaining('vs '), findsWidgets);
     expect(find.textContaining('Pengeluaran turun'), findsOneWidget);
@@ -297,7 +307,7 @@ void main() {
     for (var i = 0; i < 60; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
-    expect(find.text('Saldo semua waktu'), findsOneWidget);
+    expect(find.text('SALDO MYWALLET'), findsOneWidget);
     await _flushDriftCloseTimer(tester);
   });
 }

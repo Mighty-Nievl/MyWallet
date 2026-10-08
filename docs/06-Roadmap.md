@@ -104,6 +104,11 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] Test kontras 6 aksen × 2 tema × (2 stop gradien + kepala) = 48 pengukuran dari widget yang benar-benar dirender (minimum 5.04:1 blue/dark); golden regen pola baru. 38/38 hijau.
 - [x] Regresi overflow CI (font fallback Linux lebih lebar): Row hero + status budget + kategori cepat dibungkus Expanded/Flexible + ellipsis; test viewport sempit 300px permanen agar jebol duluan di lokal. 39/39 hijau.
 
+## v1.13.1 — Mockup GoPay ✅ (rilis 8 Okt 2026 sebagai v1.13.1)
+- [x] Sapaan personal “Hai, {nama}!” + ikon mahkota (setting baru Pengaturan → Tampilan → Nama sapaan, default Nievi, kosong = “Hai!”) + tanggal panjang “Rabu, 8 Oktober 2026” + avatar inisial (ketuk = Pengaturan) + lonceng pengingat + gear; status bar transparan ikon terang.
+- [x] Kepala disusun ulang persis mockup: blok gelap menepi tepi atas, kartu saldo MENUMPUK separuh masuk blok & separuh keluar ke halaman terang (radius 16, bayangan lembut); label “SALDO MYWALLET”, mata saldo terlipat, pil aksi 39px (putih solid + dua pil putih 15%).
+- [x] Nav bulan hanya muncul saat menjelajah bulan lain; aksi cepat 4 chip (Catat/Pemasukan/Budget/Laporan); tile Masuk OKT / Keluar OKT / SISA BUDGET (hari tersisa); ringkasan “Hari ini” pindah ke seksi Terakhir dicatat; kartu dijenuhkan +35% selaras seed mockup, kontras putih tetap ≥4.5:1 (48 pengukuran, min 4.76:1). 39/39 hijau.
+
 ## v1.14 — Berikutnya
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).

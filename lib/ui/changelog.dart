@@ -11,6 +11,24 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String text})>[
   (
+    version: 'v1.13.1',
+    text:
+        'Samakan Beranda dengan mockup ala GoPay: sapaan personal “Hai, {nama}” '
+        '(baru di Pengaturan → Tampilan → Nama sapaan, default Nievi) '
+        'dengan ikon mahkota, tanggal panjang “Rabu, 8 Oktober 2026”, '
+        'label “SALDO MYWALLET”, nav bulan hanya muncul saat menjelajah '
+        'bulan lain, aksi cepat 4 chip, tile metrik Masuk OKT / Keluar OKT / '
+        'SISA BUDGET (hari tersisa), ringkasan “Hari ini” pindah ke seksi '
+        'Terakhir dicatat. Kepala disusun ulang persis mockup referensi 8 Okt: '
+        'blok gelap menepi dari tepi atas (status bar transparan, ikon terang, '
+        'lonceng + gear), kartu saldo MENUMPUK separuh masuk ke blok & separuh '
+        'keluar ke halaman terang — kartu ber-padding horizontal 16px di dalam '
+        'blok, radius 16, bayangan lembut; mata saldo ikon terlipat, pil aksi '
+        '39px (putih solid + dua pil putih 15%). Warna dijenuhkan (+35%) agar '
+        'sealiran seed mockup; kontras putih tetap ≥4.5:1. '
+        'Logika/provider/query tidak berubah.',
+  ),
+  (
     version: 'v1.13.0',
     text:
         'Beranda pola GoPay: kepala sapaan berwarna aksen + kartu saldo gradien ikut warna tema (kontras putih ≥4.5:1, 48 pengukuran 6 aksen × 2 tema), aksi cepat Catat/Riwayat/Budget/Laporan, banner insight (delta vs bulan lalu + pacing budget + CTA), tile metrik Masuk/Keluar/Hari ini. Logika/provider/query tidak berubah.',

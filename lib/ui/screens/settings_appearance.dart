@@ -59,6 +59,7 @@ class _AppearanceSettingsPageState
     final showTop = ref.watch(showTopCategoriesProvider);
     final showTotals = ref.watch(showMonthTotalsProvider);
     final showDaily = ref.watch(showDailyTotalsProvider);
+    final displayName = ref.watch(displayNameProvider);
     final showRecent = ref.watch(showRecentProvider);
     final recentCount = ref.watch(recentCountProvider);
     final compactList = ref.watch(compactListProvider);
@@ -239,6 +240,21 @@ class _AppearanceSettingsPageState
                   SettingsGroup(
                     title: 'Isi Beranda',
                     children: [
+                      if (_match('nama sapaan', 'hai sapa beranda',
+                          const ['nama', 'name']))
+                        SettingRow(
+                          icon: Icons.waving_hand_outlined,
+                          title: 'Nama sapaan',
+                          subtitle: 'Sapaan di Beranda, mis. “Hai, Nievi”',
+                          trailing: SettingValue(
+                            value: displayName.when(
+                              loading: () => '…',
+                              error: (_, _) => '…',
+                              data: (n) => n.isEmpty ? 'Hai!' : n,
+                            ),
+                          ),
+                          onTap: editDisplayName,
+                        ),
                       if (_match('ringkasan harian', 'hari ini',
                           const ['daily', 'hari']))
                         SettingRow(

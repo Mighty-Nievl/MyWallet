@@ -20,6 +20,7 @@ abstract final class SettingsKeys {
   static const showTopCategories = 'show_top_categories'; // bool
   static const showMonthTotals = 'show_month_totals'; // bool
   static const showDailyTotals = 'show_daily_totals'; // bool (ringkasan hari ini)
+  static const displayName = 'display_name'; // nama sapaan di Beranda
   static const showRecent = 'show_recent'; // bool
   static const recentCount = 'recent_count'; // int (3/5/10)
   static const compactAmounts = 'compact_amounts'; // bool (Rp25 jt)
@@ -108,6 +109,11 @@ class SettingsService {
   Future<void> setShowDailyTotals(bool v) async {
     (await _prefs).setBool(SettingsKeys.showDailyTotals, v);
     _ref.invalidate(showDailyTotalsProvider);
+  }
+
+  Future<void> setDisplayName(String v) async {
+    (await _prefs).setString(SettingsKeys.displayName, v.trim());
+    _ref.invalidate(displayNameProvider);
   }
 
   Future<void> setShowRecent(bool v) async {
@@ -225,6 +231,13 @@ final showTopCategoriesProvider = FutureProvider<bool>((ref) async {
 final showMonthTotalsProvider = FutureProvider<bool>((ref) async {
   final p = await ref.watch(prefsProvider.future);
   return p.getBool(SettingsKeys.showMonthTotals) ?? true;
+});
+
+/// Nama sapaan di Beranda — tampil sebagai "Hai, {nama}!".
+/// Default 'Nievi' (mockup), kosongkan = sapaan polos "Hai!".
+final displayNameProvider = FutureProvider<String>((ref) async {
+  final p = await ref.watch(prefsProvider.future);
+  return p.getString(SettingsKeys.displayName) ?? 'Nievi';
 });
 
 /// Tampilkan ringkasan harian (hari ini) di Beranda.

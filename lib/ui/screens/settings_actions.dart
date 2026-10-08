@@ -266,6 +266,56 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
     }
   }
 
+  // ---------- Nama sapaan ----------
+
+  Future<void> editDisplayName() async {
+    final current = ref.read(displayNameProvider).value ?? '';
+    final ctrl = TextEditingController(text: current);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Nama sapaan'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                  'Muncul di sapaan Beranda, mis. “Hai, Nie!”. '
+                  'Kosongkan untuk sapaan polos “Hai!”.'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: ctrl,
+                autofocus: true,
+                maxLength: 20,
+                decoration: const InputDecoration(
+                  labelText: 'Nama',
+                  hintText: 'cth. Nie',
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(c, false),
+              child: const Text('Batal')),
+          FilledButton(
+              onPressed: () => Navigator.pop(c, true),
+              child: const Text('Simpan')),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await ref.read(settingsServiceProvider).setDisplayName(ctrl.text);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nama sapaan disimpan.')),
+        );
+      }
+    }
+  }
+
   // ---------- Kunci aplikasi ----------
 
   Future<void> pickLock() async {
