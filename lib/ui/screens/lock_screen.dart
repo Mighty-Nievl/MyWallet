@@ -90,6 +90,22 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                   crossAxisAlignment:
                       CrossAxisAlignment.stretch,
                   children: [
+                    Center(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: Image.asset(
+                          'assets/images/app_logo.png',
+                          width: 88,
+                          height: 88,
+                          errorBuilder: (_, _, _) => const Text(
+                            '💰',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 48),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.s12),
                     Text('MyWallet',
                         textAlign: TextAlign.center,
                         style: AppType.screenTitle(context)),

@@ -78,7 +78,14 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] Blok hitam belang hilang: buang `SafeArea` pembungkus `BottomAppBar` (safe area diurus SafeArea internal di dalam material bar — background ikut warna bar).
 - [x] Notch rapat: `extendBody: true` + `BottomAppBar` langsung tanpa wrapper sehingga cekungan `CircularNotchedRectangle` kepotong tepat di bawah FAB; satu akar dua gejala (SafeArea luar menggeser bar + miss notch).
 
-## v1.11 — Berikutnya
+## v1.11 — Logo + Micro-UX ✅ (rilis 8 Okt 2026 sebagai v1.11.0)
+- [x] Logo: `assets/images/app_logo.png` (dompet hijau + koin emas) → ikon launcher Android (5 densitas) + ICO Windows + tampil di Lock + Tentang; nama OS `mywallet` → `MyWallet` (manifest + window + exe metadata; title in-app sudah benar).
+- [x] FAB Container Transform: `OpenContainer` (`animations`, fade 450ms, `tappable: false`) — tombol melebar mulus jadi form Catat; haptic dulu baru transisi (tanpa ini tap bisa dobel).
+- [x] Zero-friction: nominal `autofocus` hanya mode tambah + quick-add `ActionChip` (Bensin/Jajan/dll, pemasukan terpisah) — mode edit tidak autofocus/chip.
+- [x] Haptic: FAB + pilih kategori (`selectionClick`) + simpan sukses (`lightImpact`).
+- [x] Empty state memotivasi: Beranda top-kategori + terakhir (ramah, ajak catat), Riwayat (ubah bulan/filter) — via `AppEmptyState` generik.
+
+## v1.12 — Berikutnya
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).
 

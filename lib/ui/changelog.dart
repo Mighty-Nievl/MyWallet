@@ -11,6 +11,11 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String text})>[
   (
+    version: 'v1.11.0',
+    text:
+        'Logo MyWallet + Micro-UX premium: FAB Container Transform (OpenContainer) jadi form Catat, nominal autofocus + quick-add chips, haptic di FAB/kategori/simpan, empty state memotivasi, nama aplikasi MyWallet.',
+  ),
+  (
     version: 'v1.10.2',
     text:
         'Fix bar bawah: blok hitam belang hilang + notch FAB rapat (extendBody + buang SafeArea pembungkus, visual saja).',

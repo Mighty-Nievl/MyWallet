@@ -2,9 +2,9 @@
 
 Aplikasi pencatat pemasukan & pengeluaran. Data **100% lokal** (SQLite via Drift) — tanpa login, tanpa server.
 
-## Status: v1.10.2 ✅
+## Status: v1.11.0 ✅
 - `flutter analyze` → No issues found · `flutter test` → 35/35 passed
-- **Fix bar bawah** (visual saja, logika utuh): blok hitam belang hilang + notch FAB rapat — `extendBody: true`, buang `SafeArea` pembungkus (BottomAppBar sudah punya SafeArea internal), FAB tetap `centerDocked` + `CircularNotchedRectangle`
+- **Logo MyWallet + Micro-UX premium** (logika utuh): FAB Container Transform (`OpenContainer`) jadi form Catat · nominal autofocus + quick-add chips · haptic FAB/kategori/simpan · empty state memotivasi · nama OS `MyWallet` + ikon launcher baru
 - Fix tombol **Tambah Budget**: dialog terbuka instan + kategori dimuat di dalam dialog + SnackBar bila kategori/batas belum lengkap
 - Redesign **STEP 3** (visual saja, logika utuh): navigasi bawah custom + Budget baru (overview + item + progress) + Laporan baru (ringkasan + bar 6 bulan + pie + rincian)
 - Redesign **STEP 2**: Riwayat baru (header custom, bulan ala Beranda, chip filter kompak) + Form Transaksi baru (nominal hero, kategori bottom sheet, tanggal tile, Simpan 52px)

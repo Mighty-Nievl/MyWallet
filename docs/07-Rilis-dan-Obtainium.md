@@ -22,6 +22,7 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 7. Pantau di tab **Actions → Release MyWallet**.
 
 ## Riwayat rilis
+- **v1.11.0** (8 Okt 2026): Logo MyWallet + Micro-UX premium — FAB Container Transform jadi form Catat, nominal autofocus + quick-add chips, haptic FAB/kategori/simpan, empty state memotivasi, nama aplikasi MyWallet. Logika/provider/query/navigasi tidak berubah.
 - **v1.10.2** (8 Okt 2026): Fix bar bawah (visual saja) — blok hitam belang hilang + notch FAB rapat via `extendBody` + buang SafeArea pembungkus. Logika/provider/query/navigasi tidak berubah.
 - **v1.10.1** (8 Okt 2026): Penyeragaman (visual saja) — FAB Catat tertanam via notch + Beranda satu-sliver-per-section + ikon monochrome di semua layar. Logika/provider/query/navigasi tidak berubah.
 - **v1.10.0** (8 Okt 2026): Beranda baru (visual saja) — kartu saldo aksen + teks putih, progress bertrack abu terang, nama kategori lebih besar, ikon monochrome aksen, teks transaksi kontras, tombol Catat jadi FAB melayang. Logika/provider/query/navigasi tidak berubah.

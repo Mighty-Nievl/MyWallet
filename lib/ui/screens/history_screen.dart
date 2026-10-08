@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/providers.dart';
 import '../components/app_card.dart';
-import '../components/category_glyph.dart';
+import '../components/app_empty_state.dart';
 import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
@@ -354,30 +354,11 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.s24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CategoryGlyph(emoji: '🧾', size: 56, iconSize: 28),
-            const SizedBox(height: AppSpacing.s16),
-            Text(
-              'Belum ada transaksi',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: AppSpacing.s4),
-            Text(
-              'Belum ada transaksi untuk periode/filter ini.',
-              textAlign: TextAlign.center,
-              style: AppType.secondary(context),
-            ),
-          ],
-        ),
-      ),
+    return const AppEmptyState(
+      icon: '🧾',
+      title: 'Belum ada yang cocok',
+      subtitle:
+          'Tidak ada transaksi untuk periode atau filter ini. Coba ubah bulan, kata kunci, atau catat transaksi pertamamu!',
     );
   }
 }

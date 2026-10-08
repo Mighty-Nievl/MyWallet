@@ -4,7 +4,7 @@
     <!-- Kunci biometrik. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <application
-        android:label="mywallet"
+        android:label="MyWallet"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

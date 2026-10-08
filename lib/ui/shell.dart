@@ -1,4 +1,6 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'screens/budget_screen.dart';
 import 'screens/history_screen.dart';
@@ -42,12 +44,6 @@ class _AppShellState extends State<AppShell> {
     ReportsScreen(),
   ];
 
-  void _openAdd() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const TxFormScreen()),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -56,14 +52,29 @@ class _AppShellState extends State<AppShell> {
       // bukan background Scaffold (sumber blok hitam belang).
       extendBody: true,
       body: IndexedStack(index: _index, children: _screens),
-      // FAB lingkaran aksen — bentuk bulat agar pas di cekungan notch.
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openAdd,
-        tooltip: 'Catat transaksi',
-        backgroundColor: scheme.primary,
-        foregroundColor: scheme.onPrimary,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add),
+      // FAB lingkaran aksen — dibuka via Container Transform (OpenContainer):
+      // tombol melebar mulus menjadi halaman "Catat Transaksi".
+      // `tappable: false` agar yang membuka hanya onPressed FAB (haptic dulu,
+      // baru transisi) — tanpa ini tap bisa membuka dua kali.
+      floatingActionButton: OpenContainer(
+        transitionType: ContainerTransitionType.fade,
+        transitionDuration: const Duration(milliseconds: 450),
+        openBuilder: (context, _) => const TxFormScreen(),
+        closedElevation: 6,
+        closedColor: scheme.primary,
+        closedShape: const CircleBorder(),
+        tappable: false,
+        closedBuilder: (context, openContainer) => FloatingActionButton(
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            openContainer();
+          },
+          tooltip: 'Catat transaksi',
+          backgroundColor: scheme.primary,
+          foregroundColor: scheme.onPrimary,
+          shape: const CircleBorder(),
+          child: const Icon(Icons.add),
+        ),
       ),
       floatingActionButtonLocation:
           FloatingActionButtonLocation.centerDocked,

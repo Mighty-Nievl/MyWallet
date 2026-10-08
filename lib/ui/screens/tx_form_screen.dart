@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/actions.dart';
@@ -106,6 +107,7 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+    HapticFeedback.lightImpact();
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -161,7 +163,22 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
             const SizedBox(height: AppSpacing.sectionGap),
             Text('Nominal', style: AppType.labelMuted(context)),
             const SizedBox(height: AppSpacing.s8),
-            _AmountField(controller: _amountCtrl),
+            _AmountField(controller: _amountCtrl, autofocus: !_editing),
+            // Quick add: sekali ketuk nominal langsung terisi.
+            // Hanya di mode tambah — mode edit nominalnya sudah ada.
+            if (!_editing) ...[
+              const SizedBox(height: AppSpacing.s12),
+              _QuickAdd(
+                isExpense: _isExpense,
+                onPick: (amount, note) {
+                  HapticFeedback.selectionClick();
+                  setState(() {
+                    _amountCtrl.text = formatAmountField(amount);
+                    if (note.isNotEmpty) _noteCtrl.text = note;
+                  });
+                },
+              ),
+            ],
             const SizedBox(height: AppSpacing.s20),
             Text('Kategori', style: AppType.labelMuted(context)),
             const SizedBox(height: AppSpacing.s8),
@@ -286,6 +303,7 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
       },
     );
     if (picked != null && picked.$1) {
+      HapticFeedback.selectionClick();
       setState(() => _categoryId = picked.$2);
     }
   }
@@ -437,12 +455,54 @@ class _TypeSelector extends StatelessWidget {
   }
 }
 
+/// Quick add / smart chips: sekali ketuk nominal (+ catatan) terisi.
+/// Preset umum harian — tidak menyentuh logika simpan/validasi.
+class _QuickAdd extends StatelessWidget {
+  const _QuickAdd({required this.isExpense, required this.onPick});
+  final bool isExpense;
+  final void Function(int amount, String note) onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final presets = isExpense
+        ? const <({int amount, String label})>[
+            (amount: 10000, label: 'Jajan Rp10 rb'),
+            (amount: 15000, label: 'Parkir Rp15 rb'),
+            (amount: 25000, label: 'Bensin Rp25 rb'),
+            (amount: 50000, label: 'Makan Rp50 rb'),
+          ]
+        : const <({int amount, String label})>[
+            (amount: 50000, label: 'Rp50 rb'),
+            (amount: 100000, label: 'Rp100 rb'),
+            (amount: 500000, label: 'Rp500 rb'),
+            (amount: 1000000, label: 'Rp1 jt'),
+          ];
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final p in presets)
+          ActionChip(
+            label: Text(p.label),
+            avatar: Icon(Icons.bolt_outlined,
+                size: 16, color: scheme.primary),
+            onPressed: () => onPick(p.amount, ''),
+          ),
+      ],
+    );
+  }
+}
+
 /// Kolom nominal besar ala finance app: "Rp" tegas di kiri,
 /// angka besar menonjol. Formatter + keyboard + controller TETAP
 /// (ThousandSeparatorInputFormatter, parse via parseRp di _save).
 class _AmountField extends StatelessWidget {
-  const _AmountField({required this.controller});
+  const _AmountField({required this.controller, this.autofocus = false});
   final TextEditingController controller;
+
+  /// `true` hanya untuk mode tambah (baru) agar keyboard langsung muncul.
+  final bool autofocus;
 
   @override
   Widget build(BuildContext context) {
@@ -470,6 +530,9 @@ class _AmountField extends StatelessWidget {
             child: TextField(
               controller: controller,
               keyboardType: TextInputType.number,
+              // Zero-friction: keyboard angka langsung muncul saat form
+              // tambah dibuka. Mode edit tidak autofocus (nominal sudah ada).
+              autofocus: autofocus,
               inputFormatters: [ThousandSeparatorInputFormatter()],
               style: const TextStyle(
                   fontSize: 28, fontWeight: FontWeight.w700),

@@ -46,6 +46,21 @@ class _AboutSettingsPageState extends ConsumerState<AboutSettingsPage>
                   96,
                 ),
                 children: [
+                  Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: Image.asset(
+                        'assets/images/app_logo.png',
+                        width: 88,
+                        height: 88,
+                        errorBuilder: (_, _, _) => const Icon(
+                          Icons.wallet_outlined,
+                          size: 48,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.s12),
                   SettingsGroup(
                     title: 'Aplikasi',
                     children: [

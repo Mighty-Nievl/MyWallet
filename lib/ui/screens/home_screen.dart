@@ -5,6 +5,7 @@ import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../../data/settings.dart';
 import '../components/app_card.dart';
+import '../components/app_empty_state.dart';
 import '../components/app_progress.dart';
 import '../components/app_section.dart';
 import '../components/category_glyph.dart';
@@ -434,9 +435,11 @@ class _CategoryList extends ConsumerWidget {
       error: (e, _) => Text('Gagal memuat: $e'),
       data: (list) {
         if (list.isEmpty) {
-          return AppCard(
-            child: Text('Belum ada pengeluaran bulan ini.',
-                style: AppType.secondary(context)),
+          return const AppEmptyState(
+            icon: '📊',
+            title: 'Belum ada pengeluaran bulan ini',
+            subtitle:
+                'Setiap rupiah yang dicatat bikin gambaran keuanganmu makin jelas. Yuk mulai dari satu transaksi!',
           );
         }
         final max = list.first.total;
@@ -497,11 +500,11 @@ class _RecentList extends ConsumerWidget {
         if (!snap.hasData) return const _Skeleton(lines: 3);
         final list = snap.data!;
         if (list.isEmpty) {
-          return AppCard(
-            child: Text(
-              'Belum ada transaksi. Ketuk tombol "Catat" untuk mulai.',
-              style: AppType.secondary(context),
-            ),
+          return const AppEmptyState(
+            icon: '💸',
+            title: 'Hari ini belum ada catatan',
+            subtitle:
+                'Belum ada transaksi — hari yang tenang juga patut dirayakan. Ketuk “Catat” saat ada pemasukan atau pengeluaran.',
           );
         }
         // Tanpa kartu pembungkus — TxTile tampil sebagai baris bersih.
