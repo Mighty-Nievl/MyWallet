@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
 import '../components/category_glyph.dart';
+import '../design/app_colors.dart';
 import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
@@ -24,7 +25,11 @@ class TxTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final display = ref.watch(displayPrefsProvider);
     final scheme = Theme.of(context).colorScheme;
-    final amountColor = tx.isExpense ? scheme.error : scheme.primary;
+    // Semantik nominal satu sumber kebenaran (AppColors), sama dengan
+    // hero Beranda dan strip "Hari ini".
+    final amountColor = tx.isExpense
+        ? AppColors.expenseOf(context)
+        : AppColors.incomeOf(context);
     return InkWell(
       onTap: onTap,
       borderRadius: AppRadius.mdAll,

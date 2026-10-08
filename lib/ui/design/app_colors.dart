@@ -47,4 +47,30 @@ abstract final class AppColors {
   /// dijaga via ukuran + weight, bukan cuma warna).
   static Color strongSecondaryOf(BuildContext context) =>
       isDark(context) ? const Color(0xFFE0E0E0) : const Color(0xFF424242);
+
+  // ---- Semantik nominal (satu sumber kebenaran) ----
+  // Masuk = aksen tema, keluar = error tema. Dipakai Beranda (hero +
+  // strip hari ini), tile transaksi, dst — jadi tidak ada dua palet
+  // hijau/merah yang berbeda kadar dalam satu layar.
+
+  /// Pemasukan di atas permukaan biasa (kartu terang / dark mode).
+  static Color incomeOf(BuildContext context) =>
+      Theme.of(context).colorScheme.primary;
+
+  /// Pengeluaran di atas permukaan biasa.
+  static Color expenseOf(BuildContext context) =>
+      Theme.of(context).colorScheme.error;
+
+  /// [incomeOf] untuk di atas permukaan GELAP (hero #171717):
+  /// mode terang → dinaikkan kecerahannya (tone primary masih gelap),
+  /// mode gelap → tone primary sudah terang, jadi dipakai apa adanya
+  /// (tidak perlu di-lagi ke putih supaya hijaunya tidak pudar).
+  static Color incomeOnDark(BuildContext context) => isDark(context)
+      ? incomeOf(context)
+      : Color.lerp(incomeOf(context), Colors.white, 0.45)!;
+
+  /// [expenseOf] untuk di atas permukaan gelap (logika sama).
+  static Color expenseOnDark(BuildContext context) => isDark(context)
+      ? expenseOf(context)
+      : Color.lerp(expenseOf(context), Colors.white, 0.35)!;
 }

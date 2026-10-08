@@ -11,6 +11,11 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String text})>[
   (
+    version: 'v1.12.1',
+    text:
+        'Polish Beranda: semantik nominal satu sumber (AppColors income/expense + varian hero), delta % via provider (tanpa query ulang tiap rebuild), CTA "Atur budget" saat kosong, strip hari ini jelas saat nol, hero berboder di dark mode, golden test + uji kontras WCAG 4.5:1. README baru ala landing page.',
+  ),
+  (
     version: 'v1.12.0',
     text:
         'Beranda menjawab "bulan ini aman nggak?": header sapaan pinned (gear tidak hilang), hero netral + arus semantik + delta vs bulan lalu + pacing budget, kategori proporsional + persen, riwayat tergrup tanggal + chevron, navigasi M3 NavigationBar, skeleton shimmer + error ramah di semua layar.',

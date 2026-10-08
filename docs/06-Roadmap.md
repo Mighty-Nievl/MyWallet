@@ -92,6 +92,12 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] Feedback konsisten: `AppSkeleton` shimmer + `AppErrorState` ("…gagal dimuat." + Coba lagi, tanpa bocor `$e`) di Beranda/Riwayat/Budget/Laporan/Form/Kategori/Pengaturan; `AppHeader` + `AppMonthNav` shared dipakai semua layar (duplikat `_Header`/`_MonthNav` dihapus); label hero eksplisit "Saldo semua waktu" agar tidak dikira saldo bulan.
 - [x] Logika/provider/query/CRUD/perhitungan/navigasi TIDAK berubah — 35/35 hijau.
 
+## v1.12.1 — Polish Beranda ✅ (rilis 8 Okt 2026 sebagai v1.12.1)
+- [x] Semantik nominal satu sumber: `AppColors.incomeOf/expenseOf` (+ varian `incomeOnDark/expenseOnDark` untuk hero #171717) dipakai hero + strip hari ini + TxTile — tidak ada dua palet hijau/merah beda kadar; kontras hero vs #171717 diukur eksplisit ≥4.5:1 (WCAG AA) di light + dark.
+- [x] Delta % vs bulan lalu via `FutureProvider` (`_prevMonthExpenseProvider`) — query jalan sekali per bulan, tidak diulang tiap rebuild (sebelumnya `FutureBuilder` di dalam build).
+- [x] CTA "Atur budget" saat budget kosong (lompat ke tab Budget) + strip hari ini satu baris jelas saat nol transaksi + hero berboder di dark mode agar tidak menyatu latar.
+- [x] Golden test Beranda (`test/home_design_test.dart` + `test/goldens/`): hero light + hero dark tanpa budget + uji kontras; README baru ala landing page (logo + badge + tabel fitur). 38/38 hijau.
+
 ## v1.13 — Berikutnya
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).

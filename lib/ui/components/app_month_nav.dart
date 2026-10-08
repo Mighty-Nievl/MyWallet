@@ -32,9 +32,11 @@ class AppMonthNav extends StatelessWidget {
               onPressed: () => onShift(-1),
             ),
             const SizedBox(width: AppSpacing.s8),
-            // Chip bulan: label + hint bisa digeser. Ketuk saat lihat
-            // bulan lain = kembali ke bulan ini.
-            Tooltip(
+            // Flexible: di font lebar (mis. fallback Linux di CI) chip
+            // menyusut + ellipsis, bukan overflow kuning-hitam.
+            // Di HP normal label penuh tetap muat.
+            Flexible(
+              child: Tooltip(
               message: isCurrent
                   ? 'Geser chevron untuk ganti bulan'
                   : 'Ketuk untuk kembali ke bulan ini',
@@ -45,6 +47,8 @@ class AppMonthNav extends StatelessWidget {
                       .textTheme
                       .titleMedium
                       ?.copyWith(fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 avatar: Icon(
                   Icons.calendar_month_outlined,
@@ -62,6 +66,7 @@ class AppMonthNav extends StatelessWidget {
                 ),
                 backgroundColor:
                     Theme.of(context).colorScheme.surfaceContainerLow,
+                ),
               ),
             ),
             const SizedBox(width: AppSpacing.s8),

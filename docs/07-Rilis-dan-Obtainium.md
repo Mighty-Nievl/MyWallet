@@ -22,6 +22,7 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 7. Pantau di tab **Actions → Release MyWallet**.
 
 ## Riwayat rilis
+- **v1.12.1** (8 Okt 2026): Polish Beranda — semantik nominal satu sumber (`AppColors` income/expense + varian hero, kontras WCAG ≥4.5:1), delta % via provider, CTA "Atur budget" saat kosong, strip hari ini jelas saat nol, hero berboder dark mode, golden test Beranda + README landing page. Logika/provider/query/navigasi tidak berubah.
 - **v1.12.0** (8 Okt 2026): Beranda Insight (visual saja) — header sapaan pinned, hero netral + arus semantik + delta vs bulan lalu + pacing budget, kategori proporsional + persen, strip hari ini ringkas, riwayat tergrup + chevron, navigasi M3 NavigationBar, skeleton shimmer + error ramah semua layar, shared AppHeader/AppMonthNav, token bottomPad/touchMin. Logika/provider/query/navigasi tidak berubah.
 - **v1.11.0** (8 Okt 2026): Logo MyWallet + Micro-UX premium — FAB Container Transform jadi form Catat, nominal autofocus + quick-add chips, haptic FAB/kategori/simpan, empty state memotivasi, nama aplikasi MyWallet. Logika/provider/query/navigasi tidak berubah.
 - **v1.10.2** (8 Okt 2026): Fix bar bawah (visual saja) — blok hitam belang hilang + notch FAB rapat via `extendBody` + buang SafeArea pembungkus. Logika/provider/query/navigasi tidak berubah.

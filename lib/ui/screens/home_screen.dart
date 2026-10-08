@@ -12,6 +12,7 @@ import '../components/app_month_nav.dart';
 import '../components/app_progress.dart';
 import '../components/app_section.dart';
 import '../components/category_glyph.dart';
+import '../design/app_colors.dart';
 import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
@@ -31,9 +32,17 @@ const _warnAt = 0.8;
 const _heroBg = Color(0xFF171717);
 const _heroText = Colors.white;
 const _heroSoft = Color(0xB3FFFFFF);
-const _heroOk = Color(0xFF4ADE80);
 const _heroWarn = Color(0xFFFBBF24);
-const _heroOver = Color(0xFFF87171);
+
+/// Total pengeluaran BULAN SEBELUMNYA (delta % di hero).
+/// Provider, bukan FutureBuilder di dalam build — query jalan sekali
+/// per bulan terpilih, tidak diulang tiap rebuild.
+final _prevMonthExpenseProvider = FutureProvider<int>((ref) async {
+  final db = ref.watch(dbProvider);
+  final (from, to) =
+      monthRangeOf(shiftMonth(ref.watch(selectedMonthProvider), -1));
+  return (await db.getTotals(from, to)).$2;
+});
 
 /// Beranda: sapaan pinned, hero saldo + insight budget, strip hari ini,
 /// top kategori proporsional, terakhir dikelompokkan per tanggal.
@@ -104,6 +113,8 @@ class HomeScreen extends ConsumerWidget {
                       balance: balance,
                       totals: totals,
                       month: month,
+                      onOpenBudget:
+                          onGoTab == null ? null : () => onGoTab!(2),
                     )),
                   ),
                   if (showDaily) ...[
@@ -211,10 +222,14 @@ class _BalanceCard extends ConsumerWidget {
     required this.balance,
     required this.totals,
     required this.month,
+    required this.onOpenBudget,
   });
   final AsyncValue<int> balance;
   final AsyncValue<(int, int)> totals;
   final String month;
+
+  /// Buka tab Budget (null bila dipakai tanpa shell, mis. di test).
+  final VoidCallback? onOpenBudget;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -223,15 +238,19 @@ class _BalanceCard extends ConsumerWidget {
     final showTotals =
         ref.watch(showMonthTotalsProvider).value ?? true;
     final budgets = ref.watch(budgetsProvider);
-    final db = ref.watch(dbProvider);
-    final prevKey = shiftMonth(month, -1);
-    final (prevFrom, prevTo) = monthRangeOf(prevKey);
 
+    // Border transparan di mode terang (layout identik antar tema),
+    // #262626 di mode gelap agar hero tidak menyatu dengan latar #0A0A0A.
     return Container(
       padding: AppSpacing.cardPadding,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: _heroBg,
         borderRadius: AppRadius.lgAll,
+        border: Border.all(
+          color: AppColors.isDark(context)
+              ? AppColors.darkBorder
+              : Colors.transparent,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -314,7 +333,8 @@ class _BalanceCard extends ConsumerWidget {
                           value: display.signed(t.$1,
                               isExpense: false),
                           labelColor: _heroSoft,
-                          valueColor: _heroOk,
+                          valueColor:
+                              AppColors.incomeOnDark(context),
                         ),
                       ),
                       const SizedBox(width: AppSpacing.s16),
@@ -324,44 +344,63 @@ class _BalanceCard extends ConsumerWidget {
                           value: display.signed(t.$2,
                               isExpense: true),
                           labelColor: _heroSoft,
-                          valueColor: _heroOver,
+                          valueColor:
+                              AppColors.expenseOnDark(context),
                         ),
                       ),
                     ],
                   ),
-                  FutureBuilder<(int, int)>(
-                    future: db.getTotals(prevFrom, prevTo),
-                    builder: (ctx, snap) {
-                      if (!snap.hasData) {
-                        return const SizedBox.shrink();
-                      }
-                      final prev = snap.data!.$2;
-                      final cur = t.$2;
-                      if (prev <= 0) {
-                        return const SizedBox.shrink();
-                      }
-                      final diff =
-                          ((cur - prev) / prev * 100).round();
-                      final txt = diff == 0
-                          ? 'Pengeluaran sama seperti ${monthLabel(prevKey)}'
-                          : diff > 0
-                              ? 'Pengeluaran naik $diff% vs ${monthLabel(prevKey)}'
-                              : 'Pengeluaran turun ${-diff}% vs ${monthLabel(prevKey)}';
-                      return Padding(
-                        padding: const EdgeInsets.only(
-                            top: AppSpacing.s8),
-                        child: Text(txt,
-                            style: AppType.secondary(context)
-                                .copyWith(color: _heroSoft)),
-                      );
-                    },
-                  ),
+                  _DeltaVsPrev(
+                      month: month, current: t.$2),
                   budgets.when(
                     loading: () => const SizedBox.shrink(),
                     error: (e, _) => const SizedBox.shrink(),
                     data: (b) {
                       if (b.isEmpty) {
-                        return const SizedBox.shrink();
+                        // Tanpa budget tetap ada ajakan: insight
+                        // "aman nggak?" butuh angka yang diisi user.
+                        if (onOpenBudget == null) {
+                          return const SizedBox.shrink();
+                        }
+                        return Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: AppSpacing.s12),
+                            Container(
+                                height: 1,
+                                color: _heroText
+                                    .withValues(alpha: 0.15)),
+                            const SizedBox(height: AppSpacing.s8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Belum ada budget bulan ini',
+                                    style: AppType.secondary(
+                                            context)
+                                        .copyWith(
+                                            color: _heroSoft),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: onOpenBudget,
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: _heroText,
+                                    padding: const EdgeInsets
+                                        .symmetric(
+                                        horizontal:
+                                            AppSpacing.s8),
+                                    minimumSize: const Size(
+                                        AppSpacing.touchMin, 36),
+                                  ),
+                                  child:
+                                      const Text('Atur budget'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
                       }
                       final limit = b.fold<int>(
                           0, (s, e) => s + e.budget.limit);
@@ -373,10 +412,10 @@ class _BalanceCard extends ConsumerWidget {
                       final over = spent > limit;
                       final warn = !over && pct >= _warnAt;
                       final barColor = over
-                          ? _heroOver
+                          ? AppColors.expenseOnDark(context)
                           : warn
                               ? _heroWarn
-                              : _heroOk;
+                              : AppColors.incomeOnDark(context);
                       final status = over
                           ? 'Lewat budget'
                           : warn
@@ -482,6 +521,39 @@ class _MiniStat extends StatelessWidget {
   }
 }
 
+/// Delta pengeluaran vs bulan sebelumnya. Watch provider — bukan
+/// FutureBuilder di dalam build, yang memicu query ulang tiap rebuild.
+class _DeltaVsPrev extends ConsumerWidget {
+  const _DeltaVsPrev({required this.month, required this.current});
+  final String month;
+  final int current;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final prev = ref.watch(_prevMonthExpenseProvider);
+    return prev.when(
+      loading: () => const SizedBox.shrink(),
+      error: (e, _) => const SizedBox.shrink(),
+      data: (p) {
+        if (p <= 0) return const SizedBox.shrink();
+        final prevKey = shiftMonth(month, -1);
+        final diff = ((current - p) / p * 100).round();
+        final txt = diff == 0
+            ? 'Pengeluaran sama seperti ${monthLabel(prevKey)}'
+            : diff > 0
+                ? 'Pengeluaran naik $diff% vs ${monthLabel(prevKey)}'
+                : 'Pengeluaran turun ${-diff}% vs ${monthLabel(prevKey)}';
+        return Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.s8),
+          child: Text(txt,
+              style: AppType.secondary(context)
+                  .copyWith(color: _heroSoft)),
+        );
+      },
+    );
+  }
+}
+
 /// Strip HARI INI yang ringkas: masuk / keluar / selisih sebaris.
 /// Tanggal tidak diulang (sudah di judul section + header sapaan).
 class _DailyCard extends ConsumerWidget {
@@ -490,7 +562,6 @@ class _DailyCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
     final display = ref.watch(displayPrefsProvider);
     return AppCard(
       child: dayTotals.when(
@@ -501,20 +572,25 @@ class _DailyCard extends ConsumerWidget {
         ),
         data: (t) {
           final net = t.$1 - t.$2;
+          // Nol transaksi hari ini: satu baris jelas, bukan tiga "Rp0".
+          if (t.$1 == 0 && t.$2 == 0) {
+            return Text('Belum ada transaksi hari ini.',
+                style: AppType.secondary(context));
+          }
           return Row(
             children: [
               Expanded(
                 child: _MiniStat(
                   label: 'Masuk',
                   value: display.signed(t.$1, isExpense: false),
-                  color: scheme.primary,
+                  color: AppColors.incomeOf(context),
                 ),
               ),
               Expanded(
                 child: _MiniStat(
                   label: 'Keluar',
                   value: display.signed(t.$2, isExpense: true),
-                  color: scheme.error,
+                  color: AppColors.expenseOf(context),
                 ),
               ),
               Expanded(
@@ -522,8 +598,9 @@ class _DailyCard extends ConsumerWidget {
                   label: 'Selisih',
                   value: display.signed(net.abs(),
                       isExpense: net < 0),
-                  color:
-                      net < 0 ? scheme.error : scheme.primary,
+                  color: net < 0
+                      ? AppColors.expenseOf(context)
+                      : AppColors.incomeOf(context),
                 ),
               ),
             ],
