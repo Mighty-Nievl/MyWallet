@@ -39,6 +39,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Cegah "No space left on device" seperti di rilis v1.12.1.
+      - name: Bebaskan disk runner (anti penuh)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: false
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: false
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

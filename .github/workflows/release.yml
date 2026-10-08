@@ -22,6 +22,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Runner Ubuntu kehabisan disk saat assembleRelease (No space left).
+      # Bebaskan ~15GB dari tool preinstalled yang tidak dipakai
+      # (dotnet, haskell, docker images). Android SDK JANGAN dihapus.
+      - name: Bebaskan disk runner (anti penuh)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: false
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: false
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
