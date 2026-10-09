@@ -49,13 +49,19 @@ abstract final class AppColors {
       isDark(context) ? const Color(0xFFE0E0E0) : const Color(0xFF424242);
 
   // ---- Semantik nominal (satu sumber kebenaran) ----
-  // Masuk = aksen tema, keluar = error tema. Dipakai Beranda (hero +
+  // Masuk = hijau tetap, keluar = error tema. Dipakai Beranda (hero +
   // strip hari ini), tile transaksi, dst — jadi tidak ada dua palet
   // hijau/merah yang berbeda kadar dalam satu layar.
+  //
+  // Pemasukan SENGAJA tidak ikut aksen tema: bila user memilih aksen
+  // merah/oranye, "Masuk = primary" akan sama persis dengan "Keluar =
+  // error" (v1.13.x). Hijau tetap lolos WCAG ≥4.5:1 di kedua tema
+  // (diuji di home_design_test), aksen tetap dipakai untuk brand
+  // (ikon, bar kategori, hero, FAB).
 
   /// Pemasukan di atas permukaan biasa (kartu terang / dark mode).
   static Color incomeOf(BuildContext context) =>
-      Theme.of(context).colorScheme.primary;
+      isDark(context) ? const Color(0xFF4ADE80) : const Color(0xFF15803D);
 
   /// Pengeluaran di atas permukaan biasa.
   static Color expenseOf(BuildContext context) =>

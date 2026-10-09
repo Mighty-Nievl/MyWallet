@@ -20,6 +20,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mywallet/data/database.dart';
 import 'package:mywallet/data/providers.dart';
 import 'package:mywallet/ui/app_theme.dart';
+import 'package:mywallet/ui/components/app_month_nav.dart';
+import 'package:mywallet/ui/design/app_colors.dart';
 import 'package:mywallet/ui/screens/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -155,9 +157,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
 
-    expect(find.text('SALDO MYWALLET'), findsOneWidget);
+    expect(find.text('SALDO SAAT INI'), findsOneWidget);
     expect(find.text('Hai, Nievi'), findsOneWidget);
-    expect(find.text('SISA BUDGET'), findsOneWidget);
+    expect(find.text('Sisa budget'), findsOneWidget);
     // Delta dari provider (bukan FutureBuilder) — harus ter-render.
     expect(find.textContaining('vs '), findsWidgets);
     expect(find.textContaining('Pengeluaran turun'), findsOneWidget);
@@ -170,6 +172,188 @@ void main() {
         find.byType(HomeScreen),
         matchesGoldenFile('goldens/home_light.png'),
       );
+    }
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // Regresi kritik brutal v1.14.x (1): hero hanya punya DUA aksi
+  // pencatatan dengan tujuan berbeda — pill "Detail" (alias tab Laporan)
+  // dihapus; "+ Catat keluar" membuka form pengeluaran,
+  // "+ Pemasukan" membuka form pemasukan (v1.13.x keduanya membuka
+  // form pengeluaran yang sama).
+  testWidgets('hero: dua pil catat membuka tipe form yang benar', (
+    tester,
+  ) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(() async {
+      await _loadFonts();
+      await _seed(db);
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    expect(find.text('Detail'), findsNothing,
+        reason: 'pill Detail (alias Laporan) harus dihapus');
+    expect(find.text('+ Catat keluar'), findsOneWidget);
+    expect(find.text('+ Pemasukan'), findsOneWidget);
+    // Lonceng lama dihapus — ia cuma snackbar, bukan jalan ke fitur
+    // Pengingat harian yang hidup di Pengaturan.
+    expect(find.byTooltip('Notifikasi'), findsNothing);
+    // Avatar bukan tombol — satu-satunya pintu Pengaturan = gear.
+    expect(find.byTooltip('Profil'), findsNothing);
+    expect(find.byTooltip('Pengaturan'), findsOneWidget);
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // Regresi kritik brutal v1.14.x (2): nav bulan SELALU tampil
+  // (chicken-and-egg v1.13.x: AppMonthNav cuma dirender saat bulan lain,
+  // padahal ia satu-satunya penulis selectedMonthProvider di Beranda).
+  testWidgets('nav bulan selalu tampil di bulan berjalan', (tester) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(() async {
+      await _loadFonts();
+      await _seed(db);
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    expect(find.byKey(const ValueKey('home:monthnav')), findsOneWidget);
+    expect(find.byType(AppMonthNav), findsOneWidget);
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // Regresi kritik brutal v1.14.x (3): SATU blok kategori per layar.
+  // Strip "Top kategori" (duplikat 5 baris pertama seksi Top, sumber
+  // data sama) dihapus — seksi "Pengeluaran bulan ini" satu-satunya
+  // wajah kategori di Beranda. Jalan ke Riwayat terfilter tetap ada
+  // lewat seksi Top? Tidak — Top tidak memfilter; filter kategori
+  // milik tab Riwayat sendiri. Test ini mengunci: tidak ada duplikat.
+  testWidgets('tidak ada blok kategori ganda di beranda', (tester) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(() async {
+      await _loadFonts();
+      await _seed(db); // bulan ini: Makan siang (cat 1) + Ojek (cat 2)
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    // Label strip ganda (lama "Kategori cepat", baru "Top kategori")
+    // tidak boleh ada — seksi memakai judul "Pengeluaran bulan ini".
+    expect(find.text('Kategori cepat'), findsNothing);
+    expect(find.text('Top kategori'), findsNothing);
+    expect(find.text('Pengeluaran bulan ini'), findsOneWidget);
+    // Nama kategori muncul tepat SEKALI (di seksi Top, bukan 2x:
+    // strip + seksi seperti v1.14.x awal).
+    expect(find.text('Makan & Minum'), findsOneWidget);
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // Regresi kritik brutal v1.14.x (4): tile ketiga tanpa budget tidak
+  // lagi kartu "— / belum diatur" setinggi tile bernilai.
+  testWidgets('tile budget kosong = ajakan ringkas, bukan kartu hampa', (
+    tester,
+  ) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(() async {
+      await _loadFonts();
+      await _seed(db); // tanpa budget
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    expect(find.text('Belum diatur'), findsOneWidget);
+    expect(find.text('—'), findsNothing);
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // Regresi kritik brutal v1.14.x (5): hijau pemasukan TETAP
+  // (tidak ikut aksen tema) — kontras ≥4.5:1 di kedua tema, dan tidak
+  // pernah sama dengan merah pengeluaran walau aksen = merah.
+  testWidgets('income hijau tetap kontras di kedua tema', (tester) async {
+    double lum(Color c) {
+      double f(double v) =>
+          v <= 0.03928 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4).toDouble();
+      return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+    }
+
+    double ratio(Color a, Color b) {
+      final hi = max(lum(a), lum(b));
+      final lo = min(lum(a), lum(b));
+      return (hi + 0.05) / (lo + 0.05);
+    }
+
+    final db = await _newDb(tester);
+    await tester.runAsync(() async {
+      await _loadFonts();
+      await _seed(db);
+    });
+
+    // Aksen merah = kasus terburuk v1.13.x (Masuk == Keluar == merah).
+    for (final t in [
+      AppTheme.light(seed: const Color(0xFFDC2626)),
+      AppTheme.dark(seed: const Color(0xFFDC2626)),
+    ]) {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [dbProvider.overrideWithValue(db)],
+          child: MaterialApp(theme: t, home: const HomeScreen()),
+        ),
+      );
+      for (var i = 0; i < 40; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      final ctx = tester.element(find.byType(HomeScreen));
+      final income = AppColors.incomeOf(ctx);
+      final expense = AppColors.expenseOf(ctx);
+      expect(income, isNot(equals(expense)),
+          reason: 'Masuk tidak boleh sama dengan Keluar (aksen merah)');
+      // Kontras vs surface kartu di tema aktif.
+      final surface = t.cardTheme.color ?? t.colorScheme.surface;
+      expect(ratio(income, surface), greaterThanOrEqualTo(4.5));
     }
     await _flushDriftCloseTimer(tester);
   });
@@ -283,10 +467,9 @@ void main() {
   });
 
   // Regresi overflow CI v1.13.0: font fallback Linux lebih lebar dari
-  // Segoe — Row hero (357), kategori cepat (638), status budget (833)
-  // jebol 31px di 390px. Viewport 300px mensimulasikan teks panjang
-  // agar jebol duluan di lokal. Test gagal otomatis bila ada
-  // RenderFlex overflow (Flutter melempar exception saat pump).
+  // Segoe — Row hero, status budget jebol di 390px. Viewport 300px
+  // mensimulasikan teks panjang agar jebol duluan di lokal. Test gagal
+  // otomatis bila ada RenderFlex overflow (Flutter melempar saat pump).
   testWidgets('tidak overflow di viewport sempit 300px', (tester) async {
     final db = await _newDb(tester, size: const Size(300, 844));
     await tester.runAsync(() async {
@@ -307,7 +490,7 @@ void main() {
     for (var i = 0; i < 60; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
-    expect(find.text('SALDO MYWALLET'), findsOneWidget);
+    expect(find.text('SALDO SAAT INI'), findsOneWidget);
     await _flushDriftCloseTimer(tester);
   });
 }

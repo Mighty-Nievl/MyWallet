@@ -20,7 +20,6 @@ import '../design/app_typography.dart';
 import '../display.dart';
 import '../format.dart';
 import '../widgets/tx_tile.dart';
-import 'categories_screen.dart';
 import 'settings_screen.dart';
 import 'tx_form_screen.dart';
 
@@ -111,8 +110,8 @@ final _prevMonthExpenseProvider = FutureProvider<int>((ref) async {
   return (await db.getTotals(from, to)).$2;
 });
 
-/// Beranda (pola GoPay): kepala sapaan berwarna aksen, kartu saldo
-/// gradien aksen, deretan aksi cepat, banner insight, tile metrik,
+/// Beranda: kepala sapaan berwarna aksen, kartu saldo gradien aksen,
+/// nav bulan (selalu tampil), tile metrik, banner insight,
 /// top kategori proporsional, terakhir dikelompokkan per tanggal.
 ///
 /// Header PINNED (di luar scroll) — pintu Pengaturan tidak pernah
@@ -193,25 +192,15 @@ class HomeScreen extends ConsumerWidget {
                       ),
                       child: Row(
                         children: [
-                          // Avatar inisial ala mockup — lingkaran hijau
-                          // solid di kiri sapaan; ketuk = Pengaturan.
-                          // Tombol dipaksa 48px oleh framework (min
-                          // sentuh) → bungkus SizedBox lebar 40 supaya
-                          // lingkaran mulai di x16 dan nama di x68.
+                          // Avatar inisial — identitas visual saja (bukan tombol).
+                          // Satu-satunya pintu Pengaturan adalah ikon gear
+                          // di kanan (menghindari duplikasi avatar+gear yang
+                          // membuka layar sama + tooltip 'Profil' yang salah
+                          // di screen reader).
                           SizedBox(
                             width: 40,
-                            child: IconButton(
-                              constraints: const BoxConstraints(
-                                minWidth: 40,
-                                minHeight: 48,
-                              ),
-                              onPressed: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => const SettingsScreen(),
-                                ),
-                              ),
-                              tooltip: 'Profil',
-                              icon: CircleAvatar(
+                            child: Center(
+                              child: CircleAvatar(
                                 radius: 20,
                                 backgroundColor: Theme.of(
                                   context,
@@ -224,10 +213,6 @@ class HomeScreen extends ConsumerWidget {
                                     fontSize: 16,
                                   ),
                                 ),
-                              ),
-                              style: IconButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                foregroundColor: Colors.white,
                               ),
                             ),
                           ),
@@ -278,35 +263,10 @@ class HomeScreen extends ConsumerWidget {
                               ],
                             ),
                           ),
-                          // Lonceng + gear rapat ala mockup (pusat ikon
-                          // 40px) — dibungkus SizedBox karena IconButton
-                          // selalu melebar ke 48px.
-                          SizedBox(
-                            width: 40,
-                            child: IconButton(
-                              constraints: const BoxConstraints(
-                                minWidth: 40,
-                                minHeight: 48,
-                              ),
-                              onPressed: () => ScaffoldMessenger.of(context)
-                                ..hideCurrentSnackBar()
-                                ..showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Belum ada notifikasi.'),
-                                  ),
-                                ),
-                              tooltip: 'Notifikasi',
-                              icon: const Icon(
-                                Icons.notifications_none_outlined,
-                              ),
-                              style: IconButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                iconSize: 24,
-                                foregroundColor: Colors.white,
-                              ),
-                            ),
-                          ),
-                          // Gear: pusat 40px dari lonceng, ala mockup.
+                          // Gear — satu-satunya pintu Pengaturan di Beranda
+                          // (lonceng lama dihapus: ia cuma snackbar
+                          // "Belum ada notifikasi" — bukan jalan ke fitur
+                          // Pengingat harian yang hidup di Pengaturan).
                           SizedBox(
                             width: 40,
                             child: IconButton(
@@ -340,28 +300,28 @@ class HomeScreen extends ConsumerWidget {
                   top: statusPad + 73,
                   left: AppSpacing.page,
                   right: AppSpacing.page,
-                  child: _HeroCard(balance: balance, onGoTab: onGoTab),
+                  child: _HeroCard(balance: balance),
                 ),
               ],
             ),
             Expanded(
               child: CustomScrollView(
                 slivers: [
-                  // Nav bulan hanya tampil saat menjelajah bulan LAIN —
-                  // tampilan default mengikuti mockup: sapaan → kartu →
-                  // aksi cepat. Saat aktif, chip "Bulan ini" di dalamnya
-                  // menjadi jalan pulang ke bulan berjalan.
-                  if (month != currentMonthKey())
-                    SliverToBoxAdapter(
-                      key: const ValueKey('home:monthnav'),
-                      child: _pad(
-                        AppMonthNav(month: month, onShift: shift),
-                        top: AppSpacing.s16,
-                      ),
-                    ),
+                  // Nav bulan SELALU tampil (semua tab Beranda/Riwayat/Budget/
+                  // Laporan berbagi selectedMonthProvider yang sama): tanpa
+                  // ini, label "Masuk OKT / Keluar OKT" tidak punya kontrol
+                  // bulan — chicken-and-egg v1.13.x. Chip bulan jadi
+                  // penanda konteks + jalan pulang saat menjelajah.
                   SliverToBoxAdapter(
-                    key: const ValueKey('home:quickactions'),
-                    child: _pad(_QuickActions(onGoTab: onGoTab)),
+                    key: const ValueKey('home:monthnav'),
+                    child: _pad(
+                      AppMonthNav(month: month, onShift: shift),
+                      top: AppSpacing.s16,
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    key: const ValueKey('home:tiles'),
+                    child: _pad(_StatTiles(month: month, totals: totals)),
                   ),
                   SliverToBoxAdapter(
                     key: const ValueKey('home:banners'),
@@ -373,14 +333,9 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  SliverToBoxAdapter(
-                    key: const ValueKey('home:quickcats'),
-                    child: _pad(_QuickCategories(onGoTab: onGoTab)),
-                  ),
-                  SliverToBoxAdapter(
-                    key: const ValueKey('home:tiles'),
-                    child: _pad(_StatTiles(month: month, totals: totals)),
-                  ),
+                  // Top kategori + terakhir dicatat: tanpa quick-actions,
+                  // strip kategori ganda, & banner ganda, judul seksi sudah
+                  // terlihat di layar pertama (fold ~764px di 390x844).
                   if (showTop) ...[
                     const SliverToBoxAdapter(
                       child: SizedBox(height: AppSpacing.sectionGap),
@@ -486,14 +441,19 @@ String _weekday(int w) {
   return (w >= 1 && w <= 7) ? names[w] : '';
 }
 
-/// Kartu saldo (pola GoPay): gradien aksen + saldo SEMUA WAKTU +
-/// tombol aksi. Arus bulan, delta, dan budget pindah ke tile & banner
-/// di bawah — kartu ringkas, hanya berisi hal yang selalu berlaku.
+/// Kartu saldo: gradien aksen + saldo SEMUA WAKTU + dua aksi pencatatan.
+/// Arus bulan, delta, dan budget pindah ke tile & banner di bawah —
+/// kartu ringkas, hanya berisi hal yang selalu berlaku.
+///
+/// Dua pil SELALU berbeda tampilan dan tujuan: solid putih = Catat
+/// pengeluaran (jalur utama, TxFormScreen default isExpense=true),
+/// ghost = Pemasukan (startAsExpense:false) — v1.13.x kedua pil membuka
+/// form pengeluaran yang sama. Pill ketiga "Detail" dihapus: ia cuma
+/// alias tab Laporan yang sudah ada di nav bar.
 class _HeroCard extends ConsumerWidget {
-  const _HeroCard({required this.balance, required this.onGoTab});
+  const _HeroCard({required this.balance});
 
   final AsyncValue<int> balance;
-  final ValueChanged<int>? onGoTab;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -527,7 +487,10 @@ class _HeroCard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'SALDO MYWALLET',
+                // Penanda horizon: angka ini ALL-TIME, bukan bulan ini
+                // (v1.13.x "SALDO MYWALLET" tanpa konteks — tile di bawah
+                // justru bulanan, dua horizon tercampur tanpa pembeda).
+                'SALDO SAAT INI',
                 style: AppType.labelMuted(context).copyWith(
                   color: Colors.white.withValues(alpha: 0.9),
                   letterSpacing: 0.8,
@@ -537,10 +500,7 @@ class _HeroCard extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.s4),
               balance.when(
-                loading: () => Text(
-                  '…',
-                  style: AppType.balance(context).copyWith(color: Colors.white),
-                ),
+                loading: () => const AppSkeleton(lines: 1),
                 error: (e, _) => Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -569,23 +529,16 @@ class _HeroCard extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.s16),
+              // Dua aksi pencatatan yang benar-benar berbeda: pengeluaran
+              // (solid, jalur utama) vs pemasukan (ghost). Target sentuh
+              // 48px sesuai token touchMin.
               Row(
                 children: [
                   Expanded(
                     child: _pillButton(
                       context,
-                      label: '+ Catat',
+                      label: '+ Catat keluar',
                       solid: true,
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const TxFormScreen()),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.s16),
-                  Expanded(
-                    child: _pillButton(
-                      context,
-                      label: '- Pengeluaran',
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) =>
@@ -594,25 +547,28 @@ class _HeroCard extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  if (onGoTab != null) ...[
-                    const SizedBox(width: AppSpacing.s16),
-                    Expanded(
-                      child: _pillButton(
-                        context,
-                        label: 'Detail',
-                        onTap: () => onGoTab!(3),
+                  const SizedBox(width: AppSpacing.s8),
+                  Expanded(
+                    child: _pillButton(
+                      context,
+                      label: '+ Pemasukan',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const TxFormScreen(startAsExpense: false),
+                        ),
                       ),
                     ),
-                  ],
+                  ),
                 ],
               ),
             ],
           ),
-          // Mata toggle saldo — mockup: ikon terlipat saat saldo tampil,
-          // di baris label tepi kanan (right -16 dari tepi kartu).
+          // Mata toggle saldo — 48px penuh (AppSpacing.touchMin):
+          // cukup di dalam kartu (right 0), tidak 2px dari tepi.
           Positioned(
             top: 0,
-            right: -14,
+            right: 0,
             child: IconButton(
               alignment: Alignment.centerRight,
               onPressed: () =>
@@ -641,10 +597,13 @@ class _HeroCard extends ConsumerWidget {
   }
 }
 
-/// Tombol pil ala mockup: solid putih (teks aksen gelap) atau ghost
-/// putih 15% di atas gradien. Bila aksen tema terang sehingga teks
-/// putih di ghost <4.5:1, fallback hitam 30% (menggelapkan) — kontras
-/// terjaga di semua aksen. Tinggi 40px (mockup 39px).
+/// Tombol pil di atas gradien hero: solid putih (teks aksen gelap) atau
+/// ghost putih 15% di atas gradien. Ghost SELALU berboder putih
+/// (v1.13.x border dimatikan saat kontras lolos hitungan — tanpa border,
+/// isi putih 15% vs gradien cuma 1.39:1 sehingga pil tidak kebaca tombol).
+/// Bila aksen tema terang sehingga teks putih di ghost <4.5:1, fallback
+/// hitam 30% (menggelapkan) + border putih tetap. Tinggi 48px =
+/// AppSpacing.touchMin (mockup 39px dikorbankan demi target sentuh).
 Widget _pillButton(
   BuildContext context, {
   required String label,
@@ -660,7 +619,9 @@ Widget _pillButton(
   final shape = RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(999),
     side: BorderSide(
-      color: Colors.white.withValues(alpha: solid || whiteOk ? 0 : 0.40),
+      color: solid
+          ? Colors.transparent
+          : Colors.white.withValues(alpha: 0.55),
     ),
   );
   return Material(
@@ -670,7 +631,7 @@ Widget _pillButton(
       onTap: onTap,
       borderRadius: BorderRadius.circular(999),
       child: SizedBox(
-        height: 40,
+        height: AppSpacing.touchMin,
         child: Center(
           child: Text(
             label,
@@ -684,203 +645,6 @@ Widget _pillButton(
             ),
           ),
         ),
-      ),
-    ),
-  );
-}
-
-/// Deretan 5 aksi cepat (pola lingkaran GoPay): Budget, Laporan,
-/// Riwayat, Kategori, Bulan ini — persis urutan mockup. Target 48px.
-class _QuickActions extends ConsumerWidget {
-  const _QuickActions({required this.onGoTab});
-  final ValueChanged<int>? onGoTab;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final items = <({IconData icon, String label, VoidCallback onTap})>[
-      if (onGoTab != null) ...[
-        (
-          icon: Icons.savings_outlined,
-          label: 'Budget',
-          onTap: () => onGoTab!(2),
-        ),
-        (
-          icon: Icons.bar_chart_outlined,
-          label: 'Laporan',
-          onTap: () => onGoTab!(3),
-        ),
-        (
-          icon: Icons.receipt_long_outlined,
-          label: 'Riwayat',
-          onTap: () => onGoTab!(1),
-        ),
-      ],
-      (
-        icon: Icons.sell_outlined,
-        label: 'Kategori',
-        onTap: () => Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => const CategoriesScreen())),
-      ),
-    ];
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.s16),
-      child: Row(
-        children: [
-          for (final it in items)
-            Expanded(
-              child: _quickItem(
-                context,
-                icon: it.icon,
-                label: it.label,
-                onTap: it.onTap,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-Widget _quickItem(
-  BuildContext context, {
-  required IconData icon,
-  required String label,
-  required VoidCallback onTap,
-}) {
-  final scheme = Theme.of(context).colorScheme;
-  return InkWell(
-    onTap: onTap,
-    borderRadius: AppRadius.mdAll,
-    child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
-      child: Column(
-        children: [
-          Container(
-            width: AppSpacing.touchMin,
-            height: AppSpacing.touchMin,
-            decoration: BoxDecoration(
-              color: scheme.primary.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 22, color: scheme.primary),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: AppType.secondary(context),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-/// Pintasan kategori (pola grid layanan GoPay): ketuk → tab Riwayat
-/// dengan filter kategori itu; "Semua" mengosongkan filter. Glyph
-/// monochrome (CategoryGlyph) menjaga bahasa desain aplikasi.
-class _QuickCategories extends ConsumerWidget {
-  const _QuickCategories({required this.onGoTab});
-  final ValueChanged<int>? onGoTab;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final goTab = onGoTab;
-    if (goTab == null) return const SizedBox.shrink();
-    final cats = ref.watch(categoriesProvider);
-    return cats.when(
-      loading: () => const SizedBox.shrink(),
-      error: (e, _) => const SizedBox.shrink(),
-      data: (list) {
-        if (list.isEmpty) return const SizedBox.shrink();
-        final tint = Theme.of(context).colorScheme.primary;
-        return Padding(
-          padding: const EdgeInsets.only(top: AppSpacing.s16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Kategori cepat',
-                      style: AppType.sectionTitle(context),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      ref.read(historyFilterProvider.notifier).state =
-                          const HistoryFilter();
-                      goTab(1);
-                    },
-                    child: const Text('Semua'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.s4),
-              Row(
-                children: [
-                  for (final c in list.take(5))
-                    Expanded(
-                      child: _quickCategory(
-                        context,
-                        emoji: c.icon,
-                        name: c.name,
-                        tint: tint,
-                        onTap: () {
-                          ref.read(historyFilterProvider.notifier).state =
-                              HistoryFilter(categoryId: c.id);
-                          goTab(1);
-                        },
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-Widget _quickCategory(
-  BuildContext context, {
-  required String emoji,
-  required String name,
-  required Color tint,
-  required VoidCallback onTap,
-}) {
-  return InkWell(
-    onTap: onTap,
-    borderRadius: AppRadius.mdAll,
-    child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
-      child: Column(
-        children: [
-          Container(
-            width: AppSpacing.touchMin,
-            height: AppSpacing.touchMin,
-            decoration: BoxDecoration(
-              color: tint.withValues(alpha: 0.12),
-              borderRadius: AppRadius.mdAll,
-            ),
-            child: CategoryGlyph(
-              emoji: emoji,
-              size: AppSpacing.touchMin,
-              iconSize: 22,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            name,
-            style: AppType.secondary(context),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
       ),
     ),
   );
@@ -908,7 +672,9 @@ class _InsightBanners extends ConsumerWidget {
     final banners = <Widget>[];
 
     // 1) Delta pengeluaran vs bulan lalu (watch provider).
-    final prev = ref.watch(_prevMonthExpenseProvider).value;
+    final prevAsync = ref.watch(_prevMonthExpenseProvider);
+    final prevLoading = prevAsync.isLoading;
+    final prev = prevAsync.value;
     final cur = totals.value?.$2;
     if (prev != null && prev > 0 && cur != null) {
       final prevKey = shiftMonth(month, -1);
@@ -947,7 +713,7 @@ class _InsightBanners extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.s8),
               if (onGoTab != null)
-                _bannerPill(
+                _bannerCta(
                   context,
                   label: 'Lihat laporan',
                   onTap: () => onGoTab!(3),
@@ -959,6 +725,8 @@ class _InsightBanners extends ConsumerWidget {
     }
 
     // 2) Budget bulan ini — plus ajakan saat belum ada (CTA → tab).
+    // Ringkas: angka sisa sudah ada di tile "Sisa budget" di atas,
+    // banner hanya status pacing + bar (tanpa mengulang "Rp x dari Rp y").
     final list = budgets.value;
     if (list != null && list.isEmpty) {
       if (onGoTab != null) {
@@ -977,7 +745,7 @@ class _InsightBanners extends ConsumerWidget {
                   ).copyWith(color: Colors.white),
                 ),
                 const SizedBox(height: AppSpacing.s4),
-                _bannerPill(
+                _bannerCta(
                   context,
                   label: 'Atur budget',
                   onTap: () => onGoTab!(2),
@@ -1013,52 +781,53 @@ class _InsightBanners extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Budget ${monthLabel(month)}',
-                      style: AppType.labelMuted(
-                        context,
-                      ).copyWith(color: Colors.white.withValues(alpha: 0.85)),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.s4),
-                  Flexible(
-                    child: Text(
-                      status,
-                      style: AppType.secondary(
-                        context,
-                      ).copyWith(color: barColor, fontWeight: FontWeight.w600),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
+              Text(
+                'Budget ${monthLabel(month)}',
+                style: AppType.labelMuted(
+                  context,
+                ).copyWith(color: Colors.white.withValues(alpha: 0.85)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: AppSpacing.s8),
               AppProgress(value: pct, color: barColor, height: 8),
               const SizedBox(height: AppSpacing.s4),
               Text(
-                '${display.money(spent)} dari ${display.money(limit)}',
-                style: AppType.secondary(
-                  context,
-                ).copyWith(color: Colors.white.withValues(alpha: 0.92)),
+                // Satu baris status: angka ringkas (sisa detail ada di tile
+                // "Sisa budget" di atas + tab Budget) + status pacing.
+                '$status · ${display.money(spent)} dari ${display.money(limit)}',
+                style: AppType.secondary(context).copyWith(
+                  color: Colors.white.withValues(alpha: 0.92),
+                ),
               ),
               if (onGoTab != null)
-                _bannerPill(context, label: 'Atur', onTap: () => onGoTab!(2)),
+                _bannerCta(context, label: 'Atur', onTap: () => onGoTab!(2)),
             ],
           ),
         ),
       );
     }
 
-    if (banners.isEmpty) return const SizedBox.shrink();
+    if (banners.isEmpty) {
+      // Masih loading (salah satu provider belum ada data): skeleton
+      // setinggi banner agar layout tidak lompat saat data datang
+      // (v1.13.x SizedBox.shrink di sini, banner "muncul" belakangan).
+      final anyLoading =
+          totals.isLoading || budgets.isLoading || prevLoading;
+      if (!anyLoading) return const SizedBox.shrink();
+      return const Padding(
+        padding: EdgeInsets.only(top: AppSpacing.s16),
+        child: AppSkeleton(lines: 2),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.s16),
+      // start: kedua banner mulai dari y yang sama sehingga judulnya
+      // sejajar (v1.13.x center → offset 20px atas-bawah di
+      // dark/no-budget, terukur di golden). Bukan stretch: stretch di
+      // dalam scroll vertikal = height tak terbatas → crash layout.
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (var i = 0; i < banners.length; i++) ...[
             if (i > 0) const SizedBox(width: AppSpacing.s12),
@@ -1091,41 +860,47 @@ Widget _bannerBox(
   );
 }
 
-/// Tombol pil putih di atas banner gelap.
-Widget _bannerPill(
+/// CTA teks di dalam banner insight — menggantikan _bannerPill v1.13.x
+/// (pil putih 48px dengan 1-2 kata: "Atur", "Lihat laporan"). Pil penuh
+/// untuk 1-2 kata boros ruang & meniru tombol primer; link teks + ikon
+/// panah cukup sebagai affordance di dalam kartu yang sudah jelas
+/// bisa diketuk. Target sentuh 48px dipertahankan.
+Widget _bannerCta(
   BuildContext context, {
   required String label,
   required VoidCallback onTap,
 }) {
-  final shape = RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(999),
-    side: BorderSide(color: Colors.white.withValues(alpha: 0.40)),
-  );
-  return Material(
-    color: Colors.black.withValues(alpha: 0.30),
-    shape: shape,
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
-      child: SizedBox(
-        height: AppSpacing.touchMin,
-        child: Center(
-          child: Text(
+  return InkWell(
+    onTap: onTap,
+    borderRadius: AppRadius.smAll,
+    child: SizedBox(
+      height: AppSpacing.touchMin,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
             label,
-            style: AppType.secondary(
-              context,
-            ).copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+            style: AppType.secondary(context).copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-        ),
+          const SizedBox(width: AppSpacing.s4),
+          const Icon(
+            Icons.arrow_forward,
+            size: 16,
+            color: Colors.white,
+          ),
+        ],
       ),
     ),
   );
 }
 
-/// Tile metrik sebaris (mockup ala GoPay): Masuk / Keluar bulan +
-/// Sisa budget. Nilai memakai palet semantik tunggal
-/// (incomeOf/expenseOf); Masuk/Keluar di-gate pengaturan tampilan,
-/// ringkasan harian pindah ke [_DailyStrip].
+/// Tile metrik sebaris: Masuk / Keluar bulan berjalan + Sisa budget.
+/// Nilai memakai palet semantik tunggal (incomeOf/expenseOf);
+/// Masuk/Keluar di-gate pengaturan tampilan, ringkasan harian pindah
+/// ke [_DailyStrip].
 class _StatTiles extends ConsumerWidget {
   const _StatTiles({required this.month, required this.totals});
 
@@ -1137,6 +912,9 @@ class _StatTiles extends ConsumerWidget {
     final display = ref.watch(displayPrefsProvider);
     final showTotals = ref.watch(showMonthTotalsProvider).value ?? true;
     final budgets = ref.watch(budgetsProvider);
+    // Singkatan bulan mengikuti bulan yang sedang dijelajah
+    // (chip AppMonthNav di atas selalu menunjukkan konteks penuh).
+    final mLabel = monthAbbrLabel(month);
 
     final tiles = <Widget>[];
     final t = totals.value;
@@ -1145,7 +923,7 @@ class _StatTiles extends ConsumerWidget {
         _tile(
           context,
           child: _MiniStat(
-            label: 'Masuk ${monthAbbrLabel(month)}',
+            label: 'Masuk $mLabel',
             value: display.signed(t.$1, isExpense: false),
             valueColor: AppColors.incomeOf(context),
           ),
@@ -1155,15 +933,16 @@ class _StatTiles extends ConsumerWidget {
         _tile(
           context,
           child: _MiniStat(
-            label: 'Keluar ${monthAbbrLabel(month)}',
+            label: 'Keluar $mLabel',
             value: display.signed(t.$2, isExpense: true),
             valueColor: AppColors.expenseOf(context),
           ),
         ),
       );
     }
-    // Tile ketiga: SISA BUDGET (mockup ala GoPay). Ringkasan "Hari ini"
-    // pindah ke seksi Terakhir dicatat supaya baris ini tetap 3 kolom.
+    // Tile ketiga: ringkasan budget bulan yang sedang dijelajah.
+    // Tanpa budget yang diatur, tile menyusut jadi satu baris ajakan
+    // (bukan kartu "— / belum diatur" setinggi tile bernilai).
     final items = budgets.value;
     final totalLimit = (items ?? const []).fold<int>(
       0,
@@ -1177,9 +956,9 @@ class _StatTiles extends ConsumerWidget {
       _tile(
         context,
         child: _MiniStat(
-          label: 'SISA BUDGET',
+          label: 'Sisa budget',
           value: !hasBudget
-              ? '—'
+              ? 'Belum diatur'
               : sisa < 0
               ? '-${display.money(sisa.abs())}'
               : display.money(sisa),
@@ -1189,7 +968,7 @@ class _StatTiles extends ConsumerWidget {
               ? AppColors.expenseOf(context)
               : null,
           sub: !hasBudget
-              ? 'belum diatur'
+              ? null
               : sisa < 0
               ? 'lewat batas'
               : daysLeft <= 0
@@ -1201,8 +980,16 @@ class _StatTiles extends ConsumerWidget {
 
     if (tiles.isEmpty) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.s12),
+      // s16 = jarak blok standar (monthnav, banner); sectionGap (24) hanya
+      // antar SEKSI besar (topcats, recent) — satu ritme, bukan 3 token
+      // campur (v1.13.x s12/s16/s24 → jarak 20/35/43px tak beraturan).
+      padding: const EdgeInsets.only(top: AppSpacing.s16),
+      // start (bukan center): semua tile mulai dari y yang sama sehingga
+      // label sejajar (v1.13.x center → tile tanpa sub-line bergeser 10px,
+      // terukur di golden). Bukan stretch: stretch di dalam scroll
+      // vertikal memaksa height tak terbatas ke children → crash layout.
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (var i = 0; i < tiles.length; i++)
             Expanded(
@@ -1301,8 +1088,7 @@ class _CategoryList extends ConsumerWidget {
           return const AppEmptyState(
             icon: '📊',
             title: 'Belum ada pengeluaran bulan ini',
-            subtitle:
-                'Setiap rupiah yang dicatat bikin gambaran keuanganmu makin jelas. Yuk mulai dari satu transaksi!',
+            subtitle: 'Catat pengeluaran pertamamu bulan ini.',
           );
         }
         final total = list.fold<int>(0, (s, e) => s + e.total);
@@ -1423,9 +1209,8 @@ class _RecentList extends ConsumerWidget {
         if (list.isEmpty) {
           return const AppEmptyState(
             icon: '💸',
-            title: 'Hari ini belum ada catatan',
-            subtitle:
-                'Belum ada transaksi — hari yang tenang juga patut dirayakan. Ketuk “Catat” saat ada pemasukan atau pengeluaran.',
+            title: 'Belum ada transaksi',
+            subtitle: 'Ketuk + Catat keluar saat ada pemasukan atau pengeluaran.',
           );
         }
         final groups = <DateTime, List<TxWithCategory>>{};
