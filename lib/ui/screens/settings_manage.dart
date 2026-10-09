@@ -127,6 +127,14 @@ class _ManageSettingsPageState extends ConsumerState<ManageSettingsPage>
                               'Semua transaksi sebagai file CSV',
                           onTap: exportCsv,
                         ),
+                      if (_match('laporan', 'pdf', const ['pdf', 'laporan']))
+                        SettingRow(
+                          icon: Icons.picture_as_pdf_outlined,
+                          title: 'Export PDF laporan',
+                          subtitle:
+                              'Ringkasan + rincian bulan aktif (100% offline)',
+                          onTap: exportMonthPdf,
+                        ),
                       if (_match('backup', 'salinan', const ['backup']))
                         SettingRow(
                           icon: Icons.backup_outlined,

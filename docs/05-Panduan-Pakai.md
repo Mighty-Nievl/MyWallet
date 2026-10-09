@@ -10,7 +10,7 @@
 - "Terakhir dicatat" = 5 transaksi terbaru — ketuk untuk edit.
 
 ## Navigasi bawah
-`[ home ] [ history ] [ + ] [ budget ] [ laporan ]` — tombol **+** di tengah untuk mencatat.
+`[ home ] [ history ] [ + ] [ budget ] [ laporan ] [ utang ]` — tombol **+** di tengah untuk mencatat, tab **Utang** paling kanan untuk utang-piutang.
 
 ## Mencatat (tombol + tengah)
 1. Pilih **Keluar** / **Masuk**.
@@ -18,6 +18,8 @@
 3. Pilih kategori (atau "+ Tambah kategori baru").
 4. Catatan opsional, tanggal bisa diubah (default hari ini).
 5. Simpan. Saldo & ringkasan langsung berubah.
+
+> **Scan struk (HP Android/iOS):** ketuk ikon scan di kanan judul → pilih kamera/galeri → OCR jalan 100% di HP (tanpa internet) → nominal + tanggal + warung + saran kategori terisi otomatis. **Cek lagi sebelum Simpan** — hasil OCR bisa meleset di struk lusuh.
 
 ## Riwayat
 - Kolom cari untuk catatan, chip **Semua/Keluar/Masuk**, chip kategori untuk filter.
@@ -32,6 +34,13 @@
 ## Laporan
 - Grafik batang 6 bulan (hijau = masuk, merah = keluar).
 - Pie + rincian pengeluaran per kategori bulan berjalan.
+
+## Utang (tab ke-5)
+- **Utang** = aku pinjam (catat = saldo BERTAMBAH, tiap bayar = saldo berkurang).
+- **Piutang** = aku meminjami (catat = saldo BERKURANG, tiap terima = saldo bertambah). Tiap aksi otomatis tercatat juga di Riwayat (label "Utang — Budi" / "Bayar utang — Budi") sehingga laporan & PDF ikut.
+- Kartu ringkas di Beranda (sisa utang vs piutang) — ketuk **Kelola** untuk buka tab Utang. Kosong = kartu sembunyi.
+- Bayar bisa dicicil berkali-kali; nominal tidak bisa melebihi sisa. Jatuh tempo opsional — yang lewat ditandai merah LEWAT. Lunas otomatis saat sisa 0.
+- Ubah: nama/total/tanggal/tempo/catatan (tipe dikunci; total baru tidak boleh di bawah yang sudah dibayar). Hapus: beserta riwayat bayar + catatan transaksinya (konfirmasi dulu, tanpa undo).
 
 ## Pengaturan (ikon ⚙️ kanan atas Beranda)
 Halaman hub berisi 4 grup — ketuk untuk buka sub-halaman masing-masing. Kolom cari di hub memfilter semua item; ketuk hasil untuk lompat ke sub-halamannya.

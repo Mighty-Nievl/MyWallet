@@ -109,7 +109,20 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] Kepala disusun ulang persis mockup: blok gelap menepi tepi atas, kartu saldo MENUMPUK separuh masuk blok & separuh keluar ke halaman terang (radius 16, bayangan lembut); label “SALDO MYWALLET”, mata saldo terlipat, pil aksi 39px (putih solid + dua pil putih 15%).
 - [x] Nav bulan hanya muncul saat menjelajah bulan lain; aksi cepat 4 chip (Catat/Pemasukan/Budget/Laporan); tile Masuk OKT / Keluar OKT / SISA BUDGET (hari tersisa); ringkasan “Hari ini” pindah ke seksi Terakhir dicatat; kartu dijenuhkan +35% selaras seed mockup, kontras putih tetap ≥4.5:1 (48 pengukuran, min 4.76:1). 39/39 hijau.
 
-## v1.14 — Berikutnya
+## v1.14 — Export PDF + Scan struk (rilis 8 Okt 2026 sebagai v1.14.0)
+- [x] Export PDF laporan bulanan 100% offline: `lib/data/report_pdf_service.dart` (fetch via `monthRangeOf` + `getTotals` + `totalsByCategory` + `watchHistory`, bangun `pdf` lokal, keluar via share sheet / simpan file — tanpa server/API-key, meniru pola `exportCsv()` + backup); tombol PDF di header Laporan + baris baru di Kelola; hasil: judul + ringkasan Masuk/Keluar/Selisih + rincian kategori (%) + daftar transaksi (tanggal/tipe/kategori/nominal).
+- [x] Scan struk on-device Fase A: `image_picker` (kamera/galeri, izin CAMERA baru) → `google_mlkit_text_recognition` (latin, 100% di HP) → teks → `lib/data/receipt_parse.dart` (fungsi murni: regex TOTAL/Grand Total abaikan TUNAI/KEMBALI, fallback angka terbesar non-tunai, tanggal numerik + "8 Okt 2026", merchant baris pertama, saran kategori word-boundary 7 kategori) → prefill form Catat (nominal selalu; tanggal/catatan/kategori hanya bila cocok + kolom kosong); tombol scan di header form + bottom sheet kamera/galeri; logika `_save()`/`addTransaction` TETAP (user cek manual + Simpan).
+- [x] Test baru `test/receipt_pdf_test.dart` (20 kasus: parse uang ID/EN, TOTAL vs tunai, grand total, fallback, tanggal, 7 kategori incl. anti-false-positive "tol di botol", PDF header %PDF- + bulan kosong). analyze bersih, 59/59 hijau.
+
+## v1.15 — Manajer utang-piutang (rilis 9 Okt 2026 sebagai v1.15.0)
+- [x] Dua tabel baru (`debts` + `debt_payments`) + 2 kolom tautan di `transactions` + migrasi v1→v2 aman (data lama utuh, kolom nullable, tabel kosong). Skema: `docs/03-Skema-Database.md`.
+- [x] Semantik saldo OTOMATIS (opsi B): utang = pinjam (catat = pemasukan, bayar = pengeluaran), piutang = meminjami (catat = pengeluaran, terima = pemasukan) — tiap catat/bayar menulis transaksi CERMIN (`debtId`/`debtPaymentId`) sehingga saldo + laporan + riwayat + PDF + CSV ikut tanpa ubah satu pun query lama. `lib/data/debt_actions.dart` (inti testable `insertDebt/insertDebtPayment/updateDebt/deleteDebt/deleteDebtPayment` + wrapper `WidgetRef` tipis).
+- [x] Cicilan parsial berkali-kali (opsi A) + anti-overpay (`DebtOverpayException` + error inline) + jatuh tempo opsional (LEWAT merah) + progress + lunas otomatis (dihitung `paid >= total`, tidak disimpan). Urutan: aktif dulu (tempo dekat), lunas abjad.
+- [x] Tab Utang ke-5 (`handshake` icon) + kartu ringkas Beranda (sisa utang vs piutang, sembunyi bila kosong, Kelola → tab 4) — bottom nav melebar dari 4 ke 5, `onGoTab` Beranda tetap.
+- [x] Layar `DebtScreen`: overview + seksi Aktif/Lunas + dialog catat/ubah (tipe SegmentedButton, dikunci saat ubah) + bottom sheet detail + dialog bayar + konfirmasi hapus (tanpa undo, cermin banyak). Komponen reuse: AppHeader/AppCard/AppProgress/AppEmptyState/AppSection/CategoryGlyph + `ThousandSeparatorInputFormatter` + `display.money/date`.
+- [x] Test `test/debt_test.dart` (15 kasus: cermin masuk/keluar, 2x cicilan, overpay, pas-lunas, validasi, urutan, ubah sinkron, hapus total, hapus cicilan, ringkasan) + `test/debt_widget_test.dart` (6 kasus: empty, list, dialog end-to-end + saldo, validasi inline, kartu Beranda + lompat tab). analyze bersih, 85/85 hijau.
+
+## v1.16 — Berikutnya
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).
 
@@ -118,9 +131,9 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [ ] Insight sederhana: "pengeluaran makan naik 20% vs bulan lalu".
 
 ## Nanti / butuh riset
-- Scan struk (OCR) — butuh ML Kit / layanan OCR.
+- [x] Scan struk on-device Fase A (rilis v1.14.0: ML Kit + `receipt_parse.dart` murni + prefill form). Fase B opt-in cloud (kirim TEKS ke DocStruct/OCR.Space bila ML Kit gagal di struk lusuh) — belum dibangun, butuh kunci + izin eksplisit.
 - Sinkronisasi antar-HP / cloud — mengubah asumsi offline-first, desain dulu di [[02-Arsitektur]].
-- Export PDF laporan bulanan.
+- [x] Export PDF laporan bulanan (rilis v1.14.0: `pdf` + `printing` lokal via `report_pdf_service.dart`, tanpa API public-apis).
 
 ## Catatan keputusan
-Arsitektur saat ini (Drift + Riverpod stream) sudah cukup sampai v1.2. Multi-dompet = tambah tabel `wallets` + kolom `walletId` di transactions + migrasi schema v1→v2.
+Arsitektur saat ini (Drift + Riverpod stream) sudah cukup sampai v1.2. Multi-dompet = tambah tabel `wallets` + kolom `walletId` di transactions + migrasi schema v2→v3 (v1→v2 sudah dipakai utang-piutang di v1.15).

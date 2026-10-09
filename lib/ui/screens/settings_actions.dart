@@ -11,6 +11,7 @@ import '../../data/backup_service.dart';
 import '../../data/lock_service.dart';
 import '../../data/providers.dart';
 import '../../data/reminder_service.dart';
+import '../../data/report_pdf_service.dart';
 import '../../data/settings.dart';
 import '../amount_input.dart';
 import '../changelog.dart';
@@ -548,6 +549,64 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
     }
   }
 
+  /// Export PDF laporan bulan aktif (laporan = bulan yang dipilih di
+  /// Beranda/Laporan). 100% lokal via `ReportPdfService`, tanpa server.
+  /// Tanya Simpan-file vs Bagikan dulu — sama kayak pola tombol di Laporan.
+  Future<void> exportMonthPdf() async {
+    final month = ref.read(selectedMonthProvider);
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (c) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.share_outlined),
+              title: const Text('Bagikan PDF'),
+              subtitle: Text('Laporan bulan $month'),
+              onTap: () => Navigator.pop(c, 'share'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.save_outlined),
+              title: const Text('Simpan ke file'),
+              subtitle: const Text('Pilih folder sendiri'),
+              onTap: () => Navigator.pop(c, 'save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (choice == null || !mounted) return;
+    try {
+      if (choice == 'save') {
+        final uri =
+            await ReportPdfService.saveMonthPdfToFile(ref, monthKey: month);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(uri == null
+                ? 'Simpan PDF dibatalkan.'
+                : 'PDF laporan $month tersimpan.'),
+          ),
+        );
+      } else {
+        final count =
+            await ReportPdfService.exportMonthPdf(ref, monthKey: month);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('PDF $month dibuat: $count transaksi.')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Export PDF gagal — coba lagi.')),
+        );
+      }
+    }
+  }
+
   Future<void> restoreDb() async {
     final src = await BackupService.pickRestoreFile();
     if (src == null || !mounted) return;
@@ -688,18 +747,18 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
 
   // ---------- Tentang ----------
 
+  /// Changelog ala STEP 4: bottom sheet scroll (bukan tembok teks).
+  ///
+  /// - Kepala: judul + subjudul + tombol Tutup (X).
+  /// - Versi terbaru disorot: kartu tint aksen + badge TERBARU.
+  /// - Tiap versi = pil versi + deskripsi; tinggi 85% layar.
+  /// - Data tetap dari [appChangelog] (satu sumber, sama kayak test).
   Future<void> showChangelog() async {
-    await showDialog<void>(
+    await showModalBottomSheet<void>(
       context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Changelog'),
-        content: SingleChildScrollView(
-          child: Text(formatChangelog()),
-        ),
-        actions: const [
-          _ChangelogClose(),
-        ],
-      ),
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (c) => const _ChangelogSheet(),
     );
   }
 }
@@ -886,13 +945,171 @@ class _AccentDot extends StatelessWidget {
   }
 }
 
-class _ChangelogClose extends StatelessWidget {
-  const _ChangelogClose();
+/// Bottom sheet changelog: versi terbaru disorot, tiap versi = pil +
+/// deskripsi. Satu bahasa dengan STEP 4 (border token, radius token,
+/// tipografi [AppType]). Data dari [appChangelog] — urutan terbaru dulu.
+class _ChangelogSheet extends StatelessWidget {
+  const _ChangelogSheet();
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton(
-        onPressed: () => Navigator.pop(context),
-        child: const Text('Tutup'));
+    final scheme = Theme.of(context).colorScheme;
+    return SafeArea(
+      child: FractionallySizedBox(
+        heightFactor: 0.85,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.page,
+            AppSpacing.s8,
+            AppSpacing.page,
+            AppSpacing.s16,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Changelog',
+                          style:
+                              AppType.screenTitle(context),
+                        ),
+                        Text(
+                          'Riwayat perubahan versi',
+                          style: AppType.secondary(context),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: AppRadius.mdAll,
+                      border: Border.all(
+                          color:
+                              AppColors.borderOf(context)),
+                    ),
+                    child: IconButton(
+                      onPressed: () =>
+                          Navigator.maybePop(context),
+                      icon:
+                          const Icon(Icons.close, size: 20),
+                      tooltip: 'Tutup',
+                      constraints:
+                          const BoxConstraints.tightFor(
+                              width: 40, height: 40),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.s12),
+              Expanded(
+                child: ListView.separated(
+                  itemCount: appChangelog.length,
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(
+                          height: AppSpacing.s8),
+                  itemBuilder: (c, i) {
+                    final e = appChangelog[i];
+                    final latest = i == 0;
+                    return Container(
+                      padding:
+                          const EdgeInsets.all(
+                              AppSpacing.s12),
+                      decoration: BoxDecoration(
+                        color: latest
+                            ? Color.alphaBlend(
+                                scheme.primary.withValues(
+                                    alpha: 0.12),
+                                scheme.surface,
+                              )
+                            : AppColors.subtleOf(
+                                context),
+                        borderRadius: AppRadius.mdAll,
+                        border: Border.all(
+                          color: latest
+                              ? scheme.primary
+                              : AppColors.borderOf(
+                                  context),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding:
+                                    const EdgeInsets
+                                        .symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: latest
+                                      ? scheme.primary
+                                      : scheme
+                                          .surfaceContainerHighest,
+                                  borderRadius:
+                                      BorderRadius.circular(
+                                          999),
+                                ),
+                                child: Text(
+                                  e.version,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight:
+                                        FontWeight.w700,
+                                    color: latest
+                                        ? scheme.onPrimary
+                                        : scheme
+                                            .onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                              if (latest) ...[
+                                const SizedBox(
+                                    width:
+                                        AppSpacing.s8),
+                                Text(
+                                  'TERBARU',
+                                  style: AppType.labelMuted(
+                                          context)
+                                      .copyWith(
+                                    fontWeight:
+                                        FontWeight.w700,
+                                    color: scheme.primary,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(
+                              height: AppSpacing.s8),
+                          Text(
+                            e.text,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

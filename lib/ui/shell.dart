@@ -3,14 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'screens/budget_screen.dart';
+import 'screens/debt_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/reports_screen.dart';
 import 'screens/tx_form_screen.dart';
 
-/// Kerangka utama Material 3: 4 tab via [NavigationBar] +
+/// Kerangka utama Material 3: 5 tab via [NavigationBar] +
 /// FAB Catat mengambang (tanpa notch, tanpa spacer manual).
-/// [ home ] [ history ] [ budget ] [ laporan ]
+/// [ home ] [ history ] [ + ] [ budget ] [ laporan ] [ utang ]
 /// Pengaturan dibuka dari header Beranda (bukan tab).
 ///
 /// FAB dibuka via Container Transform ([OpenContainer]): tombol melebar
@@ -26,7 +27,7 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  // 0=Beranda, 1=Riwayat, 2=Budget, 3=Laporan
+  // 0=Beranda, 1=Riwayat, 2=Budget, 3=Laporan, 4=Utang
   int _index = 0;
 
   void _go(int i) {
@@ -43,6 +44,7 @@ class _AppShellState extends State<AppShell> {
       const HistoryScreen(),
       const BudgetScreen(),
       const ReportsScreen(),
+      const DebtScreen(),
     ];
     return Scaffold(
       body: IndexedStack(index: _index, children: screens),
@@ -92,6 +94,11 @@ class _AppShellState extends State<AppShell> {
             icon: Icon(Icons.bar_chart_outlined),
             selectedIcon: Icon(Icons.bar_chart),
             label: 'Laporan',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.handshake_outlined),
+            selectedIcon: Icon(Icons.handshake),
+            label: 'Utang',
           ),
         ],
       ),

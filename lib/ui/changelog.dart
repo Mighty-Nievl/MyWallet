@@ -11,6 +11,16 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String text})>[
   (
+    version: 'v1.15.0',
+    text:
+        'Manajer utang-piutang (100% offline): tab Utang ke-5 + kartu ringkas di Beranda (sisa utang vs piutang, tap → Kelola). Utang = pinjam (catat = pemasukan, bayar = pengeluaran), Piutang = meminjami (catat = pengeluaran, terima = pemasukan) — tiap aksi menulis transaksi cermin otomatis sehingga saldo, laporan, riwayat, PDF & CSV ikut tanpa ubah query lama. Cicilan parsial berkali-kali + anti-overpay + jatuh tempo + progress + lunas otomatis. Skema DB v2 (migrasi v1→v2 aman, data lama utuh).',
+  ),
+  (
+    version: 'v1.14.0',
+    text:
+        'Export PDF laporan + Scan struk (100% offline): tombol PDF di Laporan & Kelola (ringkasan Masuk/Keluar/Selisih + rincian kategori % + daftar transaksi, via share sheet / simpan file, tanpa server/API-key); tombol scan di form Catat (kamera/galeri → ML Kit on-device → prefill nominal + tanggal + warung + saran kategori, user tetap cek & Simpan manual). Izin kamera baru. Logika simpan/transaksi tidak berubah.',
+  ),
+  (
     version: 'v1.13.1',
     text:
         'Samakan Beranda dengan mockup ala GoPay: sapaan personal “Hai, {nama}” '

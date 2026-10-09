@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
 import '../../data/providers.dart';
+import '../../data/report_pdf_service.dart';
 import '../components/app_card.dart';
 import '../components/app_empty_state.dart';
 import '../components/app_feedback.dart';
@@ -41,7 +42,12 @@ class ReportsScreen extends ConsumerWidget {
             AppSpacing.bottomPad,
           ),
           children: [
-            const AppHeader(title: 'Laporan'),
+            AppHeader(
+              title: 'Laporan',
+              actionIcon: Icons.picture_as_pdf_outlined,
+              actionTooltip: 'Export PDF bulan ini',
+              onAction: () => _exportPdf(context, ref, month),
+            ),
             const SizedBox(height: AppSpacing.s8),
             AppMonthNav(
               month: month,
@@ -71,6 +77,68 @@ class ReportsScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// Export PDF bulan aktif: tanya Simpan-file vs Bagikan dulu,
+  /// lalu panggil [ReportPdfService]. 100% lokal, tanpa server.
+  static Future<void> _exportPdf(
+    BuildContext context,
+    WidgetRef ref,
+    String month,
+  ) async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (c) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.share_outlined),
+              title: const Text('Bagikan PDF'),
+              subtitle: const Text('Lewat share sheet (cepat)'),
+              onTap: () => Navigator.pop(c, 'share'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.save_outlined),
+              title: const Text('Simpan ke file'),
+              subtitle: const Text('Pilih folder sendiri'),
+              onTap: () => Navigator.pop(c, 'save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (choice == null || !context.mounted) return;
+    try {
+      if (choice == 'save') {
+        final uri =
+            await ReportPdfService.saveMonthPdfToFile(ref, monthKey: month);
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(uri == null
+                ? 'Simpan PDF dibatalkan.'
+                : 'PDF laporan tersimpan.'),
+          ),
+        );
+      } else {
+        final count =
+            await ReportPdfService.exportMonthPdf(ref, monthKey: month);
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('PDF dibuat: $count transaksi.')),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Export PDF gagal — coba lagi.'),
+          ),
+        );
+      }
+    }
   }
 }
 

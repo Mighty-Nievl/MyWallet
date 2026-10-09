@@ -19,7 +19,7 @@ LazyDatabase _openConnection() {
   });
 }
 
-@DriftDatabase(tables: [Categories, Transactions, Budgets])
+@DriftDatabase(tables: [Categories, Transactions, Budgets, Debts, DebtPayments])
 class AppDatabase extends _$AppDatabase {
   /// [executor] opsional agar bisa di-test in-memory
   /// (`NativeDatabase.memory()`) — default tetap file HP.
@@ -27,7 +27,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -42,6 +42,16 @@ class AppDatabase extends _$AppDatabase {
                 isExpense: Value(c['isExpense'] as bool),
               ),
             );
+          }
+        },
+        onUpgrade: (m, from, to) async {
+          // v1 → v2 (utang-piutang): 2 kolom tautan di transactions +
+          // 2 tabel baru. Data lama aman (kolom nullable, tabel kosong).
+          if (from < 2) {
+            await m.addColumn(transactions, transactions.debtId);
+            await m.addColumn(transactions, transactions.debtPaymentId);
+            await m.createTable(debts);
+            await m.createTable(debtPayments);
           }
         },
       );

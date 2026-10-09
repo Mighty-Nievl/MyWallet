@@ -46,6 +46,7 @@ class CategoryGlyph extends StatelessWidget {
     if (e.contains('💸') || e.contains('💵')) {
       return Icons.account_balance_wallet_outlined;
     }
+    if (e.contains('🤝')) return Icons.handshake_outlined;
     if (e.contains('📈') || e.contains('💹')) {
       return Icons.trending_up_outlined;
     }

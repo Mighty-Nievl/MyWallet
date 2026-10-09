@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../data/actions.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
+import '../../data/receipt_parse.dart';
+import '../../data/receipt_scan_service.dart';
 import '../amount_input.dart';
 import '../components/app_card.dart';
 import '../components/app_feedback.dart';
@@ -40,6 +43,7 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
   late DateTime _date;
   int? _categoryId;
   bool _saving = false;
+  bool _scanning = false;
 
   @override
   void initState() {
@@ -145,6 +149,128 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
     }
   }
 
+  /// Scan struk: pilih kamera/galeri → OCR on-device (ML Kit) →
+  /// prefill nominal + tanggal + catatan + saran kategori.
+  /// Logika simpan TETAP (user tetap tekan Simpan manual).
+  Future<void> _pickScanSource() async {
+    if (_scanning) return;
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (c) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Foto struk (kamera)'),
+              subtitle: const Text('100% di HP, tanpa internet'),
+              onTap: () => Navigator.pop(c, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Pilih dari galeri'),
+              onTap: () => Navigator.pop(c, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source != null && mounted) await _scanReceipt(source);
+  }
+
+  Future<void> _scanReceipt(ImageSource source) async {
+    setState(() => _scanning = true);
+    try {
+      final result = await ReceiptScanService.scanFrom(source);
+      if (!mounted) return;
+      if (result == null) return; // user batal pilih foto
+      await _applyDraft(result.draft);
+    } on ReceiptScanEmpty catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    } on ReceiptScanUnsupported catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Scan gagal — coba lagi atau isi manual.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _scanning = false);
+    }
+  }
+
+  /// Terapkan hasil OCR ke form. Hanya isi kolom yang masih kosong
+  /// (kecuali nominal — selalu timpa karena itu inti scan).
+  /// Kategori dicocokkan ke nama di DB agar id-nya valid.
+  Future<void> _applyDraft(ReceiptDraft draft) async {
+    int? catId;
+    bool? catIsExpense;
+    if (draft.suggestedCategory != null) {
+      final db = ref.read(dbProvider);
+      final cat = await (db.select(db.categories)
+            ..where((c) => c.name.equals(draft.suggestedCategory!)))
+          .getSingleOrNull();
+      if (cat != null) {
+        catId = cat.id;
+        catIsExpense = cat.isExpense;
+      }
+    }
+    if (!mounted) return;
+    HapticFeedback.selectionClick();
+    setState(() {
+      if (catIsExpense != null) {
+        _isExpense = catIsExpense;
+        _categoryId = catId;
+      } else if (catId != null) {
+        _categoryId = catId;
+      }
+      if (draft.amount != null) {
+        _amountCtrl.text = formatAmountField(draft.amount!);
+      }
+      if (draft.date != null) {
+        _date = DateTime(
+          draft.date!.year,
+          draft.date!.month,
+          draft.date!.day,
+          _date.hour,
+          _date.minute,
+        );
+      }
+      if (_noteCtrl.text.trim().isEmpty) {
+        if (draft.note != null && draft.note!.isNotEmpty) {
+          _noteCtrl.text = draft.note!;
+        } else if (draft.merchant != null) {
+          _noteCtrl.text = draft.merchant!;
+        }
+      }
+    });
+    if (!mounted) return;
+    final parts = <String>[];
+    if (draft.amount != null) parts.add(formatRp(draft.amount!));
+    if (draft.merchant != null) parts.add(draft.merchant!);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          parts.isEmpty
+              ? 'Struk terbaca, tapi nominal tidak ketemu — isi manual ya.'
+              : 'Struk terbaca: ${parts.join(' · ')} — cek lagi ya.',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final catsAsync = ref.watch(
@@ -161,7 +287,12 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
             AppSpacing.s32,
           ),
           children: [
-            _Header(editing: _editing, onDelete: _editing ? _delete : null),
+            _Header(
+              editing: _editing,
+              onDelete: _editing ? _delete : null,
+              onScan: _editing ? null : _pickScanSource,
+              scanning: _scanning,
+            ),
             const SizedBox(height: AppSpacing.s16),
             _TypeSelector(
               isExpense: _isExpense,
@@ -364,12 +495,20 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
   }
 }
 
-/// Header form: tombol kembali + judul + (mode edit) tombol hapus.
-/// Navigasi tidak berubah (pop). Tombol via [AppIconButton] shared.
+/// Header form: tombol kembali + judul + (mode tambah) tombol scan +
+/// (mode edit) tombol hapus. Navigasi tidak berubah (pop).
+/// Tombol via [AppIconButton] shared.
 class _Header extends StatelessWidget {
-  const _Header({required this.editing, this.onDelete});
+  const _Header({
+    required this.editing,
+    this.onDelete,
+    this.onScan,
+    this.scanning = false,
+  });
   final bool editing;
   final VoidCallback? onDelete;
+  final VoidCallback? onScan;
+  final bool scanning;
 
   @override
   Widget build(BuildContext context) {
@@ -389,6 +528,27 @@ class _Header extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
+        if (onScan != null) ...[
+          const SizedBox(width: AppSpacing.s8),
+          scanning
+              ? const SizedBox(
+                  width: AppSpacing.touchMin,
+                  height: AppSpacing.touchMin,
+                  child: Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child:
+                          CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                )
+              : AppIconButton(
+                  icon: Icons.document_scanner_outlined,
+                  tooltip: 'Scan struk',
+                  onPressed: onScan,
+                ),
+        ],
         if (onDelete != null)
           AppIconButton(
             icon: Icons.delete_outline,

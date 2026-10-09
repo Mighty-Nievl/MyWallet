@@ -323,6 +323,11 @@ class HomeScreen extends ConsumerWidget {
                     key: const ValueKey('home:tiles'),
                     child: _pad(_StatTiles(month: month, totals: totals)),
                   ),
+                  if (onGoTab != null)
+                    SliverToBoxAdapter(
+                      key: const ValueKey('home:debts'),
+                      child: _pad(_DebtCard(onGoTab: onGoTab)),
+                    ),
                   SliverToBoxAdapter(
                     key: const ValueKey('home:banners'),
                     child: _pad(
@@ -1016,6 +1021,73 @@ Widget _tile(BuildContext context, {required Widget child}) {
     ),
     child: child,
   );
+}
+
+/// Kartu ringkas utang-piutang di Beranda (v1.15): sisa utang vs piutang.
+/// Kosong (keduanya 0) = tidak tampil. Tap = tab Utang (indeks 4).
+class _DebtCard extends ConsumerWidget {
+  const _DebtCard({required this.onGoTab});
+  final ValueChanged<int>? onGoTab;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final summary = ref.watch(debtSummaryProvider);
+    final display = ref.watch(displayPrefsProvider);
+    return summary.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (s) {
+        final utang = s.$1;
+        final piutang = s.$2;
+        if (utang == 0 && piutang == 0) {
+          return const SizedBox.shrink();
+        }
+        return Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.s12),
+          child: AppSection(
+            title: 'Utang & piutang',
+            trailing: onGoTab == null
+                ? null
+                : TextButton(
+                    onPressed: () => onGoTab!(4),
+                    child: const Text('Kelola'),
+                  ),
+            child: InkWell(
+              onTap:
+                  onGoTab == null ? null : () => onGoTab!(4),
+              borderRadius: AppRadius.mdAll,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _MiniStat(
+                      label: 'Sisa utang',
+                      value: display.money(utang),
+                      valueColor: AppColors.expenseOf(context),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.s8),
+                  Expanded(
+                    child: _MiniStat(
+                      label: 'Sisa piutang',
+                      value: display.money(piutang),
+                      valueColor: AppColors.incomeOf(context),
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 20,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _MiniStat extends StatelessWidget {

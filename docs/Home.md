@@ -18,7 +18,7 @@
 - **Penyimpanan:** 100% lokal, SQLite via Drift — tanpa login, tanpa server.
 - **State:** flutter_riverpod 3.x (`StreamProvider` auto-refresh, `StateProvider` via `legacy.dart`).
 - **File DB:** `mywallet.sqlite` di folder dokumen aplikasi.
-- **Status:** v1.13.1 — Beranda mockup GoPay (sapaan personal + SALDO MYWALLET + nav bulan sembunyi + 4 chip + tile OKT/SISA BUDGET + kartu menumpuk) · 39 test hijau.
+- **Status:** v1.15.0 — Manajer utang-piutang offline (tab Utang ke-5 + cicilan + saldo otomatis) · 85 test hijau.
 
 ## Peta kode
 

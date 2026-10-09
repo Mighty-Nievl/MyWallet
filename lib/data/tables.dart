@@ -38,6 +38,14 @@ class Transactions extends Table {
   DateTimeColumn get date => dateTime()();
   TextColumn get note => text().withDefault(const Constant(''))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  // Tautan utang-piutang (v1.15, skema v2). null = transaksi biasa.
+  // debtId terisi = transaksi OTOMATIS dari manajer utang (awal/cicilan)
+  // — lihat debt_actions.dart. debtPaymentId terisi = cicilan ke-N.
+  // Sengaja TANPA references (int polos): sirkular FK debts↔transactions
+  // dihindari + query lama (saldo/laporan/riwayat) tidak berubah —
+  // pembersihan manual di deleteDebt/deleteDebtPayment.
+  IntColumn get debtId => integer().nullable()();
+  IntColumn get debtPaymentId => integer().nullable()();
 }
 
 /// Tabel budget bulanan per kategori.
@@ -49,4 +57,38 @@ class Budgets extends Table {
   IntColumn get limit => integer()();
   // Format: "2026-10" (tahun-bulan).
   TextColumn get month => text()();
+}
+
+/// Utang-piutang (v1.15, skema v2).
+///
+/// - [isDebt] true = UTANG (aku pinjam → saldo +total saat dicatat,
+///   tiap bayar = pengeluaran). false = PIUTANG (aku meminjami →
+///   saldo −total saat dicatat, tiap terima = pemasukan).
+/// - Status lunas TIDAK disimpan (dihitung: paid >= total) agar tidak basi.
+/// - Tiap catat/bayar menulis transaksi CERMIN ke [Transactions]
+///   (kolom debtId/debtPaymentId) supaya saldo + laporan + riwayat
+///   otomatis ikut — itu inti opsi B.
+class Debts extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  // Nama orang (cth. "Budi").
+  TextColumn get name => text()();
+  BoolColumn get isDebt => boolean().withDefault(const Constant(true))();
+  // Pokok awal dalam rupiah.
+  IntColumn get total => integer()();
+  DateTimeColumn get date => dateTime()();
+  DateTimeColumn get dueDate => dateTime().nullable()();
+  TextColumn get note => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Cicilan utang-piutang — bisa berkali-kali sampai lunas.
+/// Sumber kebenaran progress (paid = SUM amount per debtId).
+class DebtPayments extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get debtId =>
+      integer().references(Debts, #id, onDelete: KeyAction.cascade)();
+  IntColumn get amount => integer()();
+  DateTimeColumn get date => dateTime()();
+  TextColumn get note => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }

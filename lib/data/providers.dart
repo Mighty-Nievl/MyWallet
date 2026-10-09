@@ -188,3 +188,101 @@ Future<List<({Budget budget, String name, String icon, int spent})>>
   out.sort((a, b) => a.name.compareTo(b.name));
   return out;
 }
+
+// ---------- Utang-piutang (v1.15) ----------
+
+/// Satu utang + progress bayar (paid dihitung dari cicilan).
+/// Lunas = paid >= total (tidak disimpan agar tidak basi).
+typedef DebtEntry = ({
+  Debt debt,
+  int paid,
+  int remaining,
+  bool done,
+});
+
+int _debtRemain(int total, int paid) => total - paid;
+
+/// Semua utang + progress, urutan stabil: belum lunas dulu (jatuh tempo
+/// terdekat), lalu lunas abjad. Fungsi murni (testable in-memory).
+Future<List<DebtEntry>> fetchDebts(AppDatabase db) async {
+  final debts =
+      await (db.select(db.debts)..orderBy([(d) => OrderingTerm.asc(d.name)]))
+          .get();
+  final out = <DebtEntry>[];
+  for (final d in debts) {
+    final row = await db.customSelect(
+      'SELECT COALESCE(SUM(amount),0) AS s FROM debt_payments WHERE debt_id = ?',
+      variables: [Variable.withInt(d.id)],
+      readsFrom: {db.debtPayments},
+    ).getSingle();
+    final paid = row.read<int>('s');
+    out.add((
+      debt: d,
+      paid: paid,
+      remaining: _debtRemain(d.total, paid),
+      done: paid >= d.total,
+    ));
+  }
+  out.sort((a, b) {
+    // Belum lunas dulu.
+    if (a.done != b.done) return a.done ? 1 : -1;
+    if (!a.done) {
+      // Sama-sama aktif: yang ada jatuh tempo + paling dekat dulu.
+      final ad = a.debt.dueDate;
+      final bd = b.debt.dueDate;
+      if (ad != null && bd != null) {
+        final c = ad.compareTo(bd);
+        if (c != 0) return c;
+      } else if (ad != null) {
+        return -1;
+      } else if (bd != null) {
+        return 1;
+      }
+    }
+    return a.debt.name.compareTo(b.debt.name);
+  });
+  return out;
+}
+
+/// Stream utang + progress. Trigger dengarkan debts + debt_payments +
+/// transactions (cermin ikut berubah tiap aksi).
+final debtsProvider = StreamProvider<List<DebtEntry>>((ref) {
+  final db = ref.watch(dbProvider);
+  return db
+      .customSelect('SELECT 1',
+          readsFrom: {db.debts, db.debtPayments, db.transactions})
+      .watch()
+      .asyncMap((_) => fetchDebts(db));
+});
+
+/// Total sisa AKTIF: (utang belum dibayar) vs (piutang belum diterima).
+/// Dipakai kartu ringkas Beranda. (sisaUtang, sisaPiutang).
+final debtSummaryProvider = StreamProvider<(int, int)>((ref) {
+  final db = ref.watch(dbProvider);
+  return db
+      .customSelect('SELECT 1',
+          readsFrom: {db.debts, db.debtPayments, db.transactions})
+      .watch()
+      .asyncMap((_) async {
+    final list = await fetchDebts(db);
+    var utang = 0;
+    var piutang = 0;
+    for (final e in list) {
+      if (e.done) continue;
+      if (e.debt.isDebt) {
+        utang += e.remaining;
+      } else {
+        piutang += e.remaining;
+      }
+    }
+    return (utang, piutang);
+  });
+});
+
+/// Cicilan satu utang, terbaru dulu.
+Stream<List<DebtPayment>> watchDebtPayments(AppDatabase db, int debtId) {
+  return (db.select(db.debtPayments)
+        ..where((p) => p.debtId.equals(debtId))
+        ..orderBy([(p) => OrderingTerm.desc(p.date)]))
+      .watch();
+}

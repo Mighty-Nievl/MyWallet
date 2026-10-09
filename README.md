@@ -10,8 +10,8 @@ Tanpa login, tanpa server — semua data cuma tinggal di perangkatmu.
 ![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.12-0175C2?logo=dart&logoColor=white)
 ![Drift](https://img.shields.io/badge/Drift-2.35-EAECED?logo=sqlite&logoColor=black)
-![Version](https://img.shields.io/badge/version-1.13.1-6C5CE7)
-![Tests](https://img.shields.io/badge/tests-39%2F39-2ECC71)
+![Version](https://img.shields.io/badge/version-1.15.0-6C5CE7)
+![Tests](https://img.shields.io/badge/tests-85%2F85-2ECC71)
 [![Build](https://github.com/Mighty-Nievl/MyWallet/actions/workflows/build.yml/badge.svg)](https://github.com/Mighty-Nievl/MyWallet/actions/workflows/build.yml)
 
 [**Ringkasan**](#-ringkasan) · [**Fitur**](#-fitur) · [**Mulai Cepat**](#-mulai-cepat) · [**Dokumentasi**](#-dokumentasi) · [**Rilis**](#-instal-dan-rilis)
@@ -29,16 +29,17 @@ Datanya disimpan penuh di lokal (SQLite lewat Drift), jadi aman, cepat, dan bisa
 - **Privasi di depan** — kunci PIN/biometrik, sembunyikan nominal, mode privacy scale.
 - **Visual rapi** — tema Material 3, 6 warna aksen + Material You, mode gelap hitam pekat.
 - **Siap pakai harian** — budget per kategori, laporan 6 bulan, export CSV, pengingat mencatat.
-- **Sehat secara teknis** — `flutter analyze` bersih, **39/39 test hijau**, CI jalan di tiap push/PR.
+- **Sehat secara teknis** — `flutter analyze` bersih, **85/85 test hijau**, CI jalan di tiap push/PR.
 
 ## 🧩 Fitur
 
 | Kategori | Isi |
 | :-- | :-- |
-| **Transaksi** | Catat / edit / hapus masuk–keluar · kategori custom · cari + filter · riwayat tergrup tanggal |
+| **Transaksi** | Catat / edit / hapus masuk–keluar · kategori custom · cari + filter · riwayat tergrup tanggal · **scan struk on-device** (prefill nominal/tanggal/kategori) |
 | **Input cepat** | Nominal otomatis bertitik (`1000` → `1.000`) · quick-add chip · autofocus · haptic |
 | **Budget** | Budget bulanan per kategori · progress & ambang 80% · edit/hapus + undo 5 detik |
-| **Laporan** | Ringkasan 6 bulan · bar chart + pie · rincian per kategori · export CSV |
+| **Utang-piutang** | Tab Utang ke-5 + kartu Beranda · cicilan parsial + jatuh tempo + lunas otomatis · saldo ikut otomatis (cermin transaksi) |
+| **Laporan** | Ringkasan 6 bulan · bar chart + pie · rincian per kategori · export CSV · **export PDF offline** |
 | **Beranda Insight** | Sapaan + tanggal pinned · arus bulan semantik · delta vs bulan lalu · pacing budget · top kategori proporsional |
 | **Tampilan** | 6 warna aksen + Material You · hitam pekat · privacy semua nominal · nominal ringkas (`Rp1,5 jt`) · ukuran font · kustom isi Beranda |
 | **Privasi & data** | Kunci PIN/biometrik · backup/restore file `.sqlite` · hapus semua data |
@@ -53,7 +54,7 @@ Datanya disimpan penuh di lokal (SQLite lewat Drift), jadi aman, cepat, dan bisa
 | Database | Drift 2.35 (SQLite) — lokal penuh |
 | Chart | fl_chart |
 | UI | Material 3 · design tokens ala shadcn (`lib/ui/design/`) |
-| Lainnya | local_auth · flutter_secure_storage · flutter_local_notifications · share_plus · file_picker |
+| Lainnya | local_auth · flutter_secure_storage · flutter_local_notifications · share_plus · file_picker · pdf + printing (laporan offline) · image_picker + google_mlkit_text_recognition (scan struk on-device) |
 
 ## 🚀 Mulai cepat
 
@@ -88,7 +89,7 @@ MyWallet/
 ├── lib/
 │   ├── main.dart                 # ProviderScope + MyWalletApp
 │   ├── data/                     # lapisan data
-│   │   ├── tables.dart           #   skema SQLite (categories, transactions, budgets)
+│   │   ├── tables.dart           #   skema SQLite (categories, transactions, budgets, debts, debt_payments)
 │   │   ├── database.dart         #   query + database.g.dart (codegen Drift)
 │   │   ├── providers.dart        #   Riverpod providers
 │   │   ├── actions.dart          #   aksi CRUD transaksi
@@ -147,10 +148,15 @@ git tag v1.13.0 && git push origin main v1.13.0
 
 ## 🗺 Roadmap
 
-### Berikutnya (v1.13)
+### Berikutnya (v1.15)
 
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat)
+
+### Baru di v1.14 ✅
+
+- [x] Scan struk on-device (kamera/galeri → ML Kit → prefill form)
+- [x] Export PDF laporan bulanan (100% offline, tanpa server)
 
 ### Backlog
 
@@ -159,9 +165,7 @@ git tag v1.13.0 && git push origin main v1.13.0
 
 ### Butuh riset
 
-- Scan struk (OCR)
 - Sinkronisasi antar-HP / cloud
-- Export PDF laporan bulanan
 
 Rincian lengkap: [docs/06-Roadmap.md](docs/06-Roadmap.md).
 
