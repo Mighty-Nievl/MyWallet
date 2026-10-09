@@ -59,6 +59,14 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+            // R8 full-mode gagal tanpa keep rules untuk paket script opsional
+            // ML Kit (insiden 9 Okt 2026: Missing class ...chinese...
+            // ChineseTextRecognizerOptions$Builder). Aturan di
+            // android/app/proguard-rules.pro.
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
