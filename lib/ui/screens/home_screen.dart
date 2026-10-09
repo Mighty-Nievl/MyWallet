@@ -883,11 +883,20 @@ Widget _bannerCta(
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: AppType.secondary(context).copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
+          // FIX CI Ubuntu 9 Okt 2026 (7 gagal home_design_test):
+          // font DejaVu runner ~20% lebih lebar dari Segoe Windows →
+          // Row CTA ("Lihat laporan" + panah) jebol 32px di banner
+          // setengah layar (w<=149). Flexible + ellipsis = muat di
+          // font lebar + viewport 300px + font-scale besar HP kecil.
+          Flexible(
+            child: Text(
+              label,
+              style: AppType.secondary(context).copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           const SizedBox(width: AppSpacing.s4),
