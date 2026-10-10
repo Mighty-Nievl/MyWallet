@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -115,6 +116,19 @@ void main() {
     test('lainnya → coba lagi', () {
       expect(friendlyAuthError(Exception('aneh banget')),
           'Login gagal — coba lagi.');
+    });
+
+    test('timeout jaringan → pesan internet + data aman', () {
+      final m = friendlyAuthError(TimeoutException('after 0:00:20'));
+      expect(m, contains('internet'));
+      expect(m, contains('Data lokal tetap aman'));
+    });
+
+    test('permission-denied → hubungi Rezal (rules belum dibuka)', () {
+      expect(
+          friendlyAuthError(Exception(
+              '[cloud_firestore/permission-denied] Missing or insufficient permissions.')),
+          contains('Hubungi Rezal'));
     });
   });
 

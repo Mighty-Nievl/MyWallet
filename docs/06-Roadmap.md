@@ -133,6 +133,7 @@ Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi 
 - [x] **UX Keluarga (v1.17.1)**: hero empty-state + tombol Google 52px, error card inline + Coba lagi, `friendlyAuthError` diperluas, `AuthService` null-safe, `family_ux_test.dart`, full 127/127.
 - [x] **Login siap (v1.17.2, config-only)**: SHA-1 debug+rilis terdaftar, Auth Google Enable, `google-services.json` baru (oauth 3), secret CI diperbarui. Tanpa perubahan kode.
 - [x] **Anti-hang boot (v1.17.3)**: timeout 8 detik silent-login + `_sessionFor`, fallback signedIn/personal, `family_ux_test` +bootTimeout, full 128/128.
+- [x] **Audit login (v1.17.4)**: timeout berlapis signIn + fallback signedIn, fix join via `householdName` di invite, pesan permission-denied, full 131/131. WAJIB: publish `firestore.rules` ke console.
 - [ ] Fase 2 — sync engine beta (opt-in): push/pull transactions + categories, antrean offline, indikator status. Cermin utang di-rebuild per-HP (jangan sync mentah → ganda).
 - [ ] Fase 3 — utang + budget ikut sync + uji 2 emulator bareng.
 - [ ] Fase 4 — hardening production-grade: RLS audit, hapus akun, kebijakan privasi (wajib Play Store), crash reporting.

@@ -8,7 +8,8 @@ rules_version = '2';
 // - households/{hid}/members/{uid}: anggota kelola SENDIRI (gabung via
 //   kode = tulis diri sendiri; keluar = hapus diri sendiri). Update role
 //   hanya owner (cek role pemohon).
-// - invites/{CODE}: kode = capability secret (kayak link join grup).
+// - invites/{CODE}: {householdId, householdName, ...} = capability
+//   secret (kayak link join grup).
 //   Semua user LOGIN bisa `get` BILA tahu kodenya (tidak bisa list).
 //   Tulis: user login (buat/putar kode milik rumah tangganya).
 // - users/{uid}: profil milik SENDIRI saja.

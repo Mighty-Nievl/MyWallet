@@ -167,12 +167,26 @@ class AuthService {
   }
 
   /// Login Google interaktif. Lempar [FamilyException] bila gagal.
+  ///
+  /// Anti-hang (audit v1.17.3): tiap langkah jaringan dibungkus timeout
+  /// agar tombol tidak macet di `Menghubungkan...` selamanya. Google
+  /// interaktif 60 dtk (user baca + pilih akun), Firebase Auth 45 dtk,
+  /// tulis/baca Firestore 20 dtk — gagal = [FamilyException] ramah.
+  static const signInGoogleTimeout = Duration(seconds: 60);
+  static const signInFirebaseTimeout = Duration(seconds: 45);
+  static const signInStoreTimeout = Duration(seconds: 20);
+
   Future<FamilySession> signIn() async {
     try {
-      await _ensureGsInit();
+      await _ensureGsInit().timeout(
+        signInStoreTimeout,
+        onTimeout: () => throw TimeoutException('init Google lama'),
+      );
       final GoogleSignInAccount acct;
       if (GoogleSignIn.instance.supportsAuthenticate()) {
-        acct = await GoogleSignIn.instance.authenticate();
+        acct = await GoogleSignIn.instance
+            .authenticate()
+            .timeout(signInGoogleTimeout);
       } else {
         throw StateError('unsupported-platform');
       }
@@ -180,13 +194,30 @@ class AuthService {
       if (idToken == null || idToken.isEmpty) {
         throw StateError('empty-id-token');
       }
-      final cred = await _needAuth().signInWithCredential(
-        GoogleAuthProvider.credential(idToken: idToken),
-      );
+      final cred = await _needAuth()
+          .signInWithCredential(
+            GoogleAuthProvider.credential(idToken: idToken),
+          )
+          .timeout(signInFirebaseTimeout);
       final u = cred.user ?? _auth?.currentUser;
       if (u == null) throw StateError('empty-firebase-user');
-      await _ensureUserDoc(u);
-      return _emit(await _sessionFor(u));
+      try {
+        await _ensureUserDoc(u).timeout(signInStoreTimeout);
+      } catch (_) {
+        // Profil gagal ditulis (rules/offline): sesi tetap jalan lokal.
+      }
+      try {
+        return _emit(await _sessionFor(u).timeout(signInStoreTimeout));
+      } catch (_) {
+        // Server lemot tapi login SAH: tampilkan signedIn, halaman
+        // berikutnya lanjut tanpa nunggu.
+        return _emit(FamilySession(
+          status: FamilyStatus.signedIn,
+          uid: u.uid,
+          email: u.email,
+          displayName: u.displayName,
+        ));
+      }
     } catch (e) {
       if (e is FamilyException) rethrow;
       throw FamilyException(friendlyAuthError(e));
@@ -240,6 +271,7 @@ class AuthService {
       });
       batch.set(_needStore().collection(HouseholdPaths.invites).doc(code), {
         'householdId': hid,
+        'householdName': clean,
         'createdBy': u.uid,
         'createdAt': FieldValue.serverTimestamp(),
         'expiresAt': Timestamp.fromDate(now.add(HouseholdPaths.inviteTtl)),
@@ -250,7 +282,7 @@ class AuthService {
         'householdId': hid,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
-      await batch.commit();
+      await batch.commit().timeout(signInStoreTimeout);
       await _saveHouseholdCache(hid, clean);
       return _emit(await _sessionFor(u));
     } catch (e) {
@@ -268,8 +300,11 @@ class AuthService {
       throw FamilyException(friendlyJoinError(JoinFailure.badCode));
     }
     try {
-      final invSnap =
-          await _needStore().collection(HouseholdPaths.invites).doc(code).get();
+      final invSnap = await _needStore()
+          .collection(HouseholdPaths.invites)
+          .doc(code)
+          .get()
+          .timeout(signInStoreTimeout);
       if (!invSnap.exists) {
         throw FamilyException(friendlyJoinError(JoinFailure.notFound));
       }
@@ -282,9 +317,11 @@ class AuthService {
       if (exp == null || InviteCode.isExpired(exp, DateTime.now())) {
         throw FamilyException(friendlyJoinError(JoinFailure.expired));
       }
-      final hSnap =
-          await _needStore().collection(HouseholdPaths.households).doc(hid).get();
-      final hName = (hSnap.data()?['name'] as String?) ?? 'Keluarga';
+      // Nama dibaca dari DOKUMEN INVITE (boleh dibaca siapa pun yang tahu
+      // kode), BUKAN dari households/{hid} — rules hanya mengizinkan
+      // ANGGOTA membaca dokumen rumah tangga, calon anggota pasti ditolak
+      // (bug audit v1.17.3: permission-denied saat join).
+      final hName = (inv['householdName'] as String?) ?? 'Keluarga';
       final hRef = _needStore().collection(HouseholdPaths.households).doc(hid);
       final batch = _needStore().batch();
       batch.set(hRef.collection(HouseholdPaths.members).doc(u.uid), {
@@ -299,7 +336,7 @@ class AuthService {
         'householdId': hid,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
-      await batch.commit();
+      await batch.commit().timeout(signInStoreTimeout);
       await _saveHouseholdCache(hid, hName);
       return _emit(await _sessionFor(u));
     } on FamilyException {
@@ -311,6 +348,8 @@ class AuthService {
 
   /// Ganti kode invite rumah tangga aktif (kode lama hangus).
   /// Hanya owner (dicek rules juga) — return kode BARU terformat.
+  /// Nama ikut disimpan di dokumen invite agar calon anggota (bukan
+  /// anggota, tidak boleh baca households/{hid}) tetap tahu nama.
   Future<String> rotateInviteCode() async {
     final s = await currentCached();
     final hid = s.householdId;
@@ -331,11 +370,12 @@ class AuthService {
           });
       batch.set(_needStore().collection(HouseholdPaths.invites).doc(code), {
         'householdId': hid,
+        'householdName': s.householdName ?? 'Keluarga',
         'createdBy': u.uid,
         'createdAt': FieldValue.serverTimestamp(),
         'expiresAt': Timestamp.fromDate(now.add(HouseholdPaths.inviteTtl)),
       });
-      await batch.commit();
+      await batch.commit().timeout(signInStoreTimeout);
       return InviteCode.format(code);
     } catch (e) {
       if (e is FamilyException) rethrow;

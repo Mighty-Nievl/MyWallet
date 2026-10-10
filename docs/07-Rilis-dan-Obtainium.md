@@ -22,6 +22,7 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 7. Pantau di tab **Actions → Release MyWallet**.
 
 ## Riwayat rilis
+- **v1.17.4** (10 Okt 2026): Audit login — timeout berlapis `signIn()` (Google 60/Firebase 45/store 20 dtk) + fallback signedIn, fix join baca nama dari dokumen invite, `householdName` di invite buat/putar, pesan `permission-denied` jujur. Test timeout + permission baru, full 131/131.
 - **v1.17.3** (10 Okt 2026): Fix halaman Keluarga macet di skeleton loading — `boot()` timeout 8 detik (silent-login + baca server), fallback personal/signedIn, tombol login tetap bisa ditekan manual. Test `family_ux_test.dart` (+bootTimeout), full 128/128.
 - **v1.17.2** (10 Okt 2026): Konfigurasi login Google lengkap — `google-services.json` baru (3 oauth client termasuk web type-3), secret CI diperbarui, tanpa perubahan kode. Full 127/127.
 - **v1.17.1** (10 Okt 2026): Rapikan halaman Keluarga — hero empty-state (manfaat + tombol Google besar), error tampil inline kontras-tinggi + tombol Coba lagi (bukan snackbar samar), pesan login jujur (config SHA-1/OAuth, provider nonaktif). `AuthService` null-safe tanpa Firebase init, test `family_ux_test.dart`, full 127/127.

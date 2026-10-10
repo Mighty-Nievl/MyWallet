@@ -42,4 +42,13 @@ void main() {
     // menggantung; timeout menjamin halaman keluar dari skeleton.
     expect(AuthService.bootTimeout, const Duration(seconds: 8));
   });
+
+  test('timeout signIn berlapis — tombol nggak macet Menghubungkan', () {
+    // Regresi audit v1.17.3: signIn tanpa timeout bikin tombol macet
+    // selamanya di sinyal lemot (0,24 KB/S). Google interaktif paling
+    // lama (user pilih akun), store paling pendek.
+    expect(AuthService.signInGoogleTimeout, const Duration(seconds: 60));
+    expect(AuthService.signInFirebaseTimeout, const Duration(seconds: 45));
+    expect(AuthService.signInStoreTimeout, const Duration(seconds: 20));
+  });
 }

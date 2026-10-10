@@ -12,7 +12,8 @@ import 'dart:math';
 /// - `households/{hid}`: {name, createdBy, createdAt, inviteCode,
 ///   inviteExpiresAt} — dibaca HANYA oleh anggota (rules `isMember`).
 /// - `households/{hid}/members/{uid}`: {email, displayName, role, joinedAt}.
-/// - `invites/{CODE}`: {householdId, createdBy, createdAt, expiresAt} —
+/// - `invites/{CODE}`: {householdId, householdName, createdBy, createdAt,
+///   expiresAt} —
 ///   kode = capability secret (kayak link join grup): semua user login bisa
 ///   `get` BILA tahu kodenya. Random 8 char + kedaluwarsa 24 jam.
 /// - `users/{uid}`: {email, displayName, householdId?, updatedAt} — sumber
@@ -101,6 +102,9 @@ String friendlyAuthError(Object e) {
   }
   if (m.contains('user-disabled')) {
     return 'Akun Google ini dinonaktifkan. Coba akun lain.';
+  }
+  if (m.contains('permission-denied') || m.contains('permission_denied')) {
+    return 'Izin server belum dibuka untuk akun ini. Hubungi Rezal.';
   }
   if (m.contains('supportsauthenticate') ||
       m.contains('unsupported') ||

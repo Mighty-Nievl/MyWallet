@@ -26,6 +26,20 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.17.4',
+    date: '10 Okt 2026',
+    user:
+        'Login Google tidak lagi macet di "Menghubungkan...": tiap langkah '
+        'dibatasi waktunya, kalau jaringan lemot muncul pesan jelas + tombol '
+        'Coba lagi. Gabung pakai kode juga diperbaiki.',
+    tech:
+        'Audit login: timeout berlapis signIn (Google 60 dtk, Firebase 45 '
+        'dtk, store 20 dtk) + fallback signedIn, fix join baca nama dari '
+        'dokumen invite (bukan households), householdName di invite '
+        'buat/putar, pesan permission-denied jujur. Full 131/131.',
+    breaking: null,
+  ),
+  (
     version: 'v1.17.3',
     date: '10 Okt 2026',
     user:
