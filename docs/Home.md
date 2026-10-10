@@ -14,11 +14,11 @@
 
 ## Fakta kunci
 
-- **Platform:** Flutter (Android utama, Windows untuk dev) · `com.nievl.mywallet`
+- **Platform:** Flutter (Android utama, Windows untuk dev) · `com.rezal.mywallet`
 - **Penyimpanan:** 100% lokal, SQLite via Drift — tanpa login, tanpa server.
 - **State:** flutter_riverpod 3.x (`StreamProvider` auto-refresh, `StateProvider` via `legacy.dart`).
 - **File DB:** `mywallet.sqlite` di folder dokumen aplikasi.
-- **Status:** v1.16.0 — Fondasi sync-ready Fase 0 (skema v3, tetap 100% offline) · 94 test hijau.
+- **Status:** v1.16.1 — Rename package + wiring Firebase Fase 1 (tetap offline) · 94 test hijau.
 
 ## Peta kode
 

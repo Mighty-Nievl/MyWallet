@@ -46,3 +46,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 test/failures/
+
+# Firebase config — JANGAN commit (isi lokal manual / via secrets di CI).
+# File ini ikut dibundel ke APK, tapi jangan masuk riwayat git.
+google-services.json
+**/google-services.json
+GoogleService-Info.plist

@@ -98,6 +98,13 @@ jobs:
           done
           test -f "$SDK/ndk/$NDK_VER/source.properties"
 
+      # Firebase (Fase 1): google-services.json di-gitignore, restore dari
+      # secret agar build cloud jalan. Gagal cepat bila secret belum diisi.
+      - name: Siapkan google-services.json (Firebase)
+        run: |
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > android/app/google-services.json
+          test -s android/app/google-services.json
+
       - run: flutter pub get
       - run: dart run build_runner build
       - run: flutter build apk --debug

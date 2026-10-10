@@ -5,6 +5,9 @@ plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    // Firebase (Fase 1): config dari android/app/google-services.json
+    // (lokal manual / secrets CI — jangan commit, lihat .gitignore).
+    id("com.google.gms.google-services")
 }
 
 // Release signing: baca android/key.properties (diisi manual lokal / dari secrets di CI).
@@ -16,7 +19,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.nievl.mywallet"
+    namespace = "com.rezal.mywallet"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -29,10 +32,11 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.nievl.mywallet"
+        applicationId = "com.rezal.mywallet"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // Firebase (Fase 1: Auth/Firestore/Google Sign-In) butuh minSdk 23.
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

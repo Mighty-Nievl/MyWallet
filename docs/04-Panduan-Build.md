@@ -18,6 +18,25 @@ Lihat [[07-Rilis-dan-Obtainium]] — ringkasnya: naikkan `version:` di `pubspec.
   - `flutter config --android-sdk "E:/dev/android/sdk"`
   - `flutter config --jdk-dir "C:\Program Files\Eclipse Adoptium\jdk-17.0.19.10-hotspot"`
 
+## Secrets CI (Firebase + keystore)
+
+File rahasia JANGAN di-commit (lihat `.gitignore` + `android/.gitignore`):
+
+| File lokal | Secret GitHub | Isi |
+|---|---|---|
+| `android/app/google-services.json` | `GOOGLE_SERVICES_JSON_BASE64` | base64 file dari Firebase Console (project `mywallet-7614d`, app `com.rezal.mywallet`) |
+| `android/app/mywallet.keystore` | `KEYSTORE_BASE64` | base64 keystore rilis |
+| `android/key.properties` | `KEYSTORE_PASSWORD` / `KEY_PASSWORD` / `KEY_ALIAS` | password + alias |
+
+Generate base64 (dari root repo, git-bash):
+
+```bash
+base64 -w0 android/app/google-services.json
+```
+
+Tempel hasilnya ke GitHub → Settings → Secrets and variables → Actions → New repository secret.
+Tanpa `GOOGLE_SERVICES_JSON_BASE64`, job `build-android`/`release` gagal cepat di step "Siapkan google-services.json" (plugin `com.google.gms.google-services` butuh file itu saat build Android).
+
 ## Perintah (dari `E:\Projects\MyWallet`)
 
 ```powershell

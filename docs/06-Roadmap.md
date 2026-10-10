@@ -127,6 +127,7 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi B — pilih user 10 Okt 2026). Tetap offline-first: tanpa login = app sekarang, nol berubah.
 
 - [x] **Fase 0 — sync-ready lokal (v1.16.0, tanpa network)**: skema v3 (`uuid/updatedAt/deletedAt/householdId` di 5 tabel + `categoryUuid`), migrasi v2→v3 + backfill otomatis, `sync_meta.dart`, semua query siap soft-delete (`deletedAt IS NULL`), `actions`/`debt_actions` bump `updatedAt`. Test `sync_ready_test.dart` 9 kasus. Offline 100% sama, full suite 94/94 hijau.
+- [x] **Rename + wiring Firebase (v1.16.1, tetap offline)**: package `com.nievl.mywallet` → `com.rezal.mywallet` (MainActivity pindah paket, namespace + applicationId + docs), plugin `google-services` 4.5.0, `firebase_core` init aman-gagal di `main.dart`, paket `firebase_auth` + `cloud_firestore` + `google_sign_in` v7, `minSdk` 23, `google-services.json` (project `mywallet-7614d`) di-gitignore + CI via secret `GOOGLE_SERVICES_JSON_BASE64`. CATATAN: ganti package = install app baru di HP (backup dulu via Kelola).
 - [ ] Fase 1 — auth + household: Google Sign-In, buat/gabung rumah tangga, kode invite. Belum sync data.
 - [ ] Fase 2 — sync engine beta (opt-in): push/pull transactions + categories, antrean offline, indikator status. Cermin utang di-rebuild per-HP (jangan sync mentah → ganda).
 - [ ] Fase 3 — utang + budget ikut sync + uji 2 emulator bareng.

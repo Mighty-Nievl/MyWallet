@@ -1,4 +1,4 @@
-package com.nievl.mywallet
+package com.rezal.mywallet
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

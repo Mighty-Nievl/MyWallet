@@ -1,7 +1,8 @@
 # 02 — Arsitektur
 
 ## Stack
-- **Flutter 3.44** (Dart 3.12) · Material 3 · `com.nievl.mywallet`
+- **Flutter 3.44** (Dart 3.12) · Material 3 · `com.rezal.mywallet`
+- **Firebase (Fase 1+, opt-in)** → `firebase_core` init aman-gagal di `main.dart` (tanpa config = offline murni); `firebase_auth` + `google_sign_in` v7 (`initialize` sekali → `authenticate()` → `idToken` → `GoogleAuthProvider.credential`) + `cloud_firestore` (`asia-southeast2`). Config `android/app/google-services.json` di-gitignore, CI via secret `GOOGLE_SERVICES_JSON_BASE64`. Package name didaftarkan ke Firebase = `com.rezal.mywallet` (project `mywallet-7614d`).
 - **Drift 2.35** + `sqlite3_flutter_libs` → SQLite lokal (`mywallet.sqlite`)
 - **flutter_riverpod 3.4** → state reaktif. Catatan penting: `StateProvider` di v3 pindah ke `package:flutter_riverpod/legacy.dart` — jangan lupa import itu kalau pakai `StateProvider`.
 - **fl_chart** → grafik laporan · **shared_preferences** → pengaturan · **share_plus** (v12 API: `SharePlus.instance.share(ShareParams(...))`) + **csv** (v8 API: `Csv().encode(rows)`) → export CSV.
