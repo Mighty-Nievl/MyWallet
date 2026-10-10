@@ -870,7 +870,16 @@ class _StreakCard extends ConsumerWidget {
                     children: [
                       Row(
                         children: [
-                          const Text('🔥', style: TextStyle(fontSize: 16)),
+                          // Ikon api vektor (bukan emoji 🔥): font test/
+                          // golden (Segoe/DejaVu) tidak punya glyph emoji
+                          // → tofu '[]' di golden QA.
+                          Icon(
+                            Icons.local_fire_department,
+                            size: 18,
+                            color: n > 0
+                                ? _warnAmber
+                                : AppColors.mutedOf(context),
+                          ),
                           const SizedBox(width: AppSpacing.s4),
                           Flexible(
                             child: Text(
@@ -935,6 +944,52 @@ class _StreakCard extends ConsumerWidget {
   }
 }
 
+/// Chip nominal Catat Kilat di atas kartu TERANG: isi = surface kartu +
+/// border netral + teks aksen pekat. Beda dari [_pillButton] ghost
+/// (putih 15% + teks putih) yang hanya benar di atas gradien gelap hero.
+class _QuickChip extends StatelessWidget {
+  const _QuickChip({required this.label, required this.onTap});
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surfaceOf(context),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(999),
+        side: BorderSide(color: AppColors.borderOf(context)),
+      ),
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        borderRadius: BorderRadius.circular(999),
+        child: SizedBox(
+          height: AppSpacing.touchMin,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.s16,
+              ),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppType.secondary(context).copyWith(
+                  color: _accentStop(context, 0.45),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Catat Kilat B2C: 4 chip nominal → form pengeluaran TERISI nominal.
 /// Scroll horizontal (aman viewport 300px — pola chip Riwayat).
 /// Label 'Catat kilat' unik (tidak bentrok dengan test kategori).
@@ -956,8 +1011,11 @@ class _QuickAdd extends StatelessWidget {
             children: [
               for (var i = 0; i < _amounts.length; i++) ...[
                 if (i > 0) const SizedBox(width: AppSpacing.s8),
-                _pillButton(
-                  context,
+                // Varian kartu-terang SENDIRI (bukan _pillButton ghost):
+                // ghost = isi putih 15% + teks putih, didesain untuk di
+                // atas gradien GELAP hero → di atas kartu terang jadi
+                // putih-di-atas-putih / invisible (bug QA golden).
+                _QuickChip(
                   label: formatRpCompact(_amounts[i]),
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
@@ -975,63 +1033,6 @@ class _QuickAdd extends StatelessWidget {
       ],
     );
   }
-}
-
-/// Tombol pil di atas gradien hero: solid putih (teks aksen gelap) atau
-/// ghost putih 15% di atas gradien. Ghost SELALU berboder putih
-/// (v1.13.x border dimatikan saat kontras lolos hitungan — tanpa border,
-/// isi putih 15% vs gradien cuma 1.39:1 sehingga pil tidak kebaca tombol).
-/// Bila aksen tema terang sehingga teks putih di ghost <4.5:1, fallback
-/// hitam 30% (menggelapkan) + border putih tetap. Tinggi 48px =
-/// AppSpacing.touchMin (mockup 39px dikorbankan demi target sentuh).
-Widget _pillButton(
-  BuildContext context, {
-  required String label,
-  required VoidCallback onTap,
-  bool solid = false,
-}) {
-  // Perkiraan latar ghost: putih 15% di atas tengah gradien.
-  final ghostOver = Color.lerp(_accentStop(context, 0.5), Colors.white, 0.15)!;
-  final whiteOk = _whiteContrast(ghostOver) >= 4.5;
-  final ghost = whiteOk
-      ? Colors.white.withValues(alpha: 0.15)
-      : Colors.black.withValues(alpha: 0.30);
-  final shape = RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(999),
-    side: BorderSide(
-      color: solid
-          ? Colors.transparent
-          : Colors.white.withValues(alpha: 0.55),
-    ),
-  );
-  return Material(
-    color: solid ? Colors.white : ghost,
-    shape: shape,
-    child: InkWell(
-      onTap: () {
-        // B2C v1.20: haptic di dua pil utama (Catat keluar/Pemasukan).
-        HapticFeedback.lightImpact();
-        onTap();
-      },
-      borderRadius: BorderRadius.circular(999),
-      child: SizedBox(
-        height: AppSpacing.touchMin,
-        child: Center(
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppType.secondary(context).copyWith(
-              // Teks gelap hasil aksen pekat: lolos kontras di atas
-              // putih, termasuk saat aksen mode gelap (tone terang).
-              color: solid ? _accentStop(context, 0.45) : Colors.white,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
 }
 
 /// Dua banner insight (pola promo GoPay, isi datanya milik user):
@@ -1506,11 +1507,21 @@ class _MiniStat extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 2),
-        Text(
-          value,
-          style: AppType.amount(context).copyWith(color: valueColor),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        // FittedBox scaleDown: nominal panjang (mis. +Rp10.188.000 di
+        // kolom 1/3 @390px) MENGECIL, bukan kepotong '...' (bug QA
+        // golden). Teks utuh tetap ada → find.text test tidak berubah.
+        SizedBox(
+          width: double.infinity,
+          child: FittedBox(
+            alignment: Alignment.centerLeft,
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: AppType.amount(context).copyWith(color: valueColor),
+              maxLines: 1,
+              overflow: TextOverflow.visible,
+            ),
+          ),
         ),
         if (sub != null) ...[
           const SizedBox(height: 2),
