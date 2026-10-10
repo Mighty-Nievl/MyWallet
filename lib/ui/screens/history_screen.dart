@@ -7,8 +7,7 @@ import '../components/app_empty_state.dart';
 import '../components/app_feedback.dart';
 import '../components/app_header.dart';
 import '../components/app_month_nav.dart';
-import '../design/app_colors.dart';
-import '../design/app_radius.dart';
+import '../components/b2c_chip.dart';
 import '../design/app_spacing.dart';
 import '../format.dart';
 import '../widgets/tx_tile.dart';
@@ -223,8 +222,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 /// Judul layar Riwayat sudah via [AppHeader] shared.
 /// Kalender aksi langsung jadi bagian header (tanpa _Header lokal).
 
-/// Chip filter kompak: jelas saat aktif, tenang saat tidak.
-/// Radius ikut token (md = 12).
+/// Chip filter B2C (v1.20): lihat [B2CFilterChip] — pil semibold +
+/// haptic + scale-down. Radius pil penuh (bukan md 12).
 class _FilterChip extends StatelessWidget {
   const _FilterChip(
       {required this.label, required this.selected, required this.onTap});
@@ -234,31 +233,7 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: AppRadius.mdAll,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? scheme.primaryContainer : Colors.transparent,
-          borderRadius: AppRadius.mdAll,
-          border: Border.all(
-            color: selected ? scheme.primary : AppColors.borderOf(context),
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: selected
-                ? scheme.onPrimaryContainer
-                : scheme.onSurfaceVariant,
-          ),
-        ),
-      ),
-    );
+    return B2CFilterChip(label: label, selected: selected, onTap: onTap);
   }
 }
 

@@ -26,6 +26,24 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.20.0',
+    date: '10 Okt 2026',
+    user:
+        'Tampilan kini terasa hidup di semua halaman: kartu terangkat '
+        'lembut, layar kosong punya ilustrasi medali, daftar muncul '
+        'berurutan halus, tombol bergetar ringan saat disentuh, dan pindah '
+        'halaman mengalir mulus. Isi dan datamu tidak berubah — cuma '
+        'tampilannya yang naik kelas.',
+    tech:
+        'Token gerak AppMotion (durasi+kurva satu sumber) + Stagger '
+        'entrance tanpa timer (TweenAnimationBuilder+Interval, aman '
+        'fake_async) + progress animasi + empty-state medali gradien + '
+        'AppCard shadow 5% + haptic global (TxTile/SettingRow/AppIconButton/'
+        'pil hero/segmented/export/Kunci) + hero shine + stagger semua '
+        'halaman + transisi fade-through, full 160/160.',
+    breaking: null,
+  ),
+  (
     version: 'v1.19.1',
     date: '10 Okt 2026',
     user:

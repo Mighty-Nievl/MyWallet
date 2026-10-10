@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
@@ -30,8 +31,15 @@ class TxTile extends ConsumerWidget {
     final amountColor = tx.isExpense
         ? AppColors.expenseOf(context)
         : AppColors.incomeOf(context);
+    final tap = onTap;
     return InkWell(
-      onTap: onTap,
+      onTap: tap == null
+          ? null
+          : () {
+              // B2C v1.20: umpan sentuh ringan di tiap baris transaksi.
+              HapticFeedback.selectionClick();
+              tap();
+            },
       borderRadius: AppRadius.mdAll,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.s12),

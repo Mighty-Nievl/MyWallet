@@ -11,6 +11,7 @@ import '../../data/receipt_scan_service.dart';
 import '../amount_input.dart';
 import '../components/app_card.dart';
 import '../components/app_feedback.dart';
+import '../components/b2c_chip.dart';
 import '../components/category_glyph.dart';
 import '../design/app_colors.dart';
 import '../design/app_radius.dart';
@@ -588,7 +589,11 @@ class _TypeSelector extends StatelessWidget {
           ),
         ],
         selected: {isExpense},
-        onSelectionChanged: (s) => onChanged(s.first),
+        onSelectionChanged: (s) {
+          // B2C v1.20: haptic saat ganti tipe Keluar/Masuk.
+          HapticFeedback.selectionClick();
+          onChanged(s.first);
+        },
         style: SegmentedButton.styleFrom(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.md),
@@ -616,7 +621,6 @@ class _QuickAdd extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final presets = isExpense
         ? const <({int amount, String label})>[
             (amount: 10000, label: 'Jajan Rp10 rb'),
@@ -635,10 +639,12 @@ class _QuickAdd extends StatelessWidget {
       runSpacing: 8,
       children: [
         for (final p in presets)
-          ActionChip(
-            label: Text(p.label),
-            avatar: Icon(Icons.bolt_outlined, size: 16, color: scheme.primary),
-            onPressed: () => onPick(p.amount, ''),
+          // B2C v1.20: chip kilat pakai bahasa pil yang sama dengan
+          // filter Riwayat (selalu unselected = netral, bukan aksi).
+          B2CFilterChip(
+            label: p.label,
+            selected: false,
+            onTap: () => onPick(p.amount, ''),
           ),
       ],
     );

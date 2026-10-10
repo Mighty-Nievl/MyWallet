@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../design/app_colors.dart';
 import '../design/app_radius.dart';
@@ -99,8 +100,15 @@ class SettingRow extends StatelessWidget {
       ),
     );
     if (onTap == null) return content;
+    final tap = onTap;
+    if (tap == null) return content;
     return InkWell(
-      onTap: onTap,
+      // B2C v1.20: haptic di SEMUA baris pengaturan (sekali sentuh di
+      // sini = kena Settings + Kategori + Keluarga + semua sub-halaman).
+      onTap: () {
+        HapticFeedback.selectionClick();
+        tap();
+      },
       borderRadius: AppRadius.mdAll,
       child: content,
     );

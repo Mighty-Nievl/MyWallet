@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
@@ -12,6 +13,7 @@ import '../components/app_header.dart';
 import '../components/app_month_nav.dart';
 import '../components/app_section.dart';
 import '../components/category_glyph.dart';
+import '../design/app_motion.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../display.dart';
@@ -56,22 +58,32 @@ class ReportsScreen extends ConsumerWidget {
                   .state = shiftMonth(month, d),
             ),
             const SizedBox(height: AppSpacing.s16),
-            AppSection(
-              title: 'Ringkasan bulan ini',
-              child: _SummaryCard(totals: totals),
-            ),
-            const SizedBox(height: AppSpacing.sectionGap),
-            AppSection(
-              title: 'Arus 6 bulan terakhir',
-              child: AppCard(
-                child: SizedBox(height: 220, child: _SixMonthChart()),
+            // B2C v1.20: entrance stagger per seksi — teks/key/logika tetap.
+            Stagger(
+              index: 0,
+              child: AppSection(
+                title: 'Ringkasan bulan ini',
+                child: _SummaryCard(totals: totals),
               ),
             ),
             const SizedBox(height: AppSpacing.sectionGap),
-            AppSection(
-              title: 'Rincian bulan ini',
-              child: _Breakdown(
-                  byCat: byCat, display: display),
+            Stagger(
+              index: 1,
+              child: AppSection(
+                title: 'Arus 6 bulan terakhir',
+                child: AppCard(
+                  child: SizedBox(height: 220, child: _SixMonthChart()),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sectionGap),
+            Stagger(
+              index: 2,
+              child: AppSection(
+                title: 'Rincian bulan ini',
+                child: _Breakdown(
+                    byCat: byCat, display: display),
+              ),
             ),
           ],
         ),
@@ -110,6 +122,8 @@ class ReportsScreen extends ConsumerWidget {
       ),
     );
     if (choice == null || !context.mounted) return;
+    // B2C v1.20: haptic saat pilihan export dikunci.
+    HapticFeedback.selectionClick();
     try {
       if (choice == 'save') {
         final uri =

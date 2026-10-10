@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/lock_service.dart';
@@ -43,8 +44,11 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     if (!mounted) return;
     setState(() => _busy = false);
     if (ok) {
+      // B2C v1.20: haptic sukses/buka.
+      HapticFeedback.lightImpact();
       _unlock();
     } else {
+      HapticFeedback.vibrate();
       setState(() => _error = 'PIN salah, coba lagi.');
       _pinCtrl.clear();
     }
@@ -60,8 +64,11 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     if (!mounted) return;
     setState(() => _busy = false);
     if (ok) {
+      // B2C v1.20: haptic sukses/buka.
+      HapticFeedback.lightImpact();
       _unlock();
     } else {
+      HapticFeedback.vibrate();
       setState(() => _error = 'Autentikasi gagal.');
     }
   }

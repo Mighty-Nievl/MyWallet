@@ -14,6 +14,7 @@ import '../components/app_progress.dart';
 import '../components/app_section.dart';
 import '../components/category_glyph.dart';
 import '../design/app_colors.dart';
+import '../design/app_motion.dart';
 import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
@@ -165,7 +166,8 @@ class DebtScreen extends ConsumerWidget {
                       AppSpacing.bottomPad,
                     ),
                     children: [
-                      _DebtOverview(list: list),
+                      // B2C v1.20: entrance stagger — teks/key/logika tetap.
+                      Stagger(index: 0, child: _DebtOverview(list: list)),
                       if (aktif.isNotEmpty) ...[
                         const SizedBox(
                             height: AppSpacing.sectionGap),

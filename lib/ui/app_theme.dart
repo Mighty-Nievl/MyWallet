@@ -1,3 +1,4 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 
 import 'design/app_colors.dart';
@@ -79,6 +80,16 @@ class AppTheme {
       scaffoldBackgroundColor: bg,
       visualDensity:
           compact ? VisualDensity.compact : VisualDensity.standard,
+      // B2C v1.20: transisi halaman fade-through konsisten di semua
+      // platform (bukan slide Android bawaan yang kasar).
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: FadeThroughPageTransitionsBuilder(),
+          TargetPlatform.windows:
+              FadeThroughPageTransitionsBuilder(),
+          TargetPlatform.linux: FadeThroughPageTransitionsBuilder(),
+        },
+      ),
       cardTheme: CardThemeData(
         margin: EdgeInsets.zero,
         color: useBlack

@@ -10,6 +10,7 @@ import '../components/app_feedback.dart';
 import '../components/category_glyph.dart';
 import '../components/setting_row.dart';
 import '../design/app_colors.dart';
+import '../design/app_motion.dart';
 import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
@@ -118,12 +119,17 @@ class CategoriesScreen extends ConsumerWidget {
                         SettingsGroup(
                           title: 'Pengeluaran',
                           children: [
-                            for (final c in expense)
-                              _CategoryRow(
-                                cat: c,
-                                onDelete: () =>
-                                    _confirmDeleteCat(
-                                        context, ref, c),
+                            for (var i = 0; i < expense.length; i++)
+                              // B2C v1.20: entrance stagger —
+                              // teks/key/logika row tidak berubah.
+                              Stagger(
+                                index: i.clamp(0, 6),
+                                child: _CategoryRow(
+                                  cat: expense[i],
+                                  onDelete: () =>
+                                      _confirmDeleteCat(
+                                          context, ref, expense[i]),
+                                ),
                               ),
                           ],
                         ),
@@ -136,12 +142,15 @@ class CategoriesScreen extends ConsumerWidget {
                         SettingsGroup(
                           title: 'Pemasukan',
                           children: [
-                            for (final c in income)
-                              _CategoryRow(
-                                cat: c,
-                                onDelete: () =>
-                                    _confirmDeleteCat(
-                                        context, ref, c),
+                            for (var i = 0; i < income.length; i++)
+                              Stagger(
+                                index: i.clamp(0, 6),
+                                child: _CategoryRow(
+                                  cat: income[i],
+                                  onDelete: () =>
+                                      _confirmDeleteCat(
+                                          context, ref, income[i]),
+                                ),
                               ),
                           ],
                         ),

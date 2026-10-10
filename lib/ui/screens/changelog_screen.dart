@@ -6,6 +6,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../changelog.dart';
 import '../components/app_feedback.dart';
 import '../components/setting_row.dart';
+import '../design/app_motion.dart';
 import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
@@ -75,14 +76,19 @@ class ChangelogScreen extends ConsumerWidget {
                       96,
                     ),
                     children: [
-                      for (final e in recent)
+                      // B2C v1.20: entrance stagger — teks/key/logika tetap.
+                      for (var i = 0; i < recent.length; i++)
                         Padding(
                           padding: const EdgeInsets.only(
                             bottom: AppSpacing.s8,
                           ),
-                          child: _EntryCard(
-                            entry: e,
-                            isInstalled: installed == e.version,
+                          child: Stagger(
+                            index: i.clamp(0, 4),
+                            child: _EntryCard(
+                              entry: recent[i],
+                              isInstalled:
+                                  installed == recent[i].version,
+                            ),
                           ),
                         ),
                       if (older.isNotEmpty)

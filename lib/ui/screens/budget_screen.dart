@@ -14,6 +14,7 @@ import '../components/app_progress.dart';
 import '../components/app_section.dart';
 import '../components/category_glyph.dart';
 import '../design/app_colors.dart';
+import '../design/app_motion.dart';
 import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
@@ -140,14 +141,19 @@ class BudgetScreen extends ConsumerWidget {
                             for (var i = 0;
                                 i < list.length;
                                 i++) ...[
-                              _BudgetItem(
-                                item: list[i],
-                                onEdit: () => _openBudgetDialog(
-                                  context,
-                                  ref,
-                                  month,
-                                  list,
-                                  existing: list[i],
+                              // B2C v1.20: entrance stagger per item —
+                              // teks/key/logika item tidak berubah.
+                              Stagger(
+                                index: i.clamp(0, 6),
+                                child: _BudgetItem(
+                                  item: list[i],
+                                  onEdit: () => _openBudgetDialog(
+                                    context,
+                                    ref,
+                                    month,
+                                    list,
+                                    existing: list[i],
+                                  ),
                                 ),
                               ),
                               if (i < list.length - 1)
@@ -653,41 +659,75 @@ class _OverviewCard extends ConsumerWidget {
         : (totalSpent / totalLimit).clamp(0.0, 1.0);
     final over = totalSpent > totalLimit;
     final warn = !over && pct >= _warnAt;
-    final color =
-        over ? scheme.error : warn ? scheme.tertiary : null;
     final remain = totalLimit - totalSpent;
     final safe =
         list.where((e) => e.spent <= e.budget.limit).length;
-    return AppCard(
+    // B2C v1.20: overview dibungkus gradasi status — aman = aksen,
+    // waspada/jebol = status (teks putih, kontras terjaga karena
+    // warna status digelapkan dulu). Gradien dari scheme langsung
+    // (bukan fungsi Home) agar transparan di semua tema.
+    final gradBase = over
+        ? HSLColor.fromColor(scheme.error)
+            .withLightness(0.38)
+            .toColor()
+        : warn
+        ? HSLColor.fromColor(scheme.tertiary)
+            .withLightness(0.42)
+            .toColor()
+        : HSLColor.fromColor(scheme.primary)
+            .withLightness(0.36)
+            .toColor();
+    final white = Colors.white;
+    return Container(
+      padding: AppSpacing.cardPadding,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            gradBase,
+            Color.lerp(gradBase, Colors.black, 0.22)!,
+          ],
+        ),
+        borderRadius: AppRadius.lgAll,
+        boxShadow: [
+          BoxShadow(
+            color: gradBase.withValues(alpha: 0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Anggaran · ${monthLabel(month)}',
-              style: AppType.labelMuted(context)),
+              style: AppType.labelMuted(context)
+                  .copyWith(color: white.withValues(alpha: 0.85))),
           const SizedBox(height: AppSpacing.s4),
           Text(display.money(totalLimit),
-              style: AppType.balance(context)),
+              style: AppType.balance(context).copyWith(color: white)),
           const SizedBox(height: AppSpacing.s4),
           Text(
             over
                 ? 'Lewat ${display.money(-remain)}'
                 : '${display.money(remain)} tersisa',
-            style: color == null
-                ? AppType.secondary(context)
-                : AppType.secondary(context).copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w600,
-                  ),
+            style: AppType.secondary(context).copyWith(
+                  color: white.withValues(alpha: 0.92),
+                  fontWeight: FontWeight.w600,
+                ),
           ),
           const SizedBox(height: AppSpacing.s12),
           AppProgress(
-              value: pct,
-              color: color ?? scheme.primary,
-              height: 8),
+            value: pct,
+            color: Colors.white.withValues(alpha: 0.95),
+            height: 8,
+          ),
           const SizedBox(height: AppSpacing.s8),
           Text(
             '$safe dari ${list.length} budget aman',
-            style: AppType.secondary(context),
+            style: AppType.secondary(context)
+                .copyWith(color: white.withValues(alpha: 0.92)),
           ),
         ],
       ),

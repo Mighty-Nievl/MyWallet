@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../design/app_motion.dart';
+
 /// Progress bar konsisten di seluruh aplikasi
 /// (Beranda kategori, Budget, Laporan).
 ///
@@ -7,6 +9,9 @@ import 'package:flutter/material.dart';
 /// selalu kelihatan; fill = warna semantik dari pemanggil
 /// (normal = primary, warning = tertiary, lewat batas = error).
 /// Threshold tetap milik logika pemanggil.
+///
+/// B2C v1.20: fill ANIMASI halus (TweenAnimationBuilder) tiap nilai
+/// berubah — bukan lompat. Hormati disableAnimations sistem.
 class AppProgress extends StatelessWidget {
   const AppProgress({
     super.key,
@@ -23,13 +28,30 @@ class AppProgress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final target = value.clamp(0.0, 1.0);
+    if (AppMotion.animationsOff(context)) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: LinearProgressIndicator(
+          value: target,
+          minHeight: height,
+          backgroundColor: scheme.surfaceContainerHighest,
+          color: color,
+        ),
+      );
+    }
     return ClipRRect(
       borderRadius: BorderRadius.circular(4),
-      child: LinearProgressIndicator(
-        value: value.clamp(0.0, 1.0),
-        minHeight: height,
-        backgroundColor: scheme.surfaceContainerHighest,
-        color: color,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: 0, end: target),
+        duration: AppMotion.normal,
+        curve: AppMotion.easeOut,
+        builder: (context, v, _) => LinearProgressIndicator(
+          value: v,
+          minHeight: height,
+          backgroundColor: scheme.surfaceContainerHighest,
+          color: color,
+        ),
       ),
     );
   }

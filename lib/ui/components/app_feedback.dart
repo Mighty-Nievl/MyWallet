@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../design/app_colors.dart';
 import '../design/app_radius.dart';
@@ -30,9 +31,18 @@ class AppIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    // B2C v1.20: haptic di SEMUA tombol ikon (kembali, aksi header,
+    // kalender, mata saldo) — sekali sentuh di sini kena semua layar.
+    final press = onPressed;
+    final tapped = press == null
+        ? null
+        : () {
+            HapticFeedback.selectionClick();
+            press();
+          };
     if (filled) {
       return IconButton.filled(
-        onPressed: onPressed,
+        onPressed: tapped,
         icon: Icon(icon, size: 20),
         tooltip: tooltip,
         style: IconButton.styleFrom(
@@ -52,7 +62,7 @@ class AppIconButton extends StatelessWidget {
         border: Border.all(color: AppColors.borderOf(context)),
       ),
       child: IconButton(
-        onPressed: onPressed,
+        onPressed: tapped,
         icon: Icon(icon, size: 20, color: color),
         tooltip: tooltip,
         constraints: const BoxConstraints.tightFor(

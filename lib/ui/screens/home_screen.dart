@@ -15,6 +15,7 @@ import '../components/app_progress.dart';
 import '../components/app_section.dart';
 import '../components/category_glyph.dart';
 import '../design/app_colors.dart';
+import '../design/app_motion.dart';
 import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
@@ -336,12 +337,15 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   SliverToBoxAdapter(
                     key: const ValueKey('home:tiles'),
-                    child: _pad(_StatTiles(month: month, totals: totals)),
+                    child: _pad(
+                      _StatTiles(month: month, totals: totals),
+                      stagger: 1,
+                    ),
                   ),
                   if (onGoTab != null)
                     SliverToBoxAdapter(
                       key: const ValueKey('home:debts'),
-                      child: _pad(_DebtCard(onGoTab: onGoTab)),
+                      child: _pad(_DebtCard(onGoTab: onGoTab), stagger: 2),
                     ),
                   SliverToBoxAdapter(
                     key: const ValueKey('home:banners'),
@@ -351,6 +355,7 @@ class HomeScreen extends ConsumerWidget {
                         totals: totals,
                         onGoTab: onGoTab,
                       ),
+                      stagger: 2,
                     ),
                   ),
                   // Top kategori + terakhir dicatat: tanpa quick-actions,
@@ -373,6 +378,7 @@ class HomeScreen extends ConsumerWidget {
                                 ),
                           child: _CategoryList(byCat: byCat, display: display),
                         ),
+                        stagger: 3,
                       ),
                     ),
                   ],
@@ -399,6 +405,7 @@ class HomeScreen extends ConsumerWidget {
                             ],
                           ),
                         ),
+                        stagger: 4,
                       ),
                     ),
                   ],
@@ -416,10 +423,15 @@ class HomeScreen extends ConsumerWidget {
 }
 
 /// Padding horizontal halaman untuk satu section.
-Widget _pad(Widget child, {double top = 0}) {
+///
+/// B2C v1.20: [stagger] > 0 membungkus konten dengan entrance
+/// fade+geser (lihat [Stagger]) — teks/key/logika tidak berubah.
+Widget _pad(Widget child, {double top = 0, int stagger = 0}) {
+  final content =
+      stagger <= 0 ? child : Stagger(index: stagger, child: child);
   return Padding(
     padding: EdgeInsets.fromLTRB(AppSpacing.page, top, AppSpacing.page, 0),
-    child: child,
+    child: content,
   );
 }
 
@@ -479,6 +491,7 @@ class _HeroCard extends ConsumerWidget {
 
     return Container(
       key: const ValueKey('home:hero'),
+      clipBehavior: Clip.antiAlias,
       // Padat ala mockup referensi: padding 16px di semua sisi —
       // label/angka/pil sejajar rapi, kartu punya napas horizontal.
       padding: const EdgeInsets.all(AppSpacing.s16),
@@ -499,6 +512,33 @@ class _HeroCard extends ConsumerWidget {
       // teksnya sendiri (padat ala mockup) — target sentuh 48px utuh.
       child: Stack(
         children: [
+          // B2C v1.20: kilau dekoratif (lingkaran putih samar) — di
+          // bawah konten, tidak mengubah decoration (test kontras baca
+          // gradient Container ini) maupun teks/key/logika.
+          Positioned(
+            top: -56,
+            right: -32,
+            child: Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.10),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -72,
+            left: -28,
+            child: Container(
+              width: 130,
+              height: 130,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.07),
+              ),
+            ),
+          ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -644,7 +684,11 @@ Widget _pillButton(
     color: solid ? Colors.white : ghost,
     shape: shape,
     child: InkWell(
-      onTap: onTap,
+      onTap: () {
+        // B2C v1.20: haptic di dua pil utama (Catat keluar/Pemasukan).
+        HapticFeedback.lightImpact();
+        onTap();
+      },
       borderRadius: BorderRadius.circular(999),
       child: SizedBox(
         height: AppSpacing.touchMin,
