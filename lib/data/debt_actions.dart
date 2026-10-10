@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'database.dart';
 import 'providers.dart';
+import 'sync_meta.dart';
 
 /// Logika manajer utang-piutang (v1.15, skema v2) — opsi B.
 ///
@@ -50,10 +51,11 @@ String _mirrorNote(String label, String note) {
 
 // ---------- Inti (AppDatabase — testable langsung) ----------
 
-/// Total sudah dibayar untuk satu utang (SUM cicilan).
+/// Total sudah dibayar untuk satu utang (SUM cicilan, tanpa yang
+/// terhapus-lembut).
 Future<int> debtPaidOf(AppDatabase db, int debtId) async {
   final row = await db.customSelect(
-    'SELECT COALESCE(SUM(amount),0) AS s FROM debt_payments WHERE debt_id = ?',
+    'SELECT COALESCE(SUM(amount),0) AS s FROM debt_payments WHERE debt_id = ? AND deleted_at IS NULL',
     variables: [drift.Variable.withInt(debtId)],
     readsFrom: {db.debtPayments},
   ).getSingle();
@@ -87,6 +89,7 @@ Future<int> insertDebt(
         ),
       );
   // Cermin pokok: utang = uang MASUK, piutang = uang KELUAR.
+  // uuid/updatedAt terisi otomatis via clientDefault (sync_meta).
   await db.into(db.transactions).insert(
         TransactionsCompanion.insert(
           amount: total,
@@ -175,6 +178,8 @@ Future<void> updateDebt(
       date: drift.Value(date),
       dueDate: drift.Value(dueDate),
       note: drift.Value(cleanNote),
+      // Jejak tulis sync (Fase 0).
+      updatedAt: drift.Value(syncNow()),
     ),
   );
   // Sinkron cermin pokok (baris debtPaymentId IS NULL milik utang ini).
@@ -187,6 +192,8 @@ Future<void> updateDebt(
       date: drift.Value(date),
       note: drift.Value(
           _mirrorNote(debtPrincipalNote(debt.isDebt, n), cleanNote)),
+      // Jejak tulis sync (Fase 0).
+      updatedAt: drift.Value(syncNow()),
     ),
   );
 }

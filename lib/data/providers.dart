@@ -12,10 +12,11 @@ final dbProvider = Provider<AppDatabase>((ref) {
   return db;
 });
 
-/// Stream semua kategori (abjad).
+/// Stream semua kategori (abjad). Sembunyikan yang terhapus-lembut.
 final categoriesProvider = StreamProvider<List<Category>>((ref) {
   final db = ref.watch(dbProvider);
   return (db.select(db.categories)
+        ..where((t) => t.deletedAt.isNull())
         ..orderBy([
           (t) => OrderingTerm.asc(t.isExpense),
           (t) => OrderingTerm.asc(t.name),
@@ -27,7 +28,7 @@ final categoriesProvider = StreamProvider<List<Category>>((ref) {
 final expenseCategoriesProvider = StreamProvider<List<Category>>((ref) {
   final db = ref.watch(dbProvider);
   return (db.select(db.categories)
-        ..where((t) => t.isExpense.equals(true))
+        ..where((t) => t.isExpense.equals(true) & t.deletedAt.isNull())
         ..orderBy([(t) => OrderingTerm.asc(t.name)]))
       .watch();
 });
@@ -36,7 +37,7 @@ final expenseCategoriesProvider = StreamProvider<List<Category>>((ref) {
 final incomeCategoriesProvider = StreamProvider<List<Category>>((ref) {
   final db = ref.watch(dbProvider);
   return (db.select(db.categories)
-        ..where((t) => t.isExpense.equals(false))
+        ..where((t) => t.isExpense.equals(false) & t.deletedAt.isNull())
         ..orderBy([(t) => OrderingTerm.asc(t.name)]))
       .watch();
 });
@@ -164,12 +165,17 @@ Future<List<({Budget budget, String name, String icon, int spent})>>
       .get();
   final out = <({Budget budget, String name, String icon, int spent})>[];
   for (final b in rows) {
+    // Budget terhapus-lembut (Fase 2) disembunyikan.
+    if (b.deletedAt != null) continue;
     final cat = await (db.select(db.categories)
           ..where((c) => c.id.equals(b.categoryId)))
         .getSingleOrNull();
+    // Kategori terhapus-lembut → tampil sebagai '?' (baris budget
+    // fisiknya masih ada di Fase 0).
+    final catAlive = (cat == null || cat.deletedAt != null) ? null : cat;
     final spentRows = await db.customSelect(
       'SELECT COALESCE(SUM(amount),0) AS s FROM transactions '
-      'WHERE is_expense = 1 AND category_id = ? AND date BETWEEN ? AND ?',
+      'WHERE is_expense = 1 AND deleted_at IS NULL AND category_id = ? AND date BETWEEN ? AND ?',
       variables: [
         Variable.withInt(b.categoryId),
         Variable.withDateTime(from),
@@ -179,8 +185,8 @@ Future<List<({Budget budget, String name, String icon, int spent})>>
     ).getSingle();
     out.add((
       budget: b,
-      name: cat?.name ?? '?',
-      icon: cat?.icon ?? '📦',
+      name: catAlive?.name ?? '?',
+      icon: catAlive?.icon ?? '📦',
       spent: spentRows.read<int>('s'),
     ));
   }
@@ -204,14 +210,16 @@ int _debtRemain(int total, int paid) => total - paid;
 
 /// Semua utang + progress, urutan stabil: belum lunas dulu (jatuh tempo
 /// terdekat), lalu lunas abjad. Fungsi murni (testable in-memory).
+/// Baris terhapus-lembut disembunyikan (Fase 2 baru mengisinya).
 Future<List<DebtEntry>> fetchDebts(AppDatabase db) async {
-  final debts =
-      await (db.select(db.debts)..orderBy([(d) => OrderingTerm.asc(d.name)]))
-          .get();
+  final debts = await (db.select(db.debts)
+        ..where((d) => d.deletedAt.isNull())
+        ..orderBy([(d) => OrderingTerm.asc(d.name)]))
+      .get();
   final out = <DebtEntry>[];
   for (final d in debts) {
     final row = await db.customSelect(
-      'SELECT COALESCE(SUM(amount),0) AS s FROM debt_payments WHERE debt_id = ?',
+      'SELECT COALESCE(SUM(amount),0) AS s FROM debt_payments WHERE debt_id = ? AND deleted_at IS NULL',
       variables: [Variable.withInt(d.id)],
       readsFrom: {db.debtPayments},
     ).getSingle();
@@ -279,10 +287,10 @@ final debtSummaryProvider = StreamProvider<(int, int)>((ref) {
   });
 });
 
-/// Cicilan satu utang, terbaru dulu.
+/// Cicilan satu utang, terbaru dulu (sembunyikan yang terhapus-lembut).
 Stream<List<DebtPayment>> watchDebtPayments(AppDatabase db, int debtId) {
   return (db.select(db.debtPayments)
-        ..where((p) => p.debtId.equals(debtId))
+        ..where((p) => p.debtId.equals(debtId) & p.deletedAt.isNull())
         ..orderBy([(p) => OrderingTerm.desc(p.date)]))
       .watch();
 }

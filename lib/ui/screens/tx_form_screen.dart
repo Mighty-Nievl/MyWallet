@@ -220,7 +220,8 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
     if (draft.suggestedCategory != null) {
       final db = ref.read(dbProvider);
       final cat = await (db.select(db.categories)
-            ..where((c) => c.name.equals(draft.suggestedCategory!)))
+            ..where((c) => c.name.equals(draft.suggestedCategory!))
+            ..where((c) => c.deletedAt.isNull()))
           .getSingleOrNull();
       if (cat != null) {
         catId = cat.id;

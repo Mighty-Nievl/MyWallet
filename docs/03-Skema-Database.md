@@ -1,6 +1,17 @@
 # 03 — Skema Database
 
-SQLite `mywallet.sqlite`, `schemaVersion = 2` (v1.15: migrasi v1→v2 tambah 2 kolom + 2 tabel utang, data lama utuh). Seed 12 kategori saat database pertama dibuat.
+SQLite `mywallet.sqlite`, `schemaVersion = 3` (v1.16 Fase 0 sync-ready: 4 kolom meta di semua tabel + `categoryUuid` di transactions, migrasi v2→v3 aman + backfill otomatis; v1.15: migrasi v1→v2 tambah 2 kolom + 2 tabel utang, data lama utuh). Seed 12 kategori saat database pertama dibuat.
+
+Kolom sync di SEMUA tabel (`categories`, `transactions`, `budgets`, `debts`, `debt_payments`):
+
+| Kolom | Tipe | Keterangan |
+|---|---|---|
+| uuid | TEXT NULL, auto UUID v4 via `clientDefault` | identitas global antar-HP (unik logis, tanpa UNIQUE SQL — SQLite melarang ADD COLUMN ber-constraint UNIQUE) |
+| updatedAt | DATETIME NULL, auto jam tulis via `clientDefault` + bump manual tiap update | jejak last-write-wins per-baris (Fase 2) |
+| deletedAt | DATETIME NULL | soft-delete: null = hidup; query saldo/laporan/riwayat/budget/utang memfilter `IS NULL` (kontrak Fase 2, Fase 0 belum ada yang mengisi) |
+| householdId | TEXT NULL | null = pribadi; terisi = milik rumah tangga (Fase 1) |
+
+Util: `lib/data/sync_meta.dart` (`newSyncUuid()`, `syncNow()`, `syncUuidPattern`). Backfill migrasi: `AppDatabase.backfillSyncMeta()` (public agar testable — uuid per baris, updatedAt = createdAt kecuali categories/budgets = jam migrasi, categoryUuid dari induk). Test: `test/sync_ready_test.dart` (9 kasus).
 
 ## categories
 
@@ -26,6 +37,7 @@ Seed bawaan — keluar: Makan & Minum 🍔, Transportasi 🛵, Belanja 🛍️, 
 | createdAt | DATETIME, default now | audit |
 | debtId | INTEGER NULL | v1.15: tautan utang (null = biasa). Terisi = transaksi CERMIN otomatis (lihat `debt_actions.dart`) |
 | debtPaymentId | INTEGER NULL | v1.15: terisi = cermin cicilan ke-N |
+| categoryUuid | TEXT NULL | v1.16 Fase 0: pendamping categoryId untuk sync (kategori custom beda id per HP, uuid sama; dibackfill + ditulis actions) |
 
 ## budgets
 
@@ -71,5 +83,6 @@ Semantik saldo: tiap catat/bayar menulis transaksi CERMIN ke `transactions` (fla
 - `totalsByCategory(from, to, expense)` — agregasi per kategori untuk dashboard & laporan.
 
 ## Migrasi
+- v2 → v3 (v1.16 Fase 0, sync-ready): 4 kolom meta (`uuid/updatedAt/deletedAt/householdId`) di 5 tabel + `categoryUuid` di transactions + backfill (`backfillSyncMeta`: uuid v4 per baris, updatedAt = createdAt kecuali categories/budgets, categoryUuid dari induk). Semua nullable → data lama utuh. Tanpa network, offline 100% sama.
 - v1 → v2 (v1.15, utang-piutang): tambah kolom `transactions.debtId/debtPaymentId` (nullable) + tabel `debts` + `debt_payments`. `deleteDebt` hapus eksplisit berurutan (tidak ngandelin FK cascade — SQLite bisa pragma OFF).
 - Saat menambah kolom/tabel berikutnya: naikkan `schemaVersion` dan tulis `onUpgrade` di `migration`, JANGAN `deleteAndRecreate` di produksi.

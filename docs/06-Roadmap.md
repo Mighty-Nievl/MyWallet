@@ -122,7 +122,17 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] Layar `DebtScreen`: overview + seksi Aktif/Lunas + dialog catat/ubah (tipe SegmentedButton, dikunci saat ubah) + bottom sheet detail + dialog bayar + konfirmasi hapus (tanpa undo, cermin banyak). Komponen reuse: AppHeader/AppCard/AppProgress/AppEmptyState/AppSection/CategoryGlyph + `ThousandSeparatorInputFormatter` + `display.money/date`.
 - [x] Test `test/debt_test.dart` (15 kasus: cermin masuk/keluar, 2x cicilan, overpay, pas-lunas, validasi, urutan, ubah sinkron, hapus total, hapus cicilan, ringkasan) + `test/debt_widget_test.dart` (6 kasus: empty, list, dialog end-to-end + saldo, validasi inline, kartu Beranda + lompat tab). analyze bersih, 85/85 hijau.
 
-## v1.16 — Berikutnya
+## v1.16 — Sync-ready + keluarga (jalan: Fase 0 ✅ 10 Okt 2026)
+
+Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi B — pilih user 10 Okt 2026). Tetap offline-first: tanpa login = app sekarang, nol berubah.
+
+- [x] **Fase 0 — sync-ready lokal (v1.16.0, tanpa network)**: skema v3 (`uuid/updatedAt/deletedAt/householdId` di 5 tabel + `categoryUuid`), migrasi v2→v3 + backfill otomatis, `sync_meta.dart`, semua query siap soft-delete (`deletedAt IS NULL`), `actions`/`debt_actions` bump `updatedAt`. Test `sync_ready_test.dart` 9 kasus. Offline 100% sama, full suite 94/94 hijau.
+- [ ] Fase 1 — auth + household: Google Sign-In, buat/gabung rumah tangga, kode invite. Belum sync data.
+- [ ] Fase 2 — sync engine beta (opt-in): push/pull transactions + categories, antrean offline, indikator status. Cermin utang di-rebuild per-HP (jangan sync mentah → ganda).
+- [ ] Fase 3 — utang + budget ikut sync + uji 2 emulator bareng.
+- [ ] Fase 4 — hardening production-grade: RLS audit, hapus akun, kebijakan privasi (wajib Play Store), crash reporting.
+
+## v1.17 — Berikutnya (tetap lokal)
 - [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).
 
@@ -136,4 +146,4 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] Export PDF laporan bulanan (rilis v1.14.0: `pdf` + `printing` lokal via `report_pdf_service.dart`, tanpa API public-apis).
 
 ## Catatan keputusan
-Arsitektur saat ini (Drift + Riverpod stream) sudah cukup sampai v1.2. Multi-dompet = tambah tabel `wallets` + kolom `walletId` di transactions + migrasi schema v2→v3 (v1→v2 sudah dipakai utang-piutang di v1.15).
+Arsitektur saat ini (Drift + Riverpod stream) sudah cukup sampai v1.2. Multi-dompet = tambah tabel `wallets` + kolom `walletId` di transactions + migrasi schema v3→v4 (v2→v3 sudah dipakai sync-ready di v1.16).

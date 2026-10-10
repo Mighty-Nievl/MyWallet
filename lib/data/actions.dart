@@ -3,8 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'database.dart';
 import 'providers.dart';
+import 'sync_meta.dart';
 
 // ---------- Transaksi ----------
+
+/// Cari uuid kategori (pendamping categoryId untuk sync Fase 2).
+Future<String?> _categoryUuidOf(AppDatabase db, int? categoryId) async {
+  if (categoryId == null) return null;
+  final cat = await (db.select(db.categories)
+        ..where((c) => c.id.equals(categoryId)))
+      .getSingleOrNull();
+  return cat?.uuid;
+}
 
 Future<void> addTransaction(
   WidgetRef ref, {
@@ -20,6 +30,8 @@ Future<void> addTransaction(
           amount: amount,
           isExpense: drift.Value(isExpense),
           categoryId: drift.Value(categoryId),
+          categoryUuid:
+              drift.Value(await _categoryUuidOf(db, categoryId)),
           date: date,
           note: drift.Value(note.trim()),
         ),
@@ -41,8 +53,11 @@ Future<void> updateTransaction(
       amount: drift.Value(amount),
       isExpense: drift.Value(isExpense),
       categoryId: drift.Value(categoryId),
+      categoryUuid: drift.Value(await _categoryUuidOf(db, categoryId)),
       date: drift.Value(date),
       note: drift.Value(note.trim()),
+      // Jejak tulis sync (Fase 0): tiap ubah = updatedAt baru.
+      updatedAt: drift.Value(syncNow()),
     ),
   );
 }
@@ -98,7 +113,11 @@ Future<void> upsertBudget(
         );
   } else {
     await (db.update(db.budgets)..where((b) => b.id.equals(existing.id)))
-        .write(BudgetsCompanion(limit: drift.Value(limit)));
+        .write(BudgetsCompanion(
+      limit: drift.Value(limit),
+      // Jejak tulis sync (Fase 0).
+      updatedAt: drift.Value(syncNow()),
+    ));
   }
 }
 

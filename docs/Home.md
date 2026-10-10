@@ -18,7 +18,7 @@
 - **Penyimpanan:** 100% lokal, SQLite via Drift — tanpa login, tanpa server.
 - **State:** flutter_riverpod 3.x (`StreamProvider` auto-refresh, `StateProvider` via `legacy.dart`).
 - **File DB:** `mywallet.sqlite` di folder dokumen aplikasi.
-- **Status:** v1.15.0 — Manajer utang-piutang offline (tab Utang ke-5 + cicilan + saldo otomatis) · 85 test hijau.
+- **Status:** v1.16.0 — Fondasi sync-ready Fase 0 (skema v3, tetap 100% offline) · 94 test hijau.
 
 ## Peta kode
 

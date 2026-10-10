@@ -11,6 +11,11 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String text})>[
   (
+    version: 'v1.16.0',
+    text:
+        'Fondasi sync-ready Fase 0 (tetap 100% offline, tanpa network): skema DB v3 — semua tabel punya uuid (identitas antar-HP), updatedAt (jejak tulis), deletedAt (soft-delete), householdId (pribadi vs rumah tangga) + categoryUuid di transaksi. Migrasi v2→v3 aman (data lama utuh, backfill otomatis). Semua query (saldo/laporan/riwayat/budget/utang) siap soft-delete. Persiapan Google Sign-In + Firestore (Fase 1-2).',
+  ),
+  (
     version: 'v1.15.0',
     text:
         'Manajer utang-piutang (100% offline): tab Utang ke-5 + kartu ringkas di Beranda (sisa utang vs piutang, tap → Kelola). Utang = pinjam (catat = pemasukan, bayar = pengeluaran), Piutang = meminjami (catat = pengeluaran, terima = pemasukan) — tiap aksi menulis transaksi cermin otomatis sehingga saldo, laporan, riwayat, PDF & CSV ikut tanpa ubah query lama. Cicilan parsial berkali-kali + anti-overpay + jatuh tempo + progress + lunas otomatis. Skema DB v2 (migrasi v1→v2 aman, data lama utuh).',
