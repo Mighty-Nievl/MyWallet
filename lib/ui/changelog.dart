@@ -26,6 +26,18 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.17.2',
+    date: '10 Okt 2026',
+    user:
+        'Login Google di halaman Keluarga sekarang bisa dicoba lagi: '
+        'konfigurasi server sudah dilengkapi. Butuh internet sekali saat '
+        'login; tanpa login aplikasi tetap offline seperti biasa.',
+    tech:
+        'Config-only tanpa perubahan kode: google-services.json baru '
+        '(3 oauth client termasuk web), secret CI diperbarui. Full 127/127.',
+    breaking: null,
+  ),
+  (
     version: 'v1.17.1',
     date: '10 Okt 2026',
     user:
