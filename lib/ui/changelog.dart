@@ -26,6 +26,23 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.21.0',
+    date: '10 Okt 2026',
+    user:
+        'Beranda kini terasa seperti papan kemenangan: saldo menghitung '
+        'naik saat dibuka, sisa budget bulan ini langsung kelihatan di '
+        'kartu utama, ada streak harian biar rajin catat, plus Catat Kilat '
+        '— ketuk nominal langsung kebuka form yang sudah terisi. Datamu '
+        'tidak berubah, cuma Berandanya yang makin semangat.',
+    tech:
+        'Hero count-up + pacing budget dihitung di awal + tombol raksasa '
+        '56px + streak N hari + dots 7 + misi harian (hitung Dart murni, '
+        'tanpa skema) + TxFormScreen.initialAmount (backward-compatible) + '
+        'fix FittedBox tile + ikon api vektor + chip kartu-terang, 3 test '
+        'baru, full 163/163.',
+    breaking: null,
+  ),
+  (
     version: 'v1.20.0',
     date: '10 Okt 2026',
     user:
