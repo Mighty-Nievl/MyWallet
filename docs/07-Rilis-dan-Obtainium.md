@@ -21,6 +21,14 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 6. Workflow **Release MyWallet** otomatis jalan: codegen → analyze → test → `flutter build apk --release` (signed) + AAB → membuat GitHub Release berisi `mywallet-v1.0.1.apk` (+ `.aab` untuk Play Console).
 7. Pantau di tab **Actions → Release MyWallet**.
 
+## Workflow CI (3 file di `.github/workflows/`)
+
+| Workflow | Pemicu | Hasil |
+|---|---|---|
+| **Build MyWallet** (`build.yml`) | push/PR ke `main` | Analyze + test + APK debug + AAB rilis (artifacts) |
+| **Fast Flutter APK Build** (`build-apk.yml`) | push ke `main` / manual | APK rilis signed keystore resmi (artifact, retensi 3 hari) — buat cek cepat di HP tanpa tag |
+| **Release MyWallet** (`release.yml`) | push tag `v*` / manual | GitHub Release berisi `mywallet-vX.Y.Z.apk` + `.aab` → Obtainium |
+
 ## Riwayat rilis
 - **v1.21.1** (10 Okt 2026): Audit referensi Beranda — haptic semua tombol (banner + kartu utang). Isi/data nol berubah. Full 163/163.
 - **v1.21.0** (10 Okt 2026): Beranda papan kemenangan — saldo count-up, pacing budget di kartu utama, streak harian + misi, Catat Kilat (form terisi). Fix 3 bug visual QA golden. Full 163/163.

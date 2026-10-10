@@ -1,0 +1,115 @@
+name: Fast Flutter APK Build
+
+# APK rilis (signed keystore resmi) tiap push ke main — buat cek cepat
+# di HP tanpa nunggu tag rilis. Analyze + test tetap di build.yml;
+# workflow ini sengaja build-only biar antreannya pendek.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flutter-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build APK rilis (signed)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Cegah "No space left on device" (insiden rilis v1.12.1).
+      - name: Bebaskan disk runner (anti penuh)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: false
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: false
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: "3.44.4"
+          cache: true
+
+      # Runner cloud RAM 16GB: pakai setting kencang.
+      # (android/gradle.properties di repo diset hemat 2GB buat laptop
+      # RAM kecil — timpa di sini, pola sama seperti build.yml.)
+      - name: Tune Gradle for CI (fast)
+        run: |
+          cat > android/gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8
+          org.gradle.workers.max=4
+          org.gradle.parallel=true
+          org.gradle.caching=true
+          kotlin.incremental=true
+          android.useAndroidX=true
+          android.newDsl=false
+          android.builtInKotlin=false
+          EOF
+
+      # NDK di runner sering korup saat diunduh (ZipException flaky).
+      # Pasang eksplisit dengan retry, pola sama seperti build.yml.
+      - name: Pasang NDK dengan retry (anti-korup)
+        run: |
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          NDK_VER="28.2.13676358"
+          MGR="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          for i in 1 2 3 4 5; do
+            echo "== NDK attempt $i =="
+            rm -rf "$SDK/ndk/$NDK_VER" "$SDK/.temp"
+            if yes | "$MGR" --install "ndk;$NDK_VER"; then
+              break
+            fi
+            echo "NDK install gagal, coba lagi..."
+            sleep 15
+          done
+          test -f "$SDK/ndk/$NDK_VER/source.properties"
+
+      # Tanpa keystore, APK rilis = tanda tangan debug → GAGAL install
+      # menimpa app dari Obtainium (signature mismatch). Secrets keystore
+      # sudah ada di repo (dipakai release.yml).
+      - name: Siapkan keystore rilis
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/mywallet.keystore
+          {
+            echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}"
+            echo "keyPassword=${{ secrets.KEY_PASSWORD }}"
+            echo "keyAlias=${{ secrets.KEY_ALIAS }}"
+            echo "storeFile=app/mywallet.keystore"
+          } > android/key.properties
+
+      # Plugin google-services butuh file ini saat build (di-gitignore,
+      # restore dari secret — pola sama seperti build.yml).
+      - name: Siapkan google-services.json (Firebase)
+        run: |
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > android/app/google-services.json
+          test -s android/app/google-services.json
+
+      - run: flutter pub get
+      - run: dart run build_runner build
+      - run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: mywallet-apk-release
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 3
