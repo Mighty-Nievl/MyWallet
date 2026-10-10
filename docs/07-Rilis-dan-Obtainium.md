@@ -30,6 +30,7 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 | **Release MyWallet** (`release.yml`) | push tag `v*` / manual | GitHub Release berisi `mywallet-vX.Y.Z.apk` + `.aab` → Obtainium |
 
 ## Riwayat rilis
+- **v1.22.0** (11 Okt 2026): Redesign Beranda editorial + logo baru. Hero ledger full-bleed, strip delta ringkas. Full 163/163.
 - **v1.21.1** (10 Okt 2026): Audit referensi Beranda — haptic semua tombol (banner + kartu utang). Isi/data nol berubah. Full 163/163.
 - **v1.21.0** (10 Okt 2026): Beranda papan kemenangan — saldo count-up, pacing budget di kartu utama, streak harian + misi, Catat Kilat (form terisi). Fix 3 bug visual QA golden. Full 163/163.
 - **v1.20.0** (10 Okt 2026): B2C total semua halaman — kartu terangkat lembut, empty-state medali, daftar stagger halus, haptic global, transisi fade-through. Isi/data nol berubah. Full 160/160.

@@ -26,6 +26,21 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.22.0',
+    date: '11 Okt 2026',
+    user:
+        'Beranda tampil beda total: saldo besar di atas, ringkasan masuk-'
+        'keluar-budget dalam satu panel, insight bulan lalu jadi strip '
+        'ringkas, plus logo baru di aplikasi.',
+    tech:
+        'home_screen.dart redesign: header strip ramping, hero ledger full-'
+        'bleed (saldo 40px + kolom Masuk/Keluar + ledger budget + tombol 2 '
+        'kolom), _DeltaStrip ganti banner ganda, hapus _StatTiles/_megaButton/'
+        '_incomeLink/_bannerBox/_bannerCta/_tile/_darkBanner, golden '
+        'diregenerasi, logo app_logo.png + mipmap diganti redesigned.',
+    breaking: null,
+  ),
+  (
     version: 'v1.21.1',
     date: '10 Okt 2026',
     user:

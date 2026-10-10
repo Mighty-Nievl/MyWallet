@@ -140,7 +140,7 @@ Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi 
 - [x] **Kelola anggota + pengaman keluar (v1.19.1)**: baris Anggota bisa diketik → bottom sheet (naik/turun peran, keluarkan, keluar) + dialog konfirmasi + peringatan pengelola-terakhir (tidak diblokir); tombol Keluar utama juga konfirmasi + cek online; `canRemoveMember` guard murni + test 3 kasus; rules `members delete` owner-bisa-kick. Full 160/160.
 - [x] **B2C total semua halaman (v1.20.0)**: token gerak `AppMotion` + `Stagger` entrance tanpa timer (aman fake_async) + progress animasi + empty-state medali gradien + `AppCard` shadow lembut + haptic global (tile/baris/tombol ikon/pil hero/segmented/export/PIN) + hero shine + stagger Beranda/Riwayat/Catat/Budget/Laporan/Utang/Kategori/Changelog + transisi fade-through. Nol teks/key/logika berubah. Full 160/160.
 - [x] **Beranda papan kemenangan (v1.21.0)**: hero count-up + pacing budget di awal + tombol raksasa 56px + streak N hari + dots 7 + misi harian + Catat Kilat (`initialAmount`) + fix 3 bug visual QA golden. 3 test baru, full 163/163.
-- [x] **Audit referensi satu-file (v1.21.1)**: haptic CTA banner + kartu utang; tolak hardcode/TODO/FAB/emoji PDF (provider live + ikon vektor + tema dipertahankan). Full 163/163.
+- [x] **Redesign Beranda editorial (v1.22.0)**: header strip ramping, hero ledger full-bleed (saldo 40px + Masuk/Keluar + budget + tombol 2 kolom), strip delta ganti banner ganda, golden regenerasi, logo redesigned + mipmap. Full 163/163.
 - [ ] Fase 3 — utang + budget ikut sync + uji 2 emulator bareng.
 - [ ] Fase 4 — hardening production-grade: RLS audit, hapus akun, kebijakan privasi (wajib Play Store), crash reporting.
 

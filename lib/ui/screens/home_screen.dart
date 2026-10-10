@@ -32,10 +32,6 @@ const _warnAt = 0.8;
 /// Warna bar budget saat waspada (sama dengan layar Budget).
 const _warnAmber = Color(0xFFFBBF24);
 
-/// Latar banner insight gelap (satu-satunya warna netral hard-code di
-/// halaman ini — dipakai sebagai LATAR kartu, bukan teks).
-const _darkBanner = Color(0xFF171717);
-
 /// Gradien aksen untuk kartu saldo — IKUT warna aksen tema
 /// (Pengaturan → Tampilan): default hijau, bisa biru ala GoPay,
 /// ungu, oranye, dll tanpa kode terpisah.
@@ -121,10 +117,7 @@ final _prevMonthExpenseProvider = FutureProvider<int>((ref) async {
 /// tidak menyentuh schema/query lain.
 final _streakProvider = StreamProvider<int>((ref) {
   final db = ref.watch(dbProvider);
-  return db
-      .select(db.transactions)
-      .watch()
-      .asyncMap((_) => _calcStreak(db));
+  return db.select(db.transactions).watch().asyncMap((_) => _calcStreak(db));
 });
 
 Future<int> _calcStreak(AppDatabase db) async {
@@ -214,154 +207,121 @@ class HomeScreen extends ConsumerWidget {
           // tinggi hero tidak punya lebar bawaan).
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Kepala mockup (referensi 8 Okt): blok gelap menepi dari
-            // tepi atas (radius atas = kelengkungan layar), kartu saldo
-            // MENUMPUK separuh masuk ke blok & separuh keluar ke halaman
-            // terang. Ruang 390: blok y0-126, kartu y73-219 — kartu
-            // ber-padding horizontal 16px di dalam blok gelap.
-            Stack(
-              children: [
-                SizedBox(height: statusPad + 219),
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(AppRadius.xxl),
-                    ),
-                    child: Container(
-                      key: const ValueKey('home:header'),
-                      color: _topColor(context),
-                      padding: EdgeInsets.only(
-                        top: statusPad + 18,
-                        bottom: 60,
-                        left: AppSpacing.page,
-                        right: 8,
+            // Header editorial ramping (redesign v1.22): strip gelap
+            // setinggi konten — sapaan + tanggal + gear. Blok 126px +
+            // kartu menumpuk DIHAPUS; hero saldo pindah ke dalam scroll
+            // sebagai elemen dominan pertama.
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppRadius.xxl),
+              ),
+              child: Container(
+                key: const ValueKey('home:header'),
+                color: _topColor(context),
+                padding: EdgeInsets.only(
+                  top: statusPad + 12,
+                  bottom: 12,
+                  left: AppSpacing.page,
+                  right: 8,
+                ),
+                child: Row(
+                  children: [
+                    // Avatar inisial — identitas visual saja (bukan tombol).
+                    SizedBox(
+                      width: 36,
+                      child: Center(
+                        child: CircleAvatar(
+                          radius: 16,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
+                          child: Text(
+                            _avatarInitial(greetName ?? ''),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
                       ),
-                      child: Row(
+                    ),
+                    const SizedBox(width: AppSpacing.s8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Avatar inisial — identitas visual saja (bukan tombol).
-                          // Satu-satunya pintu Pengaturan adalah ikon gear
-                          // di kanan (menghindari duplikasi avatar+gear yang
-                          // membuka layar sama + tooltip 'Profil' yang salah
-                          // di screen reader).
-                          SizedBox(
-                            width: 40,
-                            child: Center(
-                              child: CircleAvatar(
-                                radius: 20,
-                                backgroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.primary,
-                                child: Text(
-                                  _avatarInitial(greetName ?? ''),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
+                          // Sapaan ringkas tanpa mahkota (redesign: header
+                          // minimalis — mahkota emoji dihapus).
+                          Text(
+                            greetingText(
+                              now,
+                              manualName: manualName,
+                              googleName: googleName,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppType.screenTitle(
+                              context,
+                            ).copyWith(color: Colors.white, fontSize: 16),
                           ),
-                          const SizedBox(width: AppSpacing.s12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        greetingText(
-                                          now,
-                                          manualName: manualName,
-                                          googleName: googleName,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: AppType.screenTitle(context)
-                                            .copyWith(
-                                              color: Colors.white,
-                                              fontSize: 18,
-                                            ),
-                                      ),
-                                    ),
-                                    // Mahkota hanya bila ada nama (sapaan polos
-                                    // tanpa nama = tanpa mahkota).
-                                    if (greetName != null) ...[
-                                      const SizedBox(width: 4),
-                                      // Mahkota kecil ala mockup.
-                                      const Text(
-                                        '👑',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          height: 1,
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '${_weekday(now.weekday)}, '
-                                  '${formatDateLong(now)}',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppType.secondary(context).copyWith(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Gear — satu-satunya pintu Pengaturan di Beranda
-                          // (lonceng lama dihapus: ia cuma snackbar
-                          // "Belum ada notifikasi" — bukan jalan ke fitur
-                          // Pengingat harian yang hidup di Pengaturan).
-                          SizedBox(
-                            width: 40,
-                            child: IconButton(
-                              constraints: const BoxConstraints(
-                                minWidth: 40,
-                                minHeight: 48,
-                              ),
-                              onPressed: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => const SettingsScreen(),
-                                ),
-                              ),
-                              tooltip: 'Pengaturan',
-                              icon: const Icon(Icons.settings_outlined),
-                              style: IconButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                iconSize: 24,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: AppRadius.mdAll,
-                                ),
-                              ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${_weekday(now.weekday)}, '
+                            '${formatDateLong(now)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppType.secondary(context).copyWith(
+                              color: Colors.white.withValues(alpha: 0.9),
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
+                    // Gear — satu-satunya pintu Pengaturan di Beranda.
+                    SizedBox(
+                      width: 40,
+                      child: IconButton(
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 48,
+                        ),
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const SettingsScreen(),
+                          ),
+                        ),
+                        tooltip: 'Pengaturan',
+                        icon: const Icon(Icons.settings_outlined),
+                        style: IconButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          iconSize: 24,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppRadius.mdAll,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                Positioned(
-                  top: statusPad + 73,
-                  left: AppSpacing.page,
-                  right: AppSpacing.page,
-                  child: _HeroCard(balance: balance, month: month),
-                ),
-              ],
+              ),
             ),
             Expanded(
               child: CustomScrollView(
                 slivers: [
+                  // Hero ledger editorial full-bleed (redesign v1.22):
+                  // elemen dominan pertama di dalam scroll — BUKAN kartu
+                  // menumpuk di header.
+                  SliverToBoxAdapter(
+                    key: const ValueKey('home:hero-slot'),
+                    child: _HeroCard(
+                      balance: balance,
+                      month: month,
+                      onGoTab: onGoTab,
+                    ),
+                  ),
                   // Nav bulan SELALU tampil (semua tab Beranda/Riwayat/Budget/
                   // Laporan berbagi selectedMonthProvider yang sama): tanpa
                   // ini, label "Masuk OKT / Keluar OKT" tidak punya kontrol
@@ -374,10 +334,14 @@ class HomeScreen extends ConsumerWidget {
                       top: AppSpacing.s16,
                     ),
                   ),
+                  // Redesign v1.22: Masuk/Keluar + Sisa budget SUDAH di hero
+                  // ledger — tile 3-kecil dihapus (duplikasi). Sebagai
+                  // gantinya delta % vs bulan lalu jadi strip ramping di
+                  // sini (key 'home:tiles' dipertahankan untuk test).
                   SliverToBoxAdapter(
                     key: const ValueKey('home:tiles'),
                     child: _pad(
-                      _StatTiles(month: month, totals: totals),
+                      _DeltaStrip(month: month, totals: totals),
                       stagger: 1,
                     ),
                   ),
@@ -386,17 +350,6 @@ class HomeScreen extends ConsumerWidget {
                       key: const ValueKey('home:debts'),
                       child: _pad(_DebtCard(onGoTab: onGoTab), stagger: 2),
                     ),
-                  SliverToBoxAdapter(
-                    key: const ValueKey('home:banners'),
-                    child: _pad(
-                      _InsightBanners(
-                        month: month,
-                        totals: totals,
-                        onGoTab: onGoTab,
-                      ),
-                      stagger: 2,
-                    ),
-                  ),
                   SliverToBoxAdapter(
                     key: const ValueKey('home:streak'),
                     child: _pad(const _StreakCard(), stagger: 3),
@@ -474,8 +427,7 @@ class HomeScreen extends ConsumerWidget {
 /// B2C v1.20: [stagger] > 0 membungkus konten dengan entrance
 /// fade+geser (lihat [Stagger]) — teks/key/logika tidak berubah.
 Widget _pad(Widget child, {double top = 0, int stagger = 0}) {
-  final content =
-      stagger <= 0 ? child : Stagger(index: stagger, child: child);
+  final content = stagger <= 0 ? child : Stagger(index: stagger, child: child);
   return Padding(
     padding: EdgeInsets.fromLTRB(AppSpacing.page, top, AppSpacing.page, 0),
     child: content,
@@ -516,28 +468,41 @@ String _weekday(int w) {
   return (w >= 1 && w <= 7) ? names[w] : '';
 }
 
-/// Kartu saldo: gradien aksen + saldo SEMUA WAKTU + tombol raksasa.
+/// Hero ledger editorial (redesign v1.22): BUKAN kartu menumpuk —
+/// blok full-bleed selebar layar dengan saldo raksasa dominan,
+/// kolom Masuk/Keluar berdampingan (pengganti tile 3-kecil di bawah),
+/// baris ledger budget (label kiri kunci 'Sisa budget',
+/// nominal kanan — pengganti tile ketiga), dan tombol 2 kolom genap.
 ///
-/// B2C: kartu kemenangan ala GoPay — saldo count-up, pacing budget bulan
-/// ini DIHITUNG DI AWAL (baris ringkas + bar, detail di tile + tab
-/// Budget), SATU tombol '+ Catat keluar' full-width 56px (THE action)
-/// + link '+ Pemasukan' sekunder. Teks pil + key 'home:hero' + gradien
-/// dikunci home_design_test — tidak diubah.
+/// Kontrak test yang dipertahankan: key 'home:hero' di Container
+/// gradient 3 stop, teks 'SALDO SAAT INI', '+ Catat keluar',
+/// '+ Pemasukan', 'Sisa budget'/'Belum diatur' (tepat 1x), 'terpakai',
+/// toggle mata + hide-balance, CTA budget kosong ('Belum ada budget
+/// bulan ini' + 'Atur budget' → tab 2), padding horizontal page.
 class _HeroCard extends ConsumerWidget {
-  const _HeroCard({required this.balance, required this.month});
+  const _HeroCard({
+    required this.balance,
+    required this.month,
+    required this.onGoTab,
+  });
 
   final AsyncValue<int> balance;
 
   /// Bulan aktif (untuk label budget di hero).
   final String month;
 
+  final ValueChanged<int>? onGoTab;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hide = ref.watch(hideBalanceProvider).value ?? false;
     final display = ref.watch(displayPrefsProvider);
     final scheme = Theme.of(context).colorScheme;
-    // Budget bulan ini untuk baris pacing di hero (sumber sama dengan
-    // tile 'Sisa budget': budgetsProvider — tanpa query baru).
+    final totals = ref.watch(monthTotalsProvider);
+    final monthVal = totals.value;
+    final showTotals = ref.watch(showMonthTotalsProvider).value ?? true;
+    final mShort = monthAbbrLabel(month);
+    // Budget bulan ini (sumber sama budgetsProvider — tanpa query baru).
     final budgetItems = ref.watch(budgetsProvider).value;
     final hasBudget = budgetItems?.isNotEmpty ?? false;
     final bLimit = (budgetItems ?? const []).fold<int>(
@@ -550,19 +515,16 @@ class _HeroCard extends ConsumerWidget {
     );
     final pct = bLimit == 0 ? 0.0 : (bSpent / bLimit).clamp(0.0, 1.0);
     final pctLabel = (pct * 100).round();
-    final mShort = monthAbbrLabel(month);
+    final over = hasBudget && bSpent > bLimit;
+    final warn = hasBudget && !over && pct >= _warnAt;
+    final sisa = bLimit - bSpent;
+    final daysLeft = _daysLeftInMonth(month);
 
     return Container(
       key: const ValueKey('home:hero'),
       clipBehavior: Clip.antiAlias,
-      // Padat ala mockup referensi: padding 16px di semua sisi —
-      // label/angka/pil sejajar rapi, kartu punya napas horizontal.
-      padding: const EdgeInsets.all(AppSpacing.s16),
       decoration: BoxDecoration(
         gradient: _accentGradient(context),
-        // Menumpuk di blok kepala: radius 16 sama di empat sudut
-        // (mockup) — separuh kartu di blok gelap, separuh di halaman.
-        borderRadius: AppRadius.xlAll,
         boxShadow: [
           BoxShadow(
             color: scheme.primary.withValues(alpha: 0.22),
@@ -571,13 +533,9 @@ class _HeroCard extends ConsumerWidget {
           ),
         ],
       ),
-      // Stack: ikon mata di luar alur teks supaya baris label setinggi
-      // teksnya sendiri (padat ala mockup) — target sentuh 48px utuh.
+      // Stack: kilau dekoratif + konten + mata toggle.
       child: Stack(
         children: [
-          // B2C v1.20: kilau dekoratif (lingkaran putih samar) — di
-          // bawah konten, tidak mengubah decoration (test kontras baca
-          // gradient Container ini) maupun teks/key/logika.
           Positioned(
             top: -56,
             right: -32,
@@ -602,120 +560,326 @@ class _HeroCard extends ConsumerWidget {
               ),
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                // Penanda horizon: angka ini ALL-TIME, bukan bulan ini
-                // (v1.13.x "SALDO MYWALLET" tanpa konteks — tile di bawah
-                // justru bulanan, dua horizon tercampur tanpa pembeda).
-                'SALDO SAAT INI',
-                style: AppType.labelMuted(context).copyWith(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  letterSpacing: 0.8,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: AppSpacing.s4),
-              balance.when(
-                loading: () => const AppSkeleton(lines: 1),
-                error: (e, _) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.page,
+              AppSpacing.s20,
+              AppSpacing.page,
+              AppSpacing.s20,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Label horizon + mata toggle sebaris (label kiri,
+                // mata kanan — bukan overlay absolute).
+                Row(
                   children: [
-                    Text(
-                      'Saldo gagal dimuat.',
-                      style: AppType.balance(
-                        context,
-                      ).copyWith(color: Colors.white, fontSize: 20),
-                    ),
-                    TextButton(
-                      onPressed: () => ref.invalidate(balanceProvider),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.white,
+                    Expanded(
+                      child: Text(
+                        // Penanda horizon: angka ini ALL-TIME, bukan bulan ini.
+                        'SALDO SAAT INI',
+                        style: AppType.labelMuted(context).copyWith(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          letterSpacing: 0.8,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      child: const Text('Coba lagi'),
+                    ),
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
+                        onPressed: () => ref
+                            .read(settingsServiceProvider)
+                            .setHideBalance(!hide),
+                        icon: Icon(
+                          hide
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          size: 18,
+                        ),
+                        tooltip: hide ? 'Tampilkan saldo' : 'Sembunyikan saldo',
+                        color: Colors.white,
+                      ),
                     ),
                   ],
                 ),
-                // B2C: saldo count-up dari 0 — rasa "menang" tiap buka
-                // aplikasi. TweenAnimationBuilder (tanpa controller/
-                // timer) — aman untuk fake_async test. Hide-balance
-                // + error path tidak berubah.
-                data: (b) => _CountUp(
-                  value: b,
-                  format: (v) => hide ? 'Rp••••••' : display.money(v),
-                ),
-              ),
-              // Budget bulan ini DIHITUNG DI AWAL: baris pacing ringkas +
-              // bar di dalam hero (detail tetap di tile + tab Budget).
-              if (hasBudget) ...[
-                const SizedBox(height: AppSpacing.s12),
-                Text(
-                  'Budget $mShort · $pctLabel% terpakai',
-                  style: AppType.secondary(context).copyWith(
-                    color: Colors.white.withValues(alpha: 0.92),
+                // Saldo RAKSASA dominan (redesign: 40px, bukan 29px).
+                balance.when(
+                  loading: () => const AppSkeleton(lines: 1),
+                  error: (e, _) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Saldo gagal dimuat.',
+                        style: AppType.balance(
+                          context,
+                        ).copyWith(color: Colors.white, fontSize: 20),
+                      ),
+                      TextButton(
+                        onPressed: () => ref.invalidate(balanceProvider),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Coba lagi'),
+                      ),
+                    ],
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: AppSpacing.s8),
-                AppProgress(value: pct, color: Colors.white, height: 8),
-              ],
-              const SizedBox(height: AppSpacing.s16),
-              // B2C: SATU tombol raksasa full-width 56px (THE action —
-              // pola tombol order GoFood). Teks '+ Catat keluar' dikunci
-              // test; tujuan tetap form pengeluaran.
-              _megaButton(
-                context,
-                label: '+ Catat keluar',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        const TxFormScreen(startAsExpense: true),
+                  data: (b) => _CountUp(
+                    value: b,
+                    format: (v) => hide ? 'Rp••••••' : display.money(v),
+                    fontSize: 40,
                   ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.s4),
-              // Pemasukan = link sekunder di bawah tombol utama (bukan
-              // pesaing setara). Teks '+ Pemasukan' dikunci test.
-              Center(
-                child: _incomeLink(
-                  context,
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          const TxFormScreen(startAsExpense: false),
+                const SizedBox(height: AppSpacing.s16),
+                // Kolom Masuk/Keluar berdampingan di dalam hero
+                // (pengganti 2 tile kecil di bawah — gabung, bukan hapus:
+                // periode + angka tetap). Di-gate showMonthTotalsProvider
+                // seperti tile lama (Pengaturan → Tampilan).
+                !showTotals
+                    ? const SizedBox.shrink()
+                    : monthVal == null
+                    ? const AppSkeleton(lines: 1)
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: _LedgerFlow(
+                              label: 'Masuk $mShort',
+                              value: display.signed(
+                                monthVal.$1,
+                                isExpense: false,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: 1,
+                            height: 36,
+                            color: Colors.white.withValues(alpha: 0.25),
+                          ),
+                          Expanded(
+                            child: _LedgerFlow(
+                              label: 'Keluar $mShort',
+                              value: display.signed(
+                                monthVal.$2,
+                                isExpense: true,
+                              ),
+                              alignRight: true,
+                            ),
+                          ),
+                        ],
+                      ),
+                const SizedBox(height: AppSpacing.s16),
+                // Ledger budget: baris label kiri + nominal kanan,
+                // lalu bar progres penuh (pengganti tile ketiga +
+                // banner pacing ganda — SATU wajah budget di hero).
+                if (!hasBudget) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Sisa budget',
+                              style: AppType.secondary(context).copyWith(
+                                color: Colors.white.withValues(alpha: 0.92),
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Belum diatur',
+                              style: AppType.labelMuted(context).copyWith(
+                                color: Colors.white.withValues(alpha: 0.75),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (onGoTab != null)
+                        _ledgerCta(
+                          context,
+                          label: 'Atur budget',
+                          onTap: () => onGoTab!(2),
+                        ),
+                    ],
+                  ),
+                  if (onGoTab != null) ...[
+                    const SizedBox(height: AppSpacing.s8),
+                    Text(
+                      'Belum ada budget bulan ini',
+                      style: AppType.labelMuted(
+                        context,
+                      ).copyWith(color: Colors.white.withValues(alpha: 0.75)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
+                  ],
+                ] else ...[
+                  // Label kiri EXACT 'Sisa budget' (kunci test) + nominal
+                  // kanan; baris kedua pacing + 'dari Rp' (kunci test).
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Sisa budget',
+                          style: AppType.secondary(context).copyWith(
+                            color: Colors.white.withValues(alpha: 0.92),
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        over
+                            ? '-${display.money(sisa.abs())}'
+                            : display.money(sisa),
+                        style: AppType.amount(
+                          context,
+                          size: 16,
+                        ).copyWith(color: Colors.white),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: AppSpacing.s4),
+                  Text(
+                    '$pctLabel% terpakai · ${display.money(bSpent)} dari ${display.money(bLimit)}',
+                    style: AppType.secondary(
+                      context,
+                    ).copyWith(color: Colors.white.withValues(alpha: 0.92)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: AppSpacing.s8),
+                  AppProgress(
+                    value: pct,
+                    color: over
+                        ? const Color(0xFFFFCDD2)
+                        : warn
+                        ? _warnAmber
+                        : Colors.white,
+                    height: 8,
+                  ),
+                  const SizedBox(height: AppSpacing.s4),
+                  Text(
+                    over
+                        ? 'Lewat batas'
+                        : warn
+                        ? 'Hampir habis'
+                        : daysLeft <= 0
+                        ? 'Aman · selesai'
+                        : 'Aman · $daysLeft hari lagi',
+                    style: AppType.labelMuted(
+                      context,
+                    ).copyWith(color: Colors.white.withValues(alpha: 0.85)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.s16),
+                // Tombol 2 kolom GENAP (redesign: bukan raksasa +
+                // link — dua aksi setara berdampingan).
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ledgerButton(
+                        context,
+                        label: '+ Catat keluar',
+                        primary: true,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                const TxFormScreen(startAsExpense: true),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.s12),
+                    Expanded(
+                      child: _ledgerButton(
+                        context,
+                        label: '+ Pemasukan',
+                        primary: false,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                const TxFormScreen(startAsExpense: false),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          // Mata toggle saldo — 48px penuh (AppSpacing.touchMin):
-          // cukup di dalam kartu (right 0), tidak 2px dari tepi.
-          Positioned(
-            top: 0,
-            right: 0,
-            child: IconButton(
-              alignment: Alignment.centerRight,
-              onPressed: () =>
-                  ref.read(settingsServiceProvider).setHideBalance(!hide),
-              icon: Icon(
-                hide
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
-                size: 16,
-              ),
-              tooltip: hide ? 'Tampilkan saldo' : 'Sembunyikan saldo',
-              color: Colors.white,
-              style: IconButton.styleFrom(
-                padding: EdgeInsets.zero,
-                minimumSize: const Size(
-                  AppSpacing.touchMin,
-                  AppSpacing.touchMin,
-                ),
-                foregroundColor: Colors.white,
+        ],
+      ),
+    );
+  }
+}
+
+/// Kolom arus kas di hero ledger: label kecil + nominal tegas putih.
+class _LedgerFlow extends StatelessWidget {
+  const _LedgerFlow({
+    required this.label,
+    required this.value,
+    this.alignRight = false,
+  });
+  final String label;
+  final String value;
+  final bool alignRight;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: alignRight ? AppSpacing.s12 : 0,
+        right: alignRight ? 0 : AppSpacing.s12,
+      ),
+      child: Column(
+        crossAxisAlignment: alignRight
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: AppType.labelMuted(
+              context,
+            ).copyWith(color: Colors.white.withValues(alpha: 0.75)),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: alignRight ? TextAlign.end : TextAlign.start,
+          ),
+          const SizedBox(height: 2),
+          SizedBox(
+            width: double.infinity,
+            child: FittedBox(
+              alignment: alignRight
+                  ? Alignment.centerRight
+                  : Alignment.centerLeft,
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: AppType.amount(
+                  context,
+                  size: 18,
+                ).copyWith(color: Colors.white),
+                maxLines: 1,
+                overflow: TextOverflow.visible,
               ),
             ),
           ),
@@ -725,72 +889,10 @@ class _HeroCard extends ConsumerWidget {
   }
 }
 
-/// Saldo count-up B2C: angka menghitung naik 0 → [value] sekali saat
-/// pertama tampil. TweenAnimationBuilder (tanpa controller/timer —
-/// preseden [Stagger]) + hormati disableAnimations. Test fake_async aman.
-class _CountUp extends StatelessWidget {
-  const _CountUp({required this.value, required this.format});
-  final int value;
-  final String Function(int) format;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = AppType.balance(
-      context,
-    ).copyWith(color: Colors.white, fontSize: 29);
-    if (AppMotion.animationsOff(context)) {
-      return Text(format(value), style: style);
-    }
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0, end: value.toDouble()),
-      duration: AppMotion.slow,
-      curve: AppMotion.easeOut,
-      builder: (context, v, _) => Text(format(v.round()), style: style),
-    );
-  }
-}
-
-/// Tombol raksasa hero B2C: full-width 56px putih solid, teks aksen
-/// pekat (rumus warna sama dengan pil solid lama → kontras terjaga).
-/// Teks '+ Catat keluar' dikunci home_design_test.
-Widget _megaButton(
+/// CTA teks di hero ledger (Atur budget): putih + panah, 48px.
+Widget _ledgerCta(
   BuildContext context, {
   required String label,
-  required VoidCallback onTap,
-}) {
-  return Material(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(AppRadius.lg),
-    elevation: 4,
-    shadowColor: Colors.black.withValues(alpha: 0.25),
-    child: InkWell(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap();
-      },
-      borderRadius: BorderRadius.circular(AppRadius.lg),
-      child: SizedBox(
-        height: 56,
-        child: Center(
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppType.amount(context, size: 16).copyWith(
-              color: _accentStop(context, 0.45),
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-/// Link pemasukan sekunder di bawah tombol raksasa: teks putih + panah,
-/// target sentuh 48px. Teks '+ Pemasukan' dikunci home_design_test
-/// (dulu ghost pil — kini link agar tombol utama tak punya pesaing).
-Widget _incomeLink(
-  BuildContext context, {
   required VoidCallback onTap,
 }) {
   return InkWell(
@@ -806,11 +908,10 @@ Widget _incomeLink(
         children: [
           Flexible(
             child: Text(
-              '+ Pemasukan',
-              style: AppType.secondary(context).copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
+              label,
+              style: AppType.secondary(
+                context,
+              ).copyWith(color: Colors.white, fontWeight: FontWeight.w700),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -821,6 +922,95 @@ Widget _incomeLink(
       ),
     ),
   );
+}
+
+/// Tombol hero ledger: primer = putih solid + teks aksen;
+/// sekunder = outline putih + teks putih. Tinggi 52px.
+Widget _ledgerButton(
+  BuildContext context, {
+  required String label,
+  required bool primary,
+  required VoidCallback onTap,
+}) {
+  final border = BorderRadius.circular(AppRadius.lg);
+  final content = SizedBox(
+    height: 52,
+    child: Center(
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: AppType.amount(
+          context,
+          size: 15,
+        ).copyWith(color: primary ? _accentStop(context, 0.45) : Colors.white),
+      ),
+    ),
+  );
+  if (!primary) {
+    return Material(
+      color: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: border,
+        side: BorderSide(
+          color: Colors.white.withValues(alpha: 0.6),
+          width: 1.5,
+        ),
+      ),
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        borderRadius: border,
+        child: content,
+      ),
+    );
+  }
+  return Material(
+    color: Colors.white,
+    borderRadius: border,
+    elevation: 4,
+    shadowColor: Colors.black.withValues(alpha: 0.25),
+    child: InkWell(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      borderRadius: border,
+      child: content,
+    ),
+  );
+}
+
+/// Saldo count-up B2C: angka menghitung naik 0 → [value] sekali saat
+/// pertama tampil. TweenAnimationBuilder (tanpa controller/timer —
+/// preseden [Stagger]) + hormati disableAnimations. Test fake_async aman.
+class _CountUp extends StatelessWidget {
+  const _CountUp({
+    required this.value,
+    required this.format,
+    this.fontSize = 29,
+  });
+  final int value;
+  final String Function(int) format;
+  final double fontSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = AppType.balance(
+      context,
+    ).copyWith(color: Colors.white, fontSize: fontSize);
+    if (AppMotion.animationsOff(context)) {
+      return Text(format(value), style: style);
+    }
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: value.toDouble()),
+      duration: AppMotion.slow,
+      curve: AppMotion.easeOut,
+      builder: (context, v, _) => Text(format(v.round()), style: style),
+    );
+  }
 }
 
 /// Kartu streak B2C: mesin retensi — N hari berurutan + dots 7 +
@@ -917,8 +1107,7 @@ class _StreakCard extends ConsumerWidget {
                                       ),
                               ),
                             ),
-                            if (i < 6)
-                              const SizedBox(width: AppSpacing.s4),
+                            if (i < 6) const SizedBox(width: AppSpacing.s4),
                           ],
                         ],
                       ),
@@ -930,9 +1119,7 @@ class _StreakCard extends ConsumerWidget {
                   '$n/7',
                   style: AppType.balance(context).copyWith(
                     fontSize: 22,
-                    color: n > 0
-                        ? _warnAmber
-                        : AppColors.mutedOf(context),
+                    color: n > 0 ? _warnAmber : AppColors.mutedOf(context),
                   ),
                 ),
               ],
@@ -970,9 +1157,7 @@ class _QuickChip extends StatelessWidget {
           height: AppSpacing.touchMin,
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.s16,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s16),
               child: Text(
                 label,
                 maxLines: 1,
@@ -1035,232 +1220,134 @@ class _QuickAdd extends StatelessWidget {
   }
 }
 
-/// Dua banner insight (pola promo GoPay, isi datanya milik user):
-/// kiri = delta vs bulan lalu, kanan = pacing budget + CTA.
-/// Banner dibentuk dari data yang benar-benar ada — kalau satu
-/// kosong, yang satunya melebar penuh (bukan menyisakan kolom hampa).
-class _InsightBanners extends ConsumerWidget {
-  const _InsightBanners({
-    required this.month,
-    required this.totals,
-    required this.onGoTab,
-  });
+/// Strip insight ramping (redesign v1.22): SATU baris delta % vs bulan
+/// lalu + CTA teks — pengganti dua banner ganda (_InsightBanners).
+/// Pacing budget TIDAK di sini (sudah di hero ledger).
+///
+/// Kontrak test: 'vs ' + 'Pengeluaran turun/naik/sama' + 'Lihat laporan'
+/// → tab 3. Tanpa data = skeleton saat loading, shrink bila selesai.
+class _DeltaStrip extends ConsumerWidget {
+  const _DeltaStrip({required this.month, required this.totals});
 
   final String month;
   final AsyncValue<(int, int)> totals;
-  final ValueChanged<int>? onGoTab;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final display = ref.watch(displayPrefsProvider);
-    final budgets = ref.watch(budgetsProvider);
-    final banners = <Widget>[];
-
-    // 1) Delta pengeluaran vs bulan lalu (watch provider).
     final prevAsync = ref.watch(_prevMonthExpenseProvider);
-    final prevLoading = prevAsync.isLoading;
     final prev = prevAsync.value;
     final cur = totals.value?.$2;
-    if (prev != null && prev > 0 && cur != null) {
-      final prevKey = shiftMonth(month, -1);
-      final diff = ((cur - prev) / prev * 100).round();
-      final txt = diff == 0
-          ? 'Pengeluaran sama seperti ${monthLabel(prevKey)}'
-          : diff > 0
-          ? 'Pengeluaran naik $diff% vs ${monthLabel(prevKey)}'
-          : 'Pengeluaran turun ${-diff}% vs ${monthLabel(prevKey)}';
-      // Sub-line insight: selisihnya berapa rupiah.
-      final deltaRp = (cur - prev).abs();
-      final sub = diff == 0
-          ? 'pengeluaran ${display.money(prev)} bulan lalu'
-          : diff < 0
-          ? '${display.money(deltaRp)} lebih sedikit keluar'
-          : '${display.money(deltaRp)} lebih banyak keluar';
-      banners.add(
-        _bannerBox(
-          context,
-          gradient: _accentGradient(context),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                txt,
-                style: AppType.secondaryStrong(
-                  context,
-                ).copyWith(color: Colors.white),
-              ),
-              const SizedBox(height: AppSpacing.s4),
-              Text(
-                sub,
-                style: AppType.labelMuted(
-                  context,
-                ).copyWith(color: Colors.white),
-              ),
-              const SizedBox(height: AppSpacing.s8),
-              if (onGoTab != null)
-                _bannerCta(
-                  context,
-                  label: 'Lihat laporan',
-                  onTap: () => onGoTab!(3),
-                ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // 2) Budget bulan ini — plus ajakan saat belum ada (CTA → tab).
-    // Ringkas: angka sisa sudah ada di tile "Sisa budget" di atas,
-    // banner hanya status pacing + bar (tanpa mengulang "Rp x dari Rp y").
-    final list = budgets.value;
-    if (list != null && list.isEmpty) {
-      if (onGoTab != null) {
-        banners.add(
-          _bannerBox(
-            context,
-            bg: _darkBanner,
-            border: true,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Belum ada budget bulan ini',
-                  style: AppType.secondaryStrong(
-                    context,
-                  ).copyWith(color: Colors.white),
-                ),
-                const SizedBox(height: AppSpacing.s4),
-                _bannerCta(
-                  context,
-                  label: 'Atur budget',
-                  onTap: () => onGoTab!(2),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-    } else if (list != null) {
-      final limit = list.fold<int>(0, (s, e) => s + e.budget.limit);
-      final spent = list.fold<int>(0, (s, e) => s + e.spent);
-      final pct = limit == 0 ? 0.0 : (spent / limit).clamp(0.0, 1.0);
-      final over = spent > limit;
-      final warn = !over && pct >= _warnAt;
-      // Di atas banner gelap: palet semantik DITERANGKAN supaya bar
-      // dan teks status tetap kontras (primary/error mentah gelap).
-      final barColor = over
-          ? Color.lerp(AppColors.expenseOf(context), Colors.white, 0.35)!
-          : warn
-          ? _warnAmber
-          : Color.lerp(AppColors.incomeOf(context), Colors.white, 0.45)!;
-      final status = over
-          ? 'Lewat budget'
-          : warn
-          ? 'Hampir habis'
-          : 'Aman bulan ini';
-      banners.add(
-        _bannerBox(
-          context,
-          bg: _darkBanner,
-          border: true,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Budget ${monthLabel(month)}',
-                style: AppType.labelMuted(
-                  context,
-                ).copyWith(color: Colors.white.withValues(alpha: 0.85)),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: AppSpacing.s8),
-              AppProgress(value: pct, color: barColor, height: 8),
-              const SizedBox(height: AppSpacing.s4),
-              Text(
-                // Satu baris status: angka ringkas (sisa detail ada di tile
-                // "Sisa budget" di atas + tab Budget) + status pacing.
-                '$status · ${display.money(spent)} dari ${display.money(limit)}',
-                style: AppType.secondary(context).copyWith(
-                  color: Colors.white.withValues(alpha: 0.92),
-                ),
-              ),
-              if (onGoTab != null)
-                _bannerCta(context, label: 'Atur', onTap: () => onGoTab!(2)),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (banners.isEmpty) {
-      // Masih loading (salah satu provider belum ada data): skeleton
-      // setinggi banner agar layout tidak lompat saat data datang
-      // (v1.13.x SizedBox.shrink di sini, banner "muncul" belakangan).
-      final anyLoading =
-          totals.isLoading || budgets.isLoading || prevLoading;
+    if (prev == null || prev <= 0 || cur == null) {
+      final anyLoading = totals.isLoading || prevAsync.isLoading;
       if (!anyLoading) return const SizedBox.shrink();
       return const Padding(
         padding: EdgeInsets.only(top: AppSpacing.s16),
-        child: AppSkeleton(lines: 2),
+        child: AppSkeleton(lines: 1),
       );
     }
+    final prevKey = shiftMonth(month, -1);
+    final diff = ((cur - prev) / prev * 100).round();
+    final txt = diff == 0
+        ? 'Pengeluaran sama seperti ${monthLabel(prevKey)}'
+        : diff > 0
+        ? 'Pengeluaran naik $diff% vs ${monthLabel(prevKey)}'
+        : 'Pengeluaran turun ${-diff}% vs ${monthLabel(prevKey)}';
+    final deltaRp = (cur - prev).abs();
+    final sub = diff == 0
+        ? 'pengeluaran ${display.money(prev)} bulan lalu'
+        : diff < 0
+        ? '${display.money(deltaRp)} lebih sedikit keluar'
+        : '${display.money(deltaRp)} lebih banyak keluar';
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.s16),
-      // start: kedua banner mulai dari y yang sama sehingga judulnya
-      // sejajar (v1.13.x center → offset 20px atas-bawah di
-      // dark/no-budget, terukur di golden). Bukan stretch: stretch di
-      // dalam scroll vertikal = height tak terbatas → crash layout.
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (var i = 0; i < banners.length; i++) ...[
-            if (i > 0) const SizedBox(width: AppSpacing.s12),
-            Expanded(child: banners[i]),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.s12,
+          vertical: AppSpacing.s8,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceOf(context),
+          border: Border.all(color: AppColors.borderOf(context)),
+          borderRadius: AppRadius.mdAll,
+        ),
+        // Kolom: baris insight full-width (teks boleh wrap 2 baris —
+        // fix QA vision: 'Septem...' kepotong saat CTA sebaris),
+        // CTA di baris bawah rata kanan.
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  diff > 0
+                      ? Icons.trending_up
+                      : diff < 0
+                      ? Icons.trending_down
+                      : Icons.trending_flat,
+                  size: 20,
+                  color: diff > 0
+                      ? AppColors.expenseOf(context)
+                      : AppColors.incomeOf(context),
+                ),
+                const SizedBox(width: AppSpacing.s8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        txt,
+                        style: AppType.secondaryStrong(context),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        sub,
+                        style: AppType.labelMuted(context),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: _stripCta(
+                context,
+                label: 'Lihat laporan',
+                onTap: () => _goTabOf(context)?.call(3),
+              ),
+            ),
           ],
-        ],
+        ),
       ),
     );
   }
 }
 
-/// Kartu banner: gradien aksen (insight utama) atau gelap netral.
-Widget _bannerBox(
-  BuildContext context, {
-  required Widget child,
-  Color? bg,
-  Gradient? gradient,
-  bool border = false,
-}) {
-  return Container(
-    constraints: const BoxConstraints(minHeight: 104),
-    padding: const EdgeInsets.all(AppSpacing.s12),
-    decoration: BoxDecoration(
-      color: gradient == null ? bg : null,
-      gradient: gradient,
-      borderRadius: AppRadius.xlAll,
-      border: border ? Border.all(color: AppColors.borderOf(context)) : null,
-    ),
-    child: child,
-  );
+/// Ambil onGoTab terdekat via context (HomeScreen selalu punya saat
+/// di shell; null di test tanpa callback — CTA disembunyikan).
+ValueChanged<int>? _goTabOf(BuildContext context) {
+  final home = context.findAncestorWidgetOfExactType<HomeScreen>();
+  return home?.onGoTab;
 }
 
-/// CTA teks di dalam banner insight — menggantikan _bannerPill v1.13.x
-/// (pil putih 48px dengan 1-2 kata: "Atur", "Lihat laporan"). Pil penuh
-/// untuk 1-2 kata boros ruang & meniru tombol primer; link teks + ikon
-/// panah cukup sebagai affordance di dalam kartu yang sudah jelas
-/// bisa diketuk. Target sentuh 48px dipertahankan.
-Widget _bannerCta(
+/// CTA teks di strip insight: aksen + panah, 48px.
+Widget _stripCta(
   BuildContext context, {
   required String label,
-  required VoidCallback onTap,
+  required VoidCallback? onTap,
 }) {
+  if (onTap == null) return const SizedBox.shrink();
+  final tap = onTap;
   return InkWell(
     onTap: () {
-      // Prompt §3: haptic di semua CTA banner (Lihat laporan / Atur
-      // budget / Atur) — teks/key/tujuan tidak berubah.
       HapticFeedback.lightImpact();
-      onTap();
+      tap();
     },
     borderRadius: AppRadius.smAll,
     child: SizedBox(
@@ -1268,16 +1355,11 @@ Widget _bannerCta(
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // FIX CI Ubuntu 9 Okt 2026 (7 gagal home_design_test):
-          // font DejaVu runner ~20% lebih lebar dari Segoe Windows →
-          // Row CTA ("Lihat laporan" + panah) jebol 32px di banner
-          // setengah layar (w<=149). Flexible + ellipsis = muat di
-          // font lebar + viewport 300px + font-scale besar HP kecil.
           Flexible(
             child: Text(
               label,
               style: AppType.secondary(context).copyWith(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.w700,
               ),
               maxLines: 1,
@@ -1285,135 +1367,14 @@ Widget _bannerCta(
             ),
           ),
           const SizedBox(width: AppSpacing.s4),
-          const Icon(
+          Icon(
             Icons.arrow_forward,
             size: 16,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ],
       ),
     ),
-  );
-}
-
-/// Tile metrik sebaris: Masuk / Keluar bulan berjalan + Sisa budget.
-/// Nilai memakai palet semantik tunggal (incomeOf/expenseOf);
-/// Masuk/Keluar di-gate pengaturan tampilan, ringkasan harian pindah
-/// ke [_DailyStrip].
-class _StatTiles extends ConsumerWidget {
-  const _StatTiles({required this.month, required this.totals});
-
-  final String month;
-  final AsyncValue<(int, int)> totals;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final display = ref.watch(displayPrefsProvider);
-    final showTotals = ref.watch(showMonthTotalsProvider).value ?? true;
-    final budgets = ref.watch(budgetsProvider);
-    // Singkatan bulan mengikuti bulan yang sedang dijelajah
-    // (chip AppMonthNav di atas selalu menunjukkan konteks penuh).
-    final mLabel = monthAbbrLabel(month);
-
-    final tiles = <Widget>[];
-    final t = totals.value;
-    if (showTotals && t != null) {
-      tiles.add(
-        _tile(
-          context,
-          child: _MiniStat(
-            label: 'Masuk $mLabel',
-            value: display.signed(t.$1, isExpense: false),
-            valueColor: AppColors.incomeOf(context),
-          ),
-        ),
-      );
-      tiles.add(
-        _tile(
-          context,
-          child: _MiniStat(
-            label: 'Keluar $mLabel',
-            value: display.signed(t.$2, isExpense: true),
-            valueColor: AppColors.expenseOf(context),
-          ),
-        ),
-      );
-    }
-    // Tile ketiga: ringkasan budget bulan yang sedang dijelajah.
-    // Tanpa budget yang diatur, tile menyusut jadi satu baris ajakan
-    // (bukan kartu "— / belum diatur" setinggi tile bernilai).
-    final items = budgets.value;
-    final totalLimit = (items ?? const []).fold<int>(
-      0,
-      (s, b) => s + b.budget.limit,
-    );
-    final totalSpent = (items ?? const []).fold<int>(0, (s, b) => s + b.spent);
-    final hasBudget = items?.isNotEmpty ?? false;
-    final sisa = totalLimit - totalSpent;
-    final daysLeft = _daysLeftInMonth(month);
-    tiles.add(
-      _tile(
-        context,
-        child: _MiniStat(
-          label: 'Sisa budget',
-          value: !hasBudget
-              ? 'Belum diatur'
-              : sisa < 0
-              ? '-${display.money(sisa.abs())}'
-              : display.money(sisa),
-          valueColor: !hasBudget
-              ? AppColors.mutedOf(context)
-              : sisa < 0
-              ? AppColors.expenseOf(context)
-              : null,
-          sub: !hasBudget
-              ? null
-              : sisa < 0
-              ? 'lewat batas'
-              : daysLeft <= 0
-              ? 'selesai'
-              : '$daysLeft hari lagi',
-        ),
-      ),
-    );
-
-    if (tiles.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      // s16 = jarak blok standar (monthnav, banner); sectionGap (24) hanya
-      // antar SEKSI besar (topcats, recent) — satu ritme, bukan 3 token
-      // campur (v1.13.x s12/s16/s24 → jarak 20/35/43px tak beraturan).
-      padding: const EdgeInsets.only(top: AppSpacing.s16),
-      // start (bukan center): semua tile mulai dari y yang sama sehingga
-      // label sejajar (v1.13.x center → tile tanpa sub-line bergeser 10px,
-      // terukur di golden). Bukan stretch: stretch di dalam scroll
-      // vertikal memaksa height tak terbatas ke children → crash layout.
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (var i = 0; i < tiles.length; i++)
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  right: i == tiles.length - 1 ? 0 : AppSpacing.s8,
-                ),
-                child: tiles[i],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-Widget _tile(BuildContext context, {required Widget child}) {
-  return Container(
-    padding: const EdgeInsets.all(AppSpacing.s12),
-    decoration: BoxDecoration(
-      color: AppColors.surfaceOf(context),
-      border: Border.all(color: AppColors.borderOf(context)),
-      borderRadius: AppRadius.mdAll,
-    ),
-    child: child,
   );
 }
 
@@ -1475,9 +1436,7 @@ class _DebtCard extends ConsumerWidget {
                   Icon(
                     Icons.chevron_right,
                     size: 20,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurfaceVariant,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ],
               ),
@@ -1490,20 +1449,12 @@ class _DebtCard extends ConsumerWidget {
 }
 
 class _MiniStat extends StatelessWidget {
-  const _MiniStat({
-    required this.label,
-    required this.value,
-    this.valueColor,
-    this.sub,
-  });
+  const _MiniStat({required this.label, required this.value, this.valueColor});
   final String label;
   final String value;
 
   /// Warna semantik tunggal untuk nilai (mis. incomeOf/expenseOf).
   final Color? valueColor;
-
-  /// Baris kecil di bawah nilai (mis. rincian hari ini).
-  final String? sub;
 
   @override
   Widget build(BuildContext context) {
@@ -1533,15 +1484,6 @@ class _MiniStat extends StatelessWidget {
             ),
           ),
         ),
-        if (sub != null) ...[
-          const SizedBox(height: 2),
-          Text(
-            sub!,
-            style: AppType.labelMuted(context),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
       ],
     );
   }
@@ -1691,7 +1633,8 @@ class _RecentList extends ConsumerWidget {
           return const AppEmptyState(
             icon: '💸',
             title: 'Belum ada transaksi',
-            subtitle: 'Ketuk + Catat keluar saat ada pemasukan atau pengeluaran.',
+            subtitle:
+                'Ketuk + Catat keluar saat ada pemasukan atau pengeluaran.',
           );
         }
         final groups = <DateTime, List<TxWithCategory>>{};
