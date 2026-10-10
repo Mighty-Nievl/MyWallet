@@ -497,6 +497,94 @@ void main() {
     expect(find.text('SALDO SAAT INI'), findsOneWidget);
     await _flushDriftCloseTimer(tester);
   });
+
+  // B2C: budget bulan ini DIHITUNG DI AWAL — baris pacing ada di hero
+  // (sumber sama budgetsProvider), bukan cuma di tile bawah.
+  testWidgets('hero menampilkan pacing budget bulan ini', (tester) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(() async {
+      await _loadFonts();
+      await _seed(db);
+      await _budget(db, 2000000); // spent 63rb → '3% terpakai'
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(find.textContaining('terpakai'), findsWidgets);
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // B2C: kartu streak tampil dari data transaksi (seed: hari ini ada
+  // 2 transaksi → streak ≥1). Streak 0 = ajakan, bukan kartu kosong.
+  testWidgets('kartu streak tampil dari riwayat catat', (tester) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(() async {
+      await _loadFonts();
+      await _seed(db);
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    // Streak ≥1 hari (seed catat hari ini) → judul + dots + counter.
+    expect(find.textContaining('Streak'), findsWidgets);
+    expect(find.textContaining('/7'), findsOneWidget);
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // B2C: Catat Kilat — chip nominal membuka form pengeluaran dengan
+  // nominal SUDAH terisi (initialAmount).
+  testWidgets('catat kilat membuka form dengan nominal terisi', (
+    tester,
+  ) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(() async {
+      await _loadFonts();
+      await _seed(db);
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(find.text('Catat kilat'), findsOneWidget);
+    // Tap chip pertama ('Rp10 rb' ala formatRpCompact) → form tambah
+    // terbuka ('Catat Transaksi'), nominal terisi 10.000.
+    await tester.tap(find.text('Rp10 rb'));
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(find.text('Catat Transaksi'), findsOneWidget);
+    expect(find.text('10.000'), findsOneWidget);
+    await _flushDriftCloseTimer(tester);
+  });
 }
 
 /// Lepas tree, lalu flush timer 0ms dari drift

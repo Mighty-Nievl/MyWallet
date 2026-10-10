@@ -26,12 +26,22 @@ import '../format.dart';
 /// kategori + tambah kategori, tanggal, catatan, simpan + validasi,
 /// dialog konfirmasi hapus, provider/action, navigasi.
 class TxFormScreen extends ConsumerStatefulWidget {
-  const TxFormScreen({super.key, this.existing, this.startAsExpense});
+  const TxFormScreen({
+    super.key,
+    this.existing,
+    this.startAsExpense,
+    this.initialAmount,
+  });
 
   final TxWithCategory? existing;
 
   /// Tipe awal saat dibuka dari pintasan Beranda (diabaikan saat edit).
   final bool? startAsExpense;
+
+  /// Nominal awal (Rupiah) saat dibuka dari Catat Kilat Beranda.
+  /// Diabaikan saat edit ([existing] menang) — backward-compatible:
+  /// semua pemanggil lama tanpa param ini tetap jalan.
+  final int? initialAmount;
 
   @override
   ConsumerState<TxFormScreen> createState() => _TxFormScreenState();
@@ -51,9 +61,14 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
     super.initState();
     final e = widget.existing;
     _isExpense = e?.isExpense ?? widget.startAsExpense ?? true;
-    _amountCtrl = TextEditingController(
-      text: e != null ? formatAmountField(e.amount) : '',
-    );
+    // Catat Kilat Beranda: form terbuka dengan nominal sudah terisi
+    // (widget.initialAmount). Edit ([existing]) selalu menang.
+    final seed = e != null
+        ? formatAmountField(e.amount)
+        : (widget.initialAmount != null && widget.initialAmount! > 0
+              ? formatAmountField(widget.initialAmount!)
+              : '');
+    _amountCtrl = TextEditingController(text: seed);
     _noteCtrl = TextEditingController(text: e?.note ?? '');
     _date = e?.date ?? DateTime.now();
     _categoryId = e?.categoryId;

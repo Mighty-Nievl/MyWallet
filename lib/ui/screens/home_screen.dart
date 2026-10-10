@@ -113,6 +113,45 @@ final _prevMonthExpenseProvider = FutureProvider<int>((ref) async {
   return (await db.getTotals(from, to)).$2;
 });
 
+/// Streak pencatatan: jumlah hari BERURUTAN (mundur dari hari ini)
+/// yang punya ≥1 transaksi. Mesin retensi B2C (kartu streak + misi).
+///
+/// Reaktif seperti [balanceProvider]: dengarkan tabel transaksi, hitung
+/// ulang tiap ada perubahan. Read-only (customSelect DISTINCT tanggal),
+/// tidak menyentuh schema/query lain.
+final _streakProvider = StreamProvider<int>((ref) {
+  final db = ref.watch(dbProvider);
+  return db
+      .select(db.transactions)
+      .watch()
+      .asyncMap((_) => _calcStreak(db));
+});
+
+Future<int> _calcStreak(AppDatabase db) async {
+  // Hitung di Dart murni (tanpa SQL mentah): ambil tanggal semua
+  // transaksi hidup, petakan ke hari lokal. Aman untuk semua backend
+  // drift + tidak menambah query baru ke database.dart.
+  final rows = await (db.select(
+    db.transactions,
+  )..where((t) => t.deletedAt.isNull())).get();
+  final days = <DateTime>{
+    for (final r in rows) DateTime(r.date.year, r.date.month, r.date.day),
+  };
+  final now = DateTime.now();
+  var cursor = DateTime(now.year, now.month, now.day);
+  // Hari ini belum catat → streak dihitung dari kemarin (belum putus).
+  if (!days.contains(cursor)) {
+    cursor = cursor.subtract(const Duration(days: 1));
+  }
+  var streak = 0;
+  while (days.contains(cursor)) {
+    streak++;
+    cursor = cursor.subtract(const Duration(days: 1));
+    if (streak > 3650) break;
+  }
+  return streak;
+}
+
 /// Beranda: kepala sapaan berwarna aksen, kartu saldo gradien aksen,
 /// nav bulan (selalu tampil), tile metrik, banner insight,
 /// top kategori proporsional, terakhir dikelompokkan per tanggal.
@@ -316,7 +355,7 @@ class HomeScreen extends ConsumerWidget {
                   top: statusPad + 73,
                   left: AppSpacing.page,
                   right: AppSpacing.page,
-                  child: _HeroCard(balance: balance),
+                  child: _HeroCard(balance: balance, month: month),
                 ),
               ],
             ),
@@ -358,6 +397,14 @@ class HomeScreen extends ConsumerWidget {
                       stagger: 2,
                     ),
                   ),
+                  SliverToBoxAdapter(
+                    key: const ValueKey('home:streak'),
+                    child: _pad(const _StreakCard(), stagger: 3),
+                  ),
+                  SliverToBoxAdapter(
+                    key: const ValueKey('home:quickadd'),
+                    child: _pad(const _QuickAdd(), stagger: 4),
+                  ),
                   // Top kategori + terakhir dicatat: tanpa quick-actions,
                   // strip kategori ganda, & banner ganda, judul seksi sudah
                   // terlihat di layar pertama (fold ~764px di 390x844).
@@ -378,7 +425,7 @@ class HomeScreen extends ConsumerWidget {
                                 ),
                           child: _CategoryList(byCat: byCat, display: display),
                         ),
-                        stagger: 3,
+                        stagger: 5,
                       ),
                     ),
                   ],
@@ -405,7 +452,7 @@ class HomeScreen extends ConsumerWidget {
                             ],
                           ),
                         ),
-                        stagger: 4,
+                        stagger: 6,
                       ),
                     ),
                   ],
@@ -469,25 +516,41 @@ String _weekday(int w) {
   return (w >= 1 && w <= 7) ? names[w] : '';
 }
 
-/// Kartu saldo: gradien aksen + saldo SEMUA WAKTU + dua aksi pencatatan.
-/// Arus bulan, delta, dan budget pindah ke tile & banner di bawah —
-/// kartu ringkas, hanya berisi hal yang selalu berlaku.
+/// Kartu saldo: gradien aksen + saldo SEMUA WAKTU + tombol raksasa.
 ///
-/// Dua pil SELALU berbeda tampilan dan tujuan: solid putih = Catat
-/// pengeluaran (jalur utama, TxFormScreen default isExpense=true),
-/// ghost = Pemasukan (startAsExpense:false) — v1.13.x kedua pil membuka
-/// form pengeluaran yang sama. Pill ketiga "Detail" dihapus: ia cuma
-/// alias tab Laporan yang sudah ada di nav bar.
+/// B2C: kartu kemenangan ala GoPay — saldo count-up, pacing budget bulan
+/// ini DIHITUNG DI AWAL (baris ringkas + bar, detail di tile + tab
+/// Budget), SATU tombol '+ Catat keluar' full-width 56px (THE action)
+/// + link '+ Pemasukan' sekunder. Teks pil + key 'home:hero' + gradien
+/// dikunci home_design_test — tidak diubah.
 class _HeroCard extends ConsumerWidget {
-  const _HeroCard({required this.balance});
+  const _HeroCard({required this.balance, required this.month});
 
   final AsyncValue<int> balance;
+
+  /// Bulan aktif (untuk label budget di hero).
+  final String month;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hide = ref.watch(hideBalanceProvider).value ?? false;
     final display = ref.watch(displayPrefsProvider);
     final scheme = Theme.of(context).colorScheme;
+    // Budget bulan ini untuk baris pacing di hero (sumber sama dengan
+    // tile 'Sisa budget': budgetsProvider — tanpa query baru).
+    final budgetItems = ref.watch(budgetsProvider).value;
+    final hasBudget = budgetItems?.isNotEmpty ?? false;
+    final bLimit = (budgetItems ?? const []).fold<int>(
+      0,
+      (s, e) => s + e.budget.limit,
+    );
+    final bSpent = (budgetItems ?? const []).fold<int>(
+      0,
+      (s, e) => s + e.spent,
+    );
+    final pct = bLimit == 0 ? 0.0 : (bSpent / bLimit).clamp(0.0, 1.0);
+    final pctLabel = (pct * 100).round();
+    final mShort = monthAbbrLabel(month);
 
     return Container(
       key: const ValueKey('home:hero'),
@@ -575,48 +638,57 @@ class _HeroCard extends ConsumerWidget {
                     ),
                   ],
                 ),
-                data: (b) => Text(
-                  hide ? 'Rp••••••' : display.money(b),
-                  style: AppType.balance(context).copyWith(
-                    color: Colors.white,
-                    // 29px: lebar angka menyamai mockup (32 terlalu lebar).
-                    fontSize: 29,
+                // B2C: saldo count-up dari 0 — rasa "menang" tiap buka
+                // aplikasi. TweenAnimationBuilder (tanpa controller/
+                // timer) — aman untuk fake_async test. Hide-balance
+                // + error path tidak berubah.
+                data: (b) => _CountUp(
+                  value: b,
+                  format: (v) => hide ? 'Rp••••••' : display.money(v),
+                ),
+              ),
+              // Budget bulan ini DIHITUNG DI AWAL: baris pacing ringkas +
+              // bar di dalam hero (detail tetap di tile + tab Budget).
+              if (hasBudget) ...[
+                const SizedBox(height: AppSpacing.s12),
+                Text(
+                  'Budget $mShort · $pctLabel% terpakai',
+                  style: AppType.secondary(context).copyWith(
+                    color: Colors.white.withValues(alpha: 0.92),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: AppSpacing.s8),
+                AppProgress(value: pct, color: Colors.white, height: 8),
+              ],
+              const SizedBox(height: AppSpacing.s16),
+              // B2C: SATU tombol raksasa full-width 56px (THE action —
+              // pola tombol order GoFood). Teks '+ Catat keluar' dikunci
+              // test; tujuan tetap form pengeluaran.
+              _megaButton(
+                context,
+                label: '+ Catat keluar',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        const TxFormScreen(startAsExpense: true),
                   ),
                 ),
               ),
-              const SizedBox(height: AppSpacing.s16),
-              // Dua aksi pencatatan yang benar-benar berbeda: pengeluaran
-              // (solid, jalur utama) vs pemasukan (ghost). Target sentuh
-              // 48px sesuai token touchMin.
-              Row(
-                children: [
-                  Expanded(
-                    child: _pillButton(
-                      context,
-                      label: '+ Catat keluar',
-                      solid: true,
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              const TxFormScreen(startAsExpense: true),
-                        ),
-                      ),
+              const SizedBox(height: AppSpacing.s4),
+              // Pemasukan = link sekunder di bawah tombol utama (bukan
+              // pesaing setara). Teks '+ Pemasukan' dikunci test.
+              Center(
+                child: _incomeLink(
+                  context,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const TxFormScreen(startAsExpense: false),
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.s8),
-                  Expanded(
-                    child: _pillButton(
-                      context,
-                      label: '+ Pemasukan',
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              const TxFormScreen(startAsExpense: false),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
@@ -649,6 +721,258 @@ class _HeroCard extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Saldo count-up B2C: angka menghitung naik 0 → [value] sekali saat
+/// pertama tampil. TweenAnimationBuilder (tanpa controller/timer —
+/// preseden [Stagger]) + hormati disableAnimations. Test fake_async aman.
+class _CountUp extends StatelessWidget {
+  const _CountUp({required this.value, required this.format});
+  final int value;
+  final String Function(int) format;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = AppType.balance(
+      context,
+    ).copyWith(color: Colors.white, fontSize: 29);
+    if (AppMotion.animationsOff(context)) {
+      return Text(format(value), style: style);
+    }
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: value.toDouble()),
+      duration: AppMotion.slow,
+      curve: AppMotion.easeOut,
+      builder: (context, v, _) => Text(format(v.round()), style: style),
+    );
+  }
+}
+
+/// Tombol raksasa hero B2C: full-width 56px putih solid, teks aksen
+/// pekat (rumus warna sama dengan pil solid lama → kontras terjaga).
+/// Teks '+ Catat keluar' dikunci home_design_test.
+Widget _megaButton(
+  BuildContext context, {
+  required String label,
+  required VoidCallback onTap,
+}) {
+  return Material(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(AppRadius.lg),
+    elevation: 4,
+    shadowColor: Colors.black.withValues(alpha: 0.25),
+    child: InkWell(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: SizedBox(
+        height: 56,
+        child: Center(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppType.amount(context, size: 16).copyWith(
+              color: _accentStop(context, 0.45),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// Link pemasukan sekunder di bawah tombol raksasa: teks putih + panah,
+/// target sentuh 48px. Teks '+ Pemasukan' dikunci home_design_test
+/// (dulu ghost pil — kini link agar tombol utama tak punya pesaing).
+Widget _incomeLink(
+  BuildContext context, {
+  required VoidCallback onTap,
+}) {
+  return InkWell(
+    onTap: () {
+      HapticFeedback.lightImpact();
+      onTap();
+    },
+    borderRadius: AppRadius.smAll,
+    child: SizedBox(
+      height: AppSpacing.touchMin,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              '+ Pemasukan',
+              style: AppType.secondary(context).copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.s4),
+          const Icon(Icons.arrow_forward, size: 16, color: Colors.white),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Kartu streak B2C: mesin retensi — N hari berurutan + dots 7 +
+/// misi hari ini. Streak 0 = ajakan mulai (bukan kartu kosong).
+/// Sumber: [_streakProvider] (hitung dari transaksi, tanpa schema baru).
+class _StreakCard extends ConsumerWidget {
+  const _StreakCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final streak = ref.watch(_streakProvider);
+    return streak.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.only(top: AppSpacing.s16),
+        child: AppSkeleton(lines: 2),
+      ),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (n) {
+        final title = n <= 0
+            ? 'Mulai streak hari ini'
+            : n == 1
+            ? 'Streak 1 hari!'
+            : 'Streak $n hari!';
+        final sub = n <= 0
+            ? 'Catat 1 transaksi — besok lanjut lagi'
+            : 'Catat lagi hari ini biar jadi ${n + 1}';
+        // Dots 7: N terisi (capped 7), sisanya kosong.
+        final filled = n.clamp(0, 7);
+        return Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.s16),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.s16),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceOf(context),
+              border: Border.all(
+                color: n > 0
+                    ? _warnAmber.withValues(alpha: 0.7)
+                    : AppColors.borderOf(context),
+              ),
+              borderRadius: AppRadius.xlAll,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Text('🔥', style: TextStyle(fontSize: 16)),
+                          const SizedBox(width: AppSpacing.s4),
+                          Flexible(
+                            child: Text(
+                              title,
+                              style: AppType.amount(context, size: 15),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.s4),
+                      Text(
+                        sub,
+                        style: AppType.secondary(context),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: AppSpacing.s8),
+                      Row(
+                        children: [
+                          for (var i = 0; i < 7; i++) ...[
+                            Container(
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: i < filled
+                                    ? _warnAmber
+                                    : AppColors.subtleOf(context),
+                                border: i < filled
+                                    ? null
+                                    : Border.all(
+                                        color: AppColors.borderOf(context),
+                                      ),
+                              ),
+                            ),
+                            if (i < 6)
+                              const SizedBox(width: AppSpacing.s4),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.s12),
+                Text(
+                  '$n/7',
+                  style: AppType.balance(context).copyWith(
+                    fontSize: 22,
+                    color: n > 0
+                        ? _warnAmber
+                        : AppColors.mutedOf(context),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Catat Kilat B2C: 4 chip nominal → form pengeluaran TERISI nominal.
+/// Scroll horizontal (aman viewport 300px — pola chip Riwayat).
+/// Label 'Catat kilat' unik (tidak bentrok dengan test kategori).
+class _QuickAdd extends StatelessWidget {
+  const _QuickAdd();
+
+  static const _amounts = [10000, 25000, 50000, 100000];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Catat kilat', style: AppType.sectionTitle(context)),
+        const SizedBox(height: AppSpacing.groupGap),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (var i = 0; i < _amounts.length; i++) ...[
+                if (i > 0) const SizedBox(width: AppSpacing.s8),
+                _pillButton(
+                  context,
+                  label: formatRpCompact(_amounts[i]),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => TxFormScreen(
+                        startAsExpense: true,
+                        initialAmount: _amounts[i],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
