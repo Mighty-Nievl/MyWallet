@@ -1,22 +1,23 @@
 rules_version = '2';
 
-// MyWallet Fase 1 (v1.17) — Google Sign-In + rumah tangga.
+// MyWallet Fase 1 (v1.17) + sync beta (v1.19) — Google Sign-In + rumah.
 //
 // Model:
 // - households/{hid}: {name, createdBy, inviteCode, ...} — baca/tulis
 //   HANYA anggota (dok members/{uid} miliknya ADA).
 // - households/{hid}/members/{uid}: anggota kelola SENDIRI (gabung via
-//   kode = tulis diri sendiri; keluar = hapus diri sendiri). Update role
-//   hanya owner (cek role pemohon).
+//   kode = tulis diri sendiri; keluar = hapus diri sendiri; owner bisa
+//   hapus anggota lain). Update role hanya owner (cek role pemohon).
 // - invites/{CODE}: {householdId, householdName, ...} = capability
 //   secret (kayak link join grup).
 //   Semua user LOGIN bisa `get` BILA tahu kodenya (tidak bisa list).
 //   Tulis: user login (buat/putar kode milik rumah tangganya).
 // - users/{uid}: profil milik SENDIRI saja.
-// - Data transaksi/sync (Fase 2): BELUM dibuka — koleksi
-//   households/{hid}/tx/* ditolak eksplisit sampai sync engine siap.
+// - Sync beta v1.19: koleksi cats + tx di bawah tiap household,
+//   anggota-only, tulis wajib updatedBy = uid sendiri, hapus fisik
+//   ditolak (pakai tombstone deletedAt).
 //
-// Catatan: `get(...).data` = baca 1 dokumen (bayar 1 read, bukan list).
+// Catatan: get((...)).data = baca 1 dokumen (bayar 1 read, bukan list).
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
@@ -53,9 +54,10 @@ service cloud.firestore {
             || request.resource.data.role == 'owner');
         // Ubah role: hanya owner (naik/turun peran).
         allow update: if isOwner(hid);
-        // Keluar: hapus DIRI SENDIRI (owner terakhir = dibiarkan, rapikan
-        // via console; Fase 2 tambah guard).
-        allow delete: if signedIn() && uid == request.auth.uid;
+        // Keluar: hapus DIRI SENDIRI. Owner boleh hapus anggota LAIN
+        // (kick) — dipakai dialog Kelola anggota di app.
+        allow delete: if signedIn()
+          && (uid == request.auth.uid || isOwner(hid));
       }
 
       // Sync transaksi + kategori Fase 2 beta (v1.19): anggota rumah.

@@ -26,6 +26,21 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.19.1',
+    date: '10 Okt 2026',
+    user:
+        'Anggota rumah kini bisa diketik untuk dikelola: naik/turun peran, '
+        'keluarkan anggota, keluar rumah — semua pakai konfirmasi. '
+        'Tombol Keluar utama juga kini tanya dulu + beri peringatan bila '
+        'kamu pengelola satu-satunya.',
+    tech:
+        'CRUD anggota: canRemoveMember guard murni + setMemberRole + '
+        'removeMember + rules delete owner-bisa-kick + bottom sheet kelola '
+        '+ dialog konfirmasi keluar (offline ditolak ramah), test guard '
+        '3 kasus, full 160/160.',
+    breaking: null,
+  ),
+  (
     version: 'v1.19.0',
     date: '10 Okt 2026',
     user:

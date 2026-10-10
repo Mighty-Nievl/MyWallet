@@ -643,6 +643,71 @@ class AuthService {
     }
   }
 
+  /// Keputusan hapus anggota (murni, testable): siapa boleh hapus siapa.
+  /// - Keluar SENDIRI selalu boleh (termasuk pengelola terakhir — dialog
+  ///   UI yang beri peringatan ekstra "rumah jadi kosong", bukan blokir
+  ///   yang menjebak user tanpa jalan keluar in-app).
+  /// - Owner boleh hapus anggota lain (kick), kecuali sesama owner
+  ///   (turunkan perannya dulu).
+  /// - Member TIDAK boleh hapus orang lain (= keluar saja via
+  ///   [leaveHousehold]).
+  /// Return null = boleh; string = pesan penolakan Indonesia.
+  static String? canRemoveMember({
+    required bool iAmOwner,
+    required bool targetIsMe,
+    required bool targetIsOwner,
+    required int ownerCount,
+  }) {
+    if (targetIsMe) return null; // keluar sendiri: selalu boleh.
+    // Target = orang lain.
+    if (!iAmOwner) return 'Hanya pengelola yang bisa mengeluarkan anggota.';
+    if (targetIsOwner) {
+      return 'Sesama pengelola tidak bisa saling mengeluarkan — turunkan perannya dulu.';
+    }
+    return null;
+  }
+
+  /// Ubah peran anggota (owner only, dicek rules juga). [makeOwner] true
+  /// = naikkan ke owner, false = turunkan ke member.
+  Future<void> setMemberRole(String targetUid, bool makeOwner) async {
+    final s = await currentCached();
+    final hid = s.householdId;
+    if (hid == null) throw const FamilyException('Bukan anggota rumah.');
+    try {
+      await _needStore()
+          .collection(HouseholdPaths.households)
+          .doc(hid)
+          .collection(HouseholdPaths.members)
+          .doc(targetUid)
+          .update({
+        'role':
+            makeOwner ? HouseholdPaths.roleOwner : HouseholdPaths.roleMember,
+      }).timeout(signInStoreTimeout);
+    } catch (e) {
+      throw FamilyException(friendlyAuthError(e));
+    }
+  }
+
+  /// Keluarkan anggota lain (owner only, dicek rules juga + guard
+  /// [canRemoveMember] di UI sebelum panggil). Keluar sendiri = pakai
+  /// [leaveHousehold] (juga bersihkan users/{uid} + cache).
+  Future<void> removeMember(String targetUid) async {
+    final s = await currentCached();
+    final hid = s.householdId;
+    if (hid == null) throw const FamilyException('Bukan anggota rumah.');
+    try {
+      await _needStore()
+          .collection(HouseholdPaths.households)
+          .doc(hid)
+          .collection(HouseholdPaths.members)
+          .doc(targetUid)
+          .delete()
+          .timeout(signInStoreTimeout);
+    } catch (e) {
+      throw FamilyException(friendlyAuthError(e));
+    }
+  }
+
   Future<void> _clearHouseholdCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();

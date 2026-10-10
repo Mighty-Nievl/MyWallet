@@ -22,6 +22,7 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 7. Pantau di tab **Actions → Release MyWallet**.
 
 ## Riwayat rilis
+- **v1.19.1** (10 Okt 2026): Kelola anggota — baris Anggota bisa diketik (bottom sheet peran/keluarkan/keluar + konfirmasi), tombol Keluar utama pakai dialog + peringatan pengelola-terakhir. Rules kick owner. Full 160/160.
 - **v1.19.0** (10 Okt 2026): Sync beta serumah — push/pull transaksi + kategori via tombol Sync data di Keluarga (LWW updatedAt, categoryUuid resolve, skip cermin utang, hapus merambat). Full 157/157. WAJIB publish firestore.rules baru.
 - **v1.18.1** (10 Okt 2026): Audit screenshot ReWin — pisah pesan timeout/deadline ("sinyal lemot, pindah jaringan") dari tanpa-internet, copy UI preemptif jujur "tanpa sinyal". Full 148/148.
 - **v1.18.0** (10 Okt 2026): Keluarga production-grade + sapaan waktu — tombol mati preemptif saat offline, nama max 40 + counter, daftar anggota, share invite WA, guard owner putar kode, sapaan `Selamat pagi/siang/sore/malam` + nama akun. Full 147/147.

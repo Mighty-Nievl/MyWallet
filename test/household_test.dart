@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:mywallet/data/auth_service.dart';
 import 'package:mywallet/data/household.dart';
 
 void main() {
@@ -203,6 +204,73 @@ void main() {
       expect(
         friendlyAuthError(Exception('[firebase_auth/unauthenticated]')),
         contains('kedaluwarsa'),
+      );
+    });
+  });
+
+  group('canRemoveMember (guard keluar/kick, v1.19.1)', () {
+    test('keluar sendiri SELALU boleh (termasuk pengelola terakhir)', () {
+      // Pengelola terakhir keluar = boleh; UI yang beri peringatan
+      // "rumah jadi kosong" di dialog (bukan blokir tanpa jalan keluar).
+      expect(
+        AuthService.canRemoveMember(
+          iAmOwner: true,
+          targetIsMe: true,
+          targetIsOwner: true,
+          ownerCount: 1,
+        ),
+        isNull,
+      );
+      expect(
+        AuthService.canRemoveMember(
+          iAmOwner: true,
+          targetIsMe: true,
+          targetIsOwner: true,
+          ownerCount: 2,
+        ),
+        isNull,
+      );
+      expect(
+        AuthService.canRemoveMember(
+          iAmOwner: false,
+          targetIsMe: true,
+          targetIsOwner: false,
+          ownerCount: 1,
+        ),
+        isNull,
+      );
+    });
+
+    test('member tidak bisa kick orang lain', () {
+      expect(
+        AuthService.canRemoveMember(
+          iAmOwner: false,
+          targetIsMe: false,
+          targetIsOwner: false,
+          ownerCount: 1,
+        ),
+        contains('pengelola'),
+      );
+    });
+
+    test('owner boleh kick member, tidak boleh kick sesama owner', () {
+      expect(
+        AuthService.canRemoveMember(
+          iAmOwner: true,
+          targetIsMe: false,
+          targetIsOwner: false,
+          ownerCount: 1,
+        ),
+        isNull,
+      );
+      expect(
+        AuthService.canRemoveMember(
+          iAmOwner: true,
+          targetIsMe: false,
+          targetIsOwner: true,
+          ownerCount: 2,
+        ),
+        contains('turunkan'),
       );
     });
   });

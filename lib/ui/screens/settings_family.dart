@@ -114,6 +114,67 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
     }
   }
 
+  /// Keluar rumah tangga DENGAN pengaman (v1.19.1): dialog konfirmasi +
+  /// peringatan ekstra bila pengelola-terakhir. Tanpa ini sekali tap
+  /// langsung pergi — temuan ReWin: "keluar dari Rumah tangga belum ada
+  /// pengamannya". Keluar SELALU boleh (termasuk pengelola terakhir —
+  /// diblokir = jebakan tanpa jalan keluar in-app); dialog yang beri
+  /// peringatan "rumah jadi kosong" agar keputusan sadar.
+  Future<void> _confirmLeaveHousehold(AuthService svc, FamilySession s) async {
+    if (_busy) return;
+    // Cek komposisi anggota dulu (butuh online; offline = tolak ramah).
+    List<HouseholdMember> members = const [];
+    try {
+      members = await svc.fetchMembers();
+    } catch (_) {
+      members = const [];
+    }
+    if (!mounted) return;
+    if (members.isEmpty) {
+      setState(() {
+        _errorMsg =
+            'Tidak bisa cek anggota saat offline — sambungkan internet dulu biar tidak salah keluar.';
+        _rawError = null;
+        _retryJob = null;
+      });
+      return;
+    }
+    final me = members.where((m) => m.uid == s.uid).toList();
+    final iAmOwner =
+        me.isNotEmpty ? me.first.isOwner : await svc.isOwner();
+    if (!mounted) return;
+    final ownerCount = members.where((m) => m.isOwner).length;
+    final lastOwner = iAmOwner && ownerCount <= 1;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Keluar rumah tangga?'),
+        content: Text(
+          'Kamu akan keluar dari ${s.householdName ?? 'rumah'}. '
+          'Data lokal HP ini tetap aman, sync berhenti. '
+          'Untuk gabung lagi butuh kode invite baru.'
+          '${lastOwner ? '\n\nPERHATIAN: kamu pengelola satu-satunya — rumah jadi kosong tanpa pengelola.' : ''}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(c).colorScheme.error,
+              foregroundColor: Theme.of(c).colorScheme.onError,
+            ),
+            child: Text(lastOwner ? 'Tetap keluar' : 'Ya, keluar'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    await _run(svc.leaveHousehold);
+  }
+
   Future<void> _run(Future<FamilySession> Function() job) async {
     if (_busy) return;
     setState(() {
@@ -518,13 +579,14 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                     subtitle:
                         'Masuk sebagai ${s.displayName ?? s.email ?? 'anggota'}',
                     trailing: TextButton(
-                      onPressed:
-                          _busy ? null : () => _run(svc.leaveHousehold),
+                      onPressed: _busy
+                          ? null
+                          : () => _confirmLeaveHousehold(svc, s),
                       child: const Text('Keluar'),
                     ),
                   ),
-                  // Daftar anggota (ringan, dari members/). Offline/gagal =
-                  // fallback teks, bukan error.
+                  // Daftar anggota: TAP = kelola (bottom sheet peran/keluar).
+                  // Offline/gagal = fallback teks, bukan error.
                   FutureBuilder<List<HouseholdMember>>(
                     future: svc.fetchMembers(),
                     builder: (c, snap) {
@@ -546,6 +608,9 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                             .map((m) =>
                                 '${m.shownName} · ${m.roleLabel}')
                             .join('\n'),
+                        onTap: (_busy || offline)
+                            ? null
+                            : () => _manageMembers(svc, s, members),
                       );
                     },
                   ),
@@ -668,6 +733,212 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
   /// Baris sync beta (v1.19): status terakhir + tombol Sync sekarang.
   /// Tanpa household tombol tetap ada tapi service menolak ramah
   /// (kasus ini tidak terjadi: section ini hanya di status household).
+  ///
+  /// Kelola anggota (v1.19.1): bottom sheet daftar + aksi per anggota.
+  /// - Owner → anggota lain: Naikkan/Turunkan peran, Keluarkan.
+  /// - Siapa pun → diri sendiri: Keluar rumah (= leaveHousehold).
+  /// Semua aksi pakai guard [AuthService.canRemoveMember] + konfirmasi
+  /// dialog. Sukses = refresh daftar (setState) + snackbar.
+  Future<void> _manageMembers(
+    AuthService svc,
+    FamilySession s,
+    List<HouseholdMember> members,
+  ) async {
+    final owner = await svc.isOwner();
+    if (!mounted) return;
+    final ownerCount = members.where((m) => m.isOwner).length;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (c) {
+        final scheme = Theme.of(c).colorScheme;
+        return SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.page, 8, AppSpacing.page, 24),
+            children: [
+              Text('Kelola anggota',
+                  style: Theme.of(c).textTheme.titleMedium),
+              const SizedBox(height: 4),
+              Text(
+                owner
+                    ? 'Kamu pengelola — atur peran / keluarkan anggota.'
+                    : 'Ketuk namamu untuk keluar rumah.',
+                style: Theme.of(c).textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              for (final m in members) ...[
+                ListTile(
+                  leading: CircleAvatar(
+                    child: Text(
+                      m.shownName.isEmpty
+                          ? '?'
+                          : m.shownName.characters.first.toUpperCase(),
+                    ),
+                  ),
+                  title: Text(m.shownName),
+                  subtitle:
+                      Text('${m.roleLabel}${m.uid == s.uid ? ' · kamu' : ''}'),
+                  trailing: (m.uid == s.uid || owner)
+                      ? const Icon(Icons.more_vert, size: 20)
+                      : null,
+                  onTap: (m.uid == s.uid || owner)
+                      ? () {
+                          Navigator.pop(c);
+                          _memberActions(svc, s, m,
+                              iAmOwner: owner, ownerCount: ownerCount);
+                        }
+                      : null,
+                ),
+                const Divider(height: 1, indent: 56),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// Aksi per anggota: ubah peran / keluarkan / keluar — dengan guard +
+  /// dialog konfirmasi. [m] = target, [s] = sesi (untuk uid sendiri).
+  Future<void> _memberActions(
+    AuthService svc,
+    FamilySession s,
+    HouseholdMember m, {
+    required bool iAmOwner,
+    required int ownerCount,
+  }) async {
+    final isMe = m.uid == s.uid;
+    final guard = AuthService.canRemoveMember(
+      iAmOwner: iAmOwner,
+      targetIsMe: isMe,
+      targetIsOwner: m.isOwner,
+      ownerCount: ownerCount,
+    );
+    // Pilihan tersedia tergantung peran + guard hapus.
+    final actions = <({String label, bool danger, Future<void> Function() run})>[];
+    if (iAmOwner && !isMe) {
+      actions.add((
+        label: m.isOwner ? 'Turunkan ke Anggota' : 'Naikkan ke Pengelola',
+        danger: false,
+        run: () => svc.setMemberRole(m.uid, !m.isOwner),
+      ));
+    }
+    if (guard == null) {
+      actions.add((
+        label: isMe ? 'Keluar rumah' : 'Keluarkan ${m.shownName}',
+        danger: true,
+        run: () => isMe
+            ? svc.leaveHousehold().then((_) {})
+            : svc.removeMember(m.uid),
+      ));
+    }
+    if (actions.isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _errorMsg = guard ?? 'Tidak ada aksi untuk anggota ini.';
+        _rawError = guard;
+        _retryJob = null;
+      });
+      return;
+    }
+    if (!mounted) return;
+    final picked = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      builder: (c) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text(m.shownName),
+              subtitle: Text(m.roleLabel),
+            ),
+            const Divider(height: 1),
+            for (var i = 0; i < actions.length; i++)
+              ListTile(
+                leading: Icon(
+                  actions[i].danger
+                      ? Icons.person_remove_outlined
+                      : Icons.swap_horiz_outlined,
+                  color: actions[i].danger
+                      ? Theme.of(c).colorScheme.error
+                      : null,
+                ),
+                title: Text(
+                  actions[i].label,
+                  style: actions[i].danger
+                      ? TextStyle(color: Theme.of(c).colorScheme.error)
+                      : null,
+                ),
+                onTap: () => Navigator.pop(c, i),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (picked == null || !mounted) return;
+    final act = actions[picked];
+    // Keluar sendiri sebagai pengelola-terakhir = peringatan ekstra
+    // (sama kayak tombol Keluar utama) — bukan blokir.
+    final lastOwnerWarn = isMe && iAmOwner && ownerCount <= 1;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(act.label),
+        content: Text(act.danger
+            ? (isMe
+                ? 'Keluar dari ${s.householdName ?? 'rumah'}? Data lokal HP ini tetap aman, sync berhenti.'
+                    '${lastOwnerWarn ? '\n\nPERHATIAN: kamu pengelola satu-satunya — rumah jadi kosong tanpa pengelola.' : ''}'
+                : '${m.shownName} tidak bisa mencatat lagi sampai gabung ulang. Lanjutkan?')
+            : '${m.shownName} akan menjadi ${m.isOwner ? 'Anggota' : 'Pengelola'}. Lanjutkan?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(c, false),
+              child: const Text('Batal')),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, true),
+            style: act.danger
+                ? FilledButton.styleFrom(
+                    backgroundColor: Theme.of(c).colorScheme.error,
+                    foregroundColor: Theme.of(c).colorScheme.onError,
+                  )
+                : null,
+            child: const Text('Ya'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    setState(() {
+      _busy = true;
+      _errorMsg = null;
+      _rawError = null;
+      _retryJob = null;
+    });
+    try {
+      await act.run();
+      if (!mounted) return;
+      setState(() {}); // refresh FutureBuilder anggota
+      _snack('${act.label} — berhasil.');
+    } on FamilyException catch (e) {
+      if (!mounted) return;
+      setState(() => _errorMsg = e.message);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMsg = 'Gagal — coba lagi.';
+        _rawError = e.toString();
+      });
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Widget _syncRow(AuthService svc) {
     final st = ref.watch(syncStateProvider);
     final busy = st.phase == SyncPhase.working;
