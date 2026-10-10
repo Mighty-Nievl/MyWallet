@@ -6,6 +6,8 @@ import 'package:share_plus/share_plus.dart';
 import '../../data/auth_service.dart';
 import '../../data/connectivity.dart';
 import '../../data/household.dart';
+import '../../data/providers.dart';
+import '../../data/sync_service.dart';
 import '../components/app_feedback.dart';
 import '../components/setting_row.dart';
 import '../design/app_colors.dart';
@@ -42,7 +44,10 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
 
   /// Error terakhir + aksi ulangannya — ditampilkan INLINE di layar
   /// (bukan snackbar) agar kontras + ada tombol Coba lagi.
+  /// [_rawError] = string exception asli untuk diagnostik (long-press
+  /// banner → salin). Pesan ramah tetap yang tampil utama.
   String? _errorMsg;
+  String? _rawError;
   Future<FamilySession> Function()? _retryJob;
 
   @override
@@ -114,6 +119,7 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
     setState(() {
       _busy = true;
       _errorMsg = null;
+      _rawError = null;
       _retryJob = null;
     });
     try {
@@ -128,13 +134,16 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
       if (mounted) {
         setState(() {
           _errorMsg = e.message;
+          // FamilyException.message sudah ramah — mentahnya = pesan tsb.
+          _rawError = e.toString();
           _retryJob = job;
         });
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         setState(() {
           _errorMsg = 'Gagal — coba lagi.';
+          _rawError = e.toString();
           _retryJob = job;
         });
       }
@@ -211,39 +220,70 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
 
   /// Kartu error inline: ikon + pesan kontras-tinggi + tombol Coba lagi.
   /// Muncul tepat di atas konten yang gagal (bukan snackbar bawah).
+  /// Long-press banner = salin detail mentah (diagnostik v1.18.2): user
+  /// kirim ke Rezal, debat "sinyal vs server" selesai pakai data.
   Widget _errorCard() {
     final scheme = Theme.of(context).colorScheme;
     final retry = _retryJob;
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.s12),
-      padding: const EdgeInsets.all(AppSpacing.s12),
-      decoration: BoxDecoration(
-        color: scheme.errorContainer,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, color: scheme.onErrorContainer),
-          const SizedBox(width: AppSpacing.s12),
-          Expanded(
-            child: Text(
-              _errorMsg ?? 'Gagal.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: scheme.onErrorContainer,
-                    fontWeight: FontWeight.w500,
+    return GestureDetector(
+      onLongPress: () async {
+        final raw = _rawError;
+        if (raw == null || raw.isEmpty) return;
+        await Clipboard.setData(ClipboardData(text: raw));
+        _snack('Detail error disalin — kirim ke Rezal.');
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.s12),
+        padding: const EdgeInsets.all(AppSpacing.s12),
+        decoration: BoxDecoration(
+          color: scheme.errorContainer,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline,
+                    color: scheme.onErrorContainer),
+                const SizedBox(width: AppSpacing.s12),
+                Expanded(
+                  child: Text(
+                    _errorMsg ?? 'Gagal.',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(
+                          color: scheme.onErrorContainer,
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
+                ),
+                if (retry != null)
+                  TextButton(
+                    onPressed:
+                        _busy ? null : () => _run(retry),
+                    style: TextButton.styleFrom(
+                      foregroundColor: scheme.onErrorContainer,
+                    ),
+                    child: const Text('Coba lagi'),
+                  ),
+              ],
             ),
-          ),
-          if (retry != null)
-            TextButton(
-              onPressed: _busy ? null : () => _run(retry),
-              style: TextButton.styleFrom(
-                foregroundColor: scheme.onErrorContainer,
+            if (_rawError != null && _rawError!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Tahan untuk salin detail teknis.',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: scheme.onErrorContainer),
+                ),
               ),
-              child: const Text('Coba lagi'),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -285,6 +325,53 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                       child: const Text('Keluar'),
                     ),
                   ),
+                  // Diagnostik v1.18.2: bedakan "jalur Auth OK" vs
+                  // "jalur Firestore buntu" tanpa tebak-tebakan sinyal.
+                  SettingRow(
+                    icon: Icons.network_check_outlined,
+                    title: 'Tes koneksi',
+                    subtitle:
+                        'Cek Auth + Firestore, salin hasil ke Rezal',
+                    trailing: _busy
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : null,
+                    onTap: _busy
+                        ? null
+                        : () async {
+                            setState(() => _busy = true);
+                            try {
+                              final r = await svc.connectionTest();
+                              if (!mounted) return;
+                              setState(() {
+                                _rawError = r;
+                                _errorMsg = null;
+                                _retryJob = null;
+                              });
+                              await Clipboard.setData(
+                                  ClipboardData(text: r));
+                              _snack(
+                                  'Hasil tes disalin — kirim ke Rezal.');
+                            } finally {
+                              if (mounted) {
+                                setState(() => _busy = false);
+                              }
+                            }
+                          },
+                  ),
+                  // Hasil tes terakhir (bila ada): tampil inline agar
+                  // bisa dibaca + disalin manual bila perlu.
+                  if (_rawError != null &&
+                      _errorMsg == null &&
+                      _rawError!.startsWith('Auth:'))
+                    SettingRow(
+                      icon: Icons.terminal_outlined,
+                      title: 'Hasil tes',
+                      subtitle: _rawError,
+                    ),
                 ],
               ),
             const SizedBox(height: AppSpacing.sectionGap),
@@ -563,14 +650,7 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
               SettingsGroup(
                 title: 'Sinkronisasi',
                 children: [
-                  SettingRow(
-                    icon: Icons.cloud_outlined,
-                    title: 'Sync data',
-                    subtitle:
-                        'Segera hadir (Fase 2) — sekarang data tetap lokal per-HP',
-                    onTap: () => _snack(
-                        'Sync menyusul Fase 2 — sekarang tetap lokal.'),
-                  ),
+                  _syncRow(svc),
                   SettingRow(
                     icon: Icons.logout,
                     title: 'Keluar akun',
@@ -583,6 +663,65 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
           ],
         );
     }
+  }
+
+  /// Baris sync beta (v1.19): status terakhir + tombol Sync sekarang.
+  /// Tanpa household tombol tetap ada tapi service menolak ramah
+  /// (kasus ini tidak terjadi: section ini hanya di status household).
+  Widget _syncRow(AuthService svc) {
+    final st = ref.watch(syncStateProvider);
+    final busy = st.phase == SyncPhase.working;
+    final subtitle = switch (st.phase) {
+      SyncPhase.idle =>
+        'Beta — kirim & ambil transaksi + kategori serumah',
+      SyncPhase.working => st.message.isEmpty ? 'Sinkron…' : st.message,
+      SyncPhase.done =>
+        'Terakhir OK: +${st.pushed} kirim, +${st.pulled} terima',
+      SyncPhase.failed => st.message.isEmpty ? 'Gagal.' : st.message,
+    };
+    return SettingRow(
+      icon: Icons.cloud_outlined,
+      title: 'Sync data',
+      subtitle: subtitle,
+      trailing: busy
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : null,
+      onTap: busy
+          ? null
+          : () async {
+              final db = ref.read(dbProvider);
+              final sync = ref.read(syncServiceProvider);
+              ref.read(syncStateProvider.notifier).state = const SyncState(
+                phase: SyncPhase.working,
+                message: 'Menyiapkan…',
+              );
+              final res = await sync.syncNow(
+                db,
+                onProgress: (tahap) {
+                  ref.read(syncStateProvider.notifier).state = SyncState(
+                    phase: SyncPhase.working,
+                    message: tahap,
+                  );
+                },
+              );
+              ref.read(syncStateProvider.notifier).state = res;
+              if (!mounted) return;
+              if (res.phase == SyncPhase.done) {
+                _snack(
+                    'Sync OK: ${res.pushed} kirim, ${res.pulled} terima.');
+              } else {
+                setState(() {
+                  _errorMsg = res.message;
+                  _rawError = res.message;
+                  _retryJob = null;
+                });
+              }
+            },
+    );
   }
 
   /// Hero empty-state status personal: ikon + ajakan + 3 manfaat +
@@ -626,7 +765,7 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                 ),
                 const SizedBox(height: AppSpacing.s12),
                 _benefit(Icons.sync_outlined,
-                    'Saling nyatat, saldo ikut (segera Fase 2)'),
+                    'Saling nyatat, saldo ikut (beta — tap Sync data)'),
                 _benefit(Icons.lock_outlined,
                     'Data lokal HP ini tidak tersentuh'),
                 _benefit(Icons.key_outlined,

@@ -64,7 +64,14 @@ Future<void> updateTransaction(
 
 Future<void> deleteTransaction(WidgetRef ref, int id) async {
   final db = ref.read(dbProvider);
-  await (db.delete(db.transactions)..where((t) => t.id.equals(id))).go();
+  // Soft-delete (Fase 2): merambat via sync sebagai tombstone, bukan
+  // hilang fisik. Query saldo/laporan/riwayat sudah filter deletedAt.
+  await (db.update(db.transactions)..where((t) => t.id.equals(id))).write(
+    TransactionsCompanion(
+      deletedAt: drift.Value(syncNow()),
+      updatedAt: drift.Value(syncNow()),
+    ),
+  );
 }
 
 // ---------- Kategori ----------
@@ -87,7 +94,14 @@ Future<int> addCategory(
 
 Future<void> deleteCategory(WidgetRef ref, int id) async {
   final db = ref.read(dbProvider);
-  await (db.delete(db.categories)..where((c) => c.id.equals(id))).go();
+  // Soft-delete (Fase 2): tombstone merambat, transaksi lama jadi
+  // "Tanpa kategori" tapi tidak hilang.
+  await (db.update(db.categories)..where((c) => c.id.equals(id))).write(
+    CategoriesCompanion(
+      deletedAt: drift.Value(syncNow()),
+      updatedAt: drift.Value(syncNow()),
+    ),
+  );
 }
 
 // ---------- Budget ----------
@@ -123,5 +137,11 @@ Future<void> upsertBudget(
 
 Future<void> deleteBudget(WidgetRef ref, int id) async {
   final db = ref.read(dbProvider);
-  await (db.delete(db.budgets)..where((b) => b.id.equals(id))).go();
+  // Soft-delete (Fase 2): tombstone merambat.
+  await (db.update(db.budgets)..where((b) => b.id.equals(id))).write(
+    BudgetsCompanion(
+      deletedAt: drift.Value(syncNow()),
+      updatedAt: drift.Value(syncNow()),
+    ),
+  );
 }

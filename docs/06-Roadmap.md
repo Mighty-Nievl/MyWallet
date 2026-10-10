@@ -136,7 +136,7 @@ Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi 
 - [x] **Audit login (v1.17.4)**: timeout berlapis signIn + fallback signedIn, fix join via `householdName` di invite, pesan permission-denied, full 131/131. WAJIB: publish `firestore.rules` ke console.
 - [x] **Keluarga + sapaan production-grade (v1.18.0)**: `isOfflineProvider` disable preemptif, `validateHouseholdName` max 40 + counter, `fetchMembers` + daftar anggota, share invite WA + fallback salin, `isOwner` guard putar kode, `greeting.dart` murni + copy baru, full 147/147.
 - [x] **Pesan error jujur (v1.18.1)**: audit screenshot ReWin (WiFi on, 0,76 KB/S, tombol aktif + banner merah) — pisah timeout/deadline/aborted ("sinyal lemot") dari network/unavailable ("tanpa internet"), copy "tanpa sinyal", full 148/148.
-- [ ] Fase 2 — sync engine beta (opt-in): push/pull transactions + categories, antrean offline, indikator status. Cermin utang di-rebuild per-HP (jangan sync mentah → ganda).
+- [x] Fase 2 — sync engine beta (v1.19.0, opt-in): push/pull transactions + categories + indikator status di Keluarga. Cermin utang TIDAK sync mentah (rebuild per-HP Fase 3) — rules tolak debtId. Hapus = soft-delete merambat (tombstone). Test `sync_engine_test.dart` 9 kasus, full 157/157. SYARAT SERVER: publish `firestore.rules` baru (cats/tx anggota-only).
 - [ ] Fase 3 — utang + budget ikut sync + uji 2 emulator bareng.
 - [ ] Fase 4 — hardening production-grade: RLS audit, hapus akun, kebijakan privasi (wajib Play Store), crash reporting.
 

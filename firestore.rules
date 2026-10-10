@@ -58,12 +58,22 @@ service cloud.firestore {
         allow delete: if signedIn() && uid == request.auth.uid;
       }
 
-      // Sync transaksi Fase 2 — BELUM dibuka (tolak semua).
+      // Sync transaksi + kategori Fase 2 beta (v1.19): anggota rumah.
+      // Cermin utang TIDAK ditulis mentah (rebuild per-HP Fase 3) —
+      // service tidak pernah push debtId, ini lapis pertahanan kedua.
       match /tx/{doc} {
-        allow read, write: if false;
+        allow read: if isMember(hid);
+        allow create, update: if isMember(hid)
+          && request.resource.data.updatedBy == request.auth.uid
+          && (!('debtId' in request.resource.data)
+            || request.resource.data.debtId == null);
+        allow delete: if false; // hapus = tombstone deletedAt, bukan hapus.
       }
       match /cats/{doc} {
-        allow read, write: if false;
+        allow read: if isMember(hid);
+        allow create, update: if isMember(hid)
+          && request.resource.data.updatedBy == request.auth.uid;
+        allow delete: if false;
       }
     }
 

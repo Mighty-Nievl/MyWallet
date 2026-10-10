@@ -657,6 +657,39 @@ class AuthService {
     _gsSub?.cancel();
     _sessionCtrl.close();
   }
+
+  /// Tes koneksi bertahap (diagnostik v1.18.2, insiden "sama saja"):
+  /// 1. Auth (currentUser) — bukti login sah.
+  /// 2. Firestore tulis-baca ringan (doc users/{uid} via server) — bukti
+  ///    jalur Firestore + rules lolos.
+  /// Return string SIAP TAMPIL (ms tiap tahap / gagal di mana). Tidak
+  /// lempar — semua kegagalan dirangkum jadi teks.
+  Future<String> connectionTest() async {
+    final buf = StringBuffer();
+    final u = _auth?.currentUser;
+    buf.write('Auth: ');
+    if (u == null) {
+      buf.writeln('TIDAK LOGIN');
+      return buf.toString();
+    }
+    buf.writeln('OK (${u.email ?? u.uid})');
+    // Tahap Firestore: baca users/{uid} dari SERVER (bukan cache).
+    final sw = Stopwatch()..start();
+    try {
+      await _needStore()
+          .collection(HouseholdPaths.users)
+          .doc(u.uid)
+          .get(GetOptions(source: Source.server))
+          .timeout(signInStoreTimeout);
+      sw.stop();
+      buf.writeln('Firestore: OK (${sw.elapsedMilliseconds} ms)');
+    } catch (e) {
+      sw.stop();
+      buf.writeln('Firestore: GAGAL (${sw.elapsedMilliseconds} ms)');
+      buf.writeln('Detail: $e');
+    }
+    return buf.toString();
+  }
 }
 
 /// Provider layanan (satu instance).

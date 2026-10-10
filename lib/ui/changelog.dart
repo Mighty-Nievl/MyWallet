@@ -26,6 +26,20 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.19.0',
+    date: '10 Okt 2026',
+    user:
+        'Keluarga sekarang bisa saling nyatat (beta): tap Sync data di '
+        'Keluarga untuk kirim + ambil transaksi dan kategori serumah. '
+        'Hapus kini merambat ke pasangan — utang tetap lokal dulu.',
+    tech:
+        'Sync engine beta: sync_engine murni (LWW updatedAt, categoryUuid '
+        'resolve, skip cermin utang) + sync_service push/pull cats+tx + '
+        'soft-delete actions + rules cats/tx anggota-only + UI status, '
+        'test sync_engine 9 kasus, full 157/157.',
+    breaking: null,
+  ),
+  (
     version: 'v1.18.1',
     date: '10 Okt 2026',
     user:
