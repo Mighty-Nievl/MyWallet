@@ -1,0 +1,84 @@
+rules_version = '2';
+
+// MyWallet Fase 1 (v1.17) — Google Sign-In + rumah tangga.
+//
+// Model:
+// - households/{hid}: {name, createdBy, inviteCode, ...} — baca/tulis
+//   HANYA anggota (dok members/{uid} miliknya ADA).
+// - households/{hid}/members/{uid}: anggota kelola SENDIRI (gabung via
+//   kode = tulis diri sendiri; keluar = hapus diri sendiri). Update role
+//   hanya owner (cek role pemohon).
+// - invites/{CODE}: kode = capability secret (kayak link join grup).
+//   Semua user LOGIN bisa `get` BILA tahu kodenya (tidak bisa list).
+//   Tulis: user login (buat/putar kode milik rumah tangganya).
+// - users/{uid}: profil milik SENDIRI saja.
+// - Data transaksi/sync (Fase 2): BELUM dibuka — koleksi
+//   households/{hid}/tx/* ditolak eksplisit sampai sync engine siap.
+//
+// Catatan: `get(...).data` = baca 1 dokumen (bayar 1 read, bukan list).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isMember(hid) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/households/$(hid)/members/$(request.auth.uid));
+    }
+
+    function isOwner(hid) {
+      return isMember(hid)
+        && get(/databases/$(database)/documents/households/$(hid)/members/$(request.auth.uid)).data.role == 'owner';
+    }
+
+    // ---- Rumah tangga: hanya anggota ----
+    match /households/{hid} {
+      allow get: if isMember(hid);
+      // Buat: pemohon otomatis jadi owner (dicek auth_service batch).
+      allow create: if signedIn()
+        && request.resource.data.createdBy == request.auth.uid;
+      // Update nama/kode: hanya owner.
+      allow update: if isOwner(hid);
+      allow delete: if false; // hapus via console saja.
+
+      match /members/{uid} {
+        // Daftar anggota: hanya anggota (privasi email).
+        allow list, get: if isMember(hid);
+        // Gabung: tulis DOKUMEN DIRI SENDIRI saja (role member/owner).
+        allow create: if signedIn()
+          && uid == request.auth.uid
+          && (request.resource.data.role == 'member'
+            || request.resource.data.role == 'owner');
+        // Ubah role: hanya owner (naik/turun peran).
+        allow update: if isOwner(hid);
+        // Keluar: hapus DIRI SENDIRI (owner terakhir = dibiarkan, rapikan
+        // via console; Fase 2 tambah guard).
+        allow delete: if signedIn() && uid == request.auth.uid;
+      }
+
+      // Sync transaksi Fase 2 — BELUM dibuka (tolak semua).
+      match /tx/{doc} {
+        allow read, write: if false;
+      }
+      match /cats/{doc} {
+        allow read, write: if false;
+      }
+    }
+
+    // ---- Invite: get-per-kode untuk user login (tanpa list) ----
+    match /invites/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create, update: if signedIn();
+      allow delete: if false;
+    }
+
+    // ---- Profil: milik sendiri ----
+    match /users/{uid} {
+      allow get: if signedIn() && uid == request.auth.uid;
+      allow create, update: if signedIn() && uid == request.auth.uid;
+      allow delete: if false;
+    }
+  }
+}

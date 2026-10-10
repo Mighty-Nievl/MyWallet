@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/providers.dart';
+import '../../data/auth_service.dart';
 import '../../data/settings.dart';
 import '../app_theme.dart';
 import '../components/setting_row.dart';
 import '../design/app_spacing.dart';
 import 'settings_about.dart';
 import 'settings_appearance.dart';
+import 'settings_family.dart';
 import 'settings_manage.dart';
 import 'settings_privacy.dart';
 
@@ -42,6 +44,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final accent = ref.watch(accentColorProvider);
     final appLock = ref.watch(appLockProvider);
     final cats = ref.watch(categoriesProvider);
+    final family = ref.watch(familySessionProvider);
+    final familySubtitle = family.when(
+      loading: () => '…',
+      error: (_, _) => 'Pribadi · offline',
+      data: (s) => switch (s.status) {
+        FamilyStatus.household =>
+          s.householdName ?? 'Anggota rumah tangga',
+        FamilyStatus.signedIn => s.email ?? 'Sudah masuk',
+        _ => 'Pribadi · offline',
+      },
+    );
 
     final themeLabel = themeMode.when(
       loading: () => '…',
@@ -120,6 +133,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _GroupKey.kelola),
       _HubEntry('Hapus semua data', 'Reset total', const ['delete', 'wipe', 'hapus'],
           _GroupKey.kelola),
+      _HubEntry('Keluarga', 'Catat bareng pasangan',
+          const ['keluarga', 'family', 'sync', 'google', 'login'],
+          _GroupKey.keluarga),
       _HubEntry('Tentang', 'Versi + changelog', const ['about', 'version', 'versi'],
           _GroupKey.tentang),
     ];
@@ -247,6 +263,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ),
                           const Divider(height: 1, indent: 52),
                           SettingRow(
+                            icon: Icons.group_outlined,
+                            title: 'Keluarga',
+                            subtitle:
+                                'Catat bareng · $familySubtitle',
+                            onTap: () =>
+                                _openGroup(_GroupKey.keluarga),
+                          ),
+                          const Divider(height: 1, indent: 52),
+                          SettingRow(
                             icon: Icons.info_outlined,
                             title: 'Tentang',
                             subtitle: 'Versi · changelog',
@@ -272,18 +297,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       _GroupKey.tampilan => AppearanceSettingsPage(initialQuery: q),
       _GroupKey.privasi => PrivacySettingsPage(initialQuery: q),
       _GroupKey.kelola => ManageSettingsPage(initialQuery: q),
+      _GroupKey.keluarga => const FamilySettingsPage(),
       _GroupKey.tentang => const AboutSettingsPage(),
     };
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
   }
 }
 
-enum _GroupKey { tampilan, privasi, kelola, tentang }
+enum _GroupKey { tampilan, privasi, kelola, keluarga, tentang }
 
 String _groupLabel(_GroupKey g) => switch (g) {
       _GroupKey.tampilan => 'Tampilan',
       _GroupKey.privasi => 'Saldo & Privasi',
       _GroupKey.kelola => 'Kelola',
+      _GroupKey.keluarga => 'Keluarga',
       _GroupKey.tentang => 'Tentang',
     };
 
@@ -291,6 +318,7 @@ IconData _groupIcon(_GroupKey g) => switch (g) {
       _GroupKey.tampilan => Icons.palette_outlined,
       _GroupKey.privasi => Icons.shield_outlined,
       _GroupKey.kelola => Icons.folder_outlined,
+      _GroupKey.keluarga => Icons.group_outlined,
       _GroupKey.tentang => Icons.info_outlined,
     };
 

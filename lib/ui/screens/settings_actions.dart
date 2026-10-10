@@ -14,7 +14,6 @@ import '../../data/reminder_service.dart';
 import '../../data/report_pdf_service.dart';
 import '../../data/settings.dart';
 import '../amount_input.dart';
-import '../changelog.dart';
 import '../design/app_colors.dart';
 import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
@@ -746,21 +745,12 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
   }
 
   // ---------- Tentang ----------
-
-  /// Changelog ala STEP 4: bottom sheet scroll (bukan tembok teks).
-  ///
-  /// - Kepala: judul + subjudul + tombol Tutup (X).
-  /// - Versi terbaru disorot: kartu tint aksen + badge TERBARU.
-  /// - Tiap versi = pil versi + deskripsi; tinggi 85% layar.
-  /// - Data tetap dari [appChangelog] (satu sumber, sama kayak test).
-  Future<void> showChangelog() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (c) => const _ChangelogSheet(),
-    );
-  }
+  //
+  // Changelog kini halaman penuh [ChangelogScreen] (dibuka dari
+  // AboutSettingsPage) — bottom-sheet 85% v1.16.x dihapus: pola modal
+  // salah untuk konten referensi panjang (konflik scroll-vs-drag-sheet),
+  // badge TERBARU-nya menipu (i==0, bukan versi terinstall), tanpa
+  // tanggal, tanpa hierarki baca.
 }
 
 /// Satu opsi dalam dialog pilih — gaya baris STEP 4.
@@ -939,175 +929,6 @@ class _AccentDot extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Bottom sheet changelog: versi terbaru disorot, tiap versi = pil +
-/// deskripsi. Satu bahasa dengan STEP 4 (border token, radius token,
-/// tipografi [AppType]). Data dari [appChangelog] — urutan terbaru dulu.
-class _ChangelogSheet extends StatelessWidget {
-  const _ChangelogSheet();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return SafeArea(
-      child: FractionallySizedBox(
-        heightFactor: 0.85,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.page,
-            AppSpacing.s8,
-            AppSpacing.page,
-            AppSpacing.s16,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Changelog',
-                          style:
-                              AppType.screenTitle(context),
-                        ),
-                        Text(
-                          'Riwayat perubahan versi',
-                          style: AppType.secondary(context),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: AppRadius.mdAll,
-                      border: Border.all(
-                          color:
-                              AppColors.borderOf(context)),
-                    ),
-                    child: IconButton(
-                      onPressed: () =>
-                          Navigator.maybePop(context),
-                      icon:
-                          const Icon(Icons.close, size: 20),
-                      tooltip: 'Tutup',
-                      constraints:
-                          const BoxConstraints.tightFor(
-                              width: 40, height: 40),
-                      padding: EdgeInsets.zero,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.s12),
-              Expanded(
-                child: ListView.separated(
-                  itemCount: appChangelog.length,
-                  separatorBuilder: (_, _) =>
-                      const SizedBox(
-                          height: AppSpacing.s8),
-                  itemBuilder: (c, i) {
-                    final e = appChangelog[i];
-                    final latest = i == 0;
-                    return Container(
-                      padding:
-                          const EdgeInsets.all(
-                              AppSpacing.s12),
-                      decoration: BoxDecoration(
-                        color: latest
-                            ? Color.alphaBlend(
-                                scheme.primary.withValues(
-                                    alpha: 0.12),
-                                scheme.surface,
-                              )
-                            : AppColors.subtleOf(
-                                context),
-                        borderRadius: AppRadius.mdAll,
-                        border: Border.all(
-                          color: latest
-                              ? scheme.primary
-                              : AppColors.borderOf(
-                                  context),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding:
-                                    const EdgeInsets
-                                        .symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: latest
-                                      ? scheme.primary
-                                      : scheme
-                                          .surfaceContainerHighest,
-                                  borderRadius:
-                                      BorderRadius.circular(
-                                          999),
-                                ),
-                                child: Text(
-                                  e.version,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight:
-                                        FontWeight.w700,
-                                    color: latest
-                                        ? scheme.onPrimary
-                                        : scheme
-                                            .onSurfaceVariant,
-                                  ),
-                                ),
-                              ),
-                              if (latest) ...[
-                                const SizedBox(
-                                    width:
-                                        AppSpacing.s8),
-                                Text(
-                                  'TERBARU',
-                                  style: AppType.labelMuted(
-                                          context)
-                                      .copyWith(
-                                    fontWeight:
-                                        FontWeight.w700,
-                                    color: scheme.primary,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(
-                              height: AppSpacing.s8),
-                          Text(
-                            e.text,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium,
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );

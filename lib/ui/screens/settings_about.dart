@@ -6,6 +6,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../components/setting_row.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
+import 'changelog_screen.dart';
 import 'settings_actions.dart';
 
 /// Sub-halaman Tentang: info versi (ketuk salin) + changelog.
@@ -98,7 +99,11 @@ class _AboutSettingsPageState extends ConsumerState<AboutSettingsPage>
                         icon: Icons.history,
                         title: 'Changelog',
                         subtitle: 'Riwayat perubahan versi',
-                        onTap: showChangelog,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const ChangelogScreen(),
+                          ),
+                        ),
                       ),
                     ],
                   ),
