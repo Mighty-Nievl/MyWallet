@@ -106,23 +106,51 @@ class AuthService {
 
   /// Boot: pulihkan sesi (silent login + cache lokal). Tidak lempar —
   /// semua kegagalan (Firebase belum init di test, offline, dsb) = personal.
+  ///
+  /// Anti-hang (insiden v1.17.2): `attemptLightweightAuthentication` di HP
+  /// dengan CredentialManager nyangkut BISA tidak pernah selesai (future
+  /// menggantung selamanya, bukan error). Karena itu dibungkus timeout
+  /// 8 detik — lewat dari itu = personal, user tetap bisa tap login
+  /// manual. Sama untuk `_sessionFor` (baca server).
+  static const bootTimeout = Duration(seconds: 8);
+
   Future<FamilySession> boot() async {
     try {
       final u = await _currentUserSafe();
       if (u == null) {
         try {
           await _ensureGsInit();
-          await GoogleSignIn.instance.attemptLightweightAuthentication();
+          await GoogleSignIn.instance
+              .attemptLightweightAuthentication()
+              ?.timeout(bootTimeout);
         } catch (_) {
-          // Silent gagal: tetap personal.
+          // Silent gagal/timeout/mode-null: tetap personal.
         }
         final u2 = await _currentUserSafe();
         if (u2 == null) {
           return _emit(const FamilySession(status: FamilyStatus.personal));
         }
-        return _emit(await _sessionFor(u2));
+        try {
+          return _emit(await _sessionFor(u2).timeout(bootTimeout));
+        } catch (_) {
+          return _emit(FamilySession(
+            status: FamilyStatus.signedIn,
+            uid: u2.uid,
+            email: u2.email,
+            displayName: u2.displayName,
+          ));
+        }
       }
-      return _emit(await _sessionFor(u));
+      try {
+        return _emit(await _sessionFor(u).timeout(bootTimeout));
+      } catch (_) {
+        return _emit(FamilySession(
+          status: FamilyStatus.signedIn,
+          uid: u.uid,
+          email: u.email,
+          displayName: u.displayName,
+        ));
+      }
     } catch (_) {
       return _emit(const FamilySession(status: FamilyStatus.personal));
     }

@@ -26,6 +26,19 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.17.3',
+    date: '10 Okt 2026',
+    user:
+        'Perbaiki halaman Keluarga yang macet di loading: kalau pemeriksaan '
+        'otomatis tersendat, halaman tetap tampil dalam 8 detik dan tombol '
+        'masuk tetap bisa ditekan manual.',
+    tech:
+        'Fix hang boot Keluarga: timeout 8 detik untuk silent-login + baca '
+        'server (CredentialManager nyangkut = future menggantung), fallback '
+        'signedIn/personal. Test regresi bootTimeout. Full 128/128.',
+    breaking: null,
+  ),
+  (
     version: 'v1.17.2',
     date: '10 Okt 2026',
     user:

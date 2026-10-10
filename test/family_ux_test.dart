@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:mywallet/data/auth_service.dart';
 import 'package:mywallet/ui/screens/settings_family.dart';
 
 /// UX Keluarga status personal (tanpa Firebase init — provider jatuh ke
@@ -34,5 +35,11 @@ void main() {
     // Tombol CTA penuh-lebar.
     final cta = find.widgetWithText(FilledButton, 'Masuk dengan Google');
     expect(cta, findsOneWidget);
+  });
+
+  test('bootTimeout 8 detik — boot nggak boleh hang selamanya', () {
+    // Regresi insiden v1.17.2: CredentialManager nyangkut bikin future
+    // menggantung; timeout menjamin halaman keluar dari skeleton.
+    expect(AuthService.bootTimeout, const Duration(seconds: 8));
   });
 }
