@@ -26,6 +26,19 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.21.1',
+    date: '10 Okt 2026',
+    user:
+        'Audit referensi Beranda: semua tombol kini bergetar ringan saat '
+        'disentuh (termasuk tombol di banner dan kartu utang). Isi dan '
+        'datamu tidak berubah.',
+    tech:
+        'Tambah haptic CTA banner + kartu utang Beranda (prompt referensi '
+        'satu-file); pola hardcode + TODO + FAB + emoji PDF ditolak — '
+        'provider live + ikon vektor + tema dipertahankan, full 163/163.',
+    breaking: null,
+  ),
+  (
     version: 'v1.21.0',
     date: '10 Okt 2026',
     user:

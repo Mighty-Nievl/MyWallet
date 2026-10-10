@@ -202,24 +202,29 @@ class _EntryCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.s4),
           // Caption tanggal + penanda jujur: versi TERINSTALL di HP ini
           // (via PackageInfo) — bukan "paling atas di list" seperti badge
-          // TERBARU v1.16.x. Satu baris rich-text: selalu muat + wrap aman.
-          Text.rich(
-            TextSpan(
-              style: AppType.secondary(context),
-              children: [
-                TextSpan(text: entry.date),
-                if (isInstalled)
-                  TextSpan(
-                    text: ' · TERINSTALL',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: scheme.primary,
-                    ),
+          // TERBARU v1.16.x. Tanggal = Text sendiri (exact-match untuk
+          // find.text test) + TERINSTALL sebagai widget terpisah — visual
+          // tetap satu baris.
+          Row(
+            children: [
+              Flexible(
+                child: Text(
+                  entry.date,
+                  style: AppType.secondary(context),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (isInstalled)
+                Text(
+                  ' · TERINSTALL',
+                  style: AppType.secondary(context).copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: scheme.primary,
                   ),
-              ],
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+            ],
           ),
           const SizedBox(height: AppSpacing.s8),
           Text(entry.user, style: Theme.of(context).textTheme.bodyMedium),

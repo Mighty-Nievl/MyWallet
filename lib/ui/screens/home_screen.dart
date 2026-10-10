@@ -1256,7 +1256,12 @@ Widget _bannerCta(
   required VoidCallback onTap,
 }) {
   return InkWell(
-    onTap: onTap,
+    onTap: () {
+      // Prompt §3: haptic di semua CTA banner (Lihat laporan / Atur
+      // budget / Atur) — teks/key/tujuan tidak berubah.
+      HapticFeedback.lightImpact();
+      onTap();
+    },
     borderRadius: AppRadius.smAll,
     child: SizedBox(
       height: AppSpacing.touchMin,
@@ -1442,8 +1447,13 @@ class _DebtCard extends ConsumerWidget {
                     child: const Text('Kelola'),
                   ),
             child: InkWell(
-              onTap:
-                  onGoTab == null ? null : () => onGoTab!(4),
+              onTap: onGoTab == null
+                  ? null
+                  : () {
+                      // Prompt §3: haptic di kartu utang (tap → tab Utang).
+                      HapticFeedback.lightImpact();
+                      onGoTab!(4);
+                    },
               borderRadius: AppRadius.mdAll,
               child: Row(
                 children: [
