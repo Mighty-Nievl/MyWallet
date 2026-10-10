@@ -22,6 +22,7 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 7. Pantau di tab **Actions → Release MyWallet**.
 
 ## Riwayat rilis
+- **v1.16.2** (10 Okt 2026): Fix restore/wipe database (`Bad state connection closed`): path DB tanpa query, WAL checkpoint sebelum backup, validasi header SQLite. Test `backup_file_test.dart` 9 kasus. Restore v1.16.0 → v1.16.1+ jalan.
 - **v1.16.1** (10 Okt 2026): Ganti package Android → `com.rezal.mywallet` + wiring Firebase Fase 1 (project `mywallet-7614d`): plugin google-services 4.5.0, `firebase_core` init aman-gagal, paket auth/firestore/google_sign_in v7, minSdk 23, secrets CI. CATATAN: install sebagai app baru — backup dulu via Kelola.
 - **v1.16.0** (10 Okt 2026): Fondasi sync-ready Fase 0 (tetap 100% offline, tanpa network) — skema DB v3: `uuid/updatedAt/deletedAt/householdId` di 5 tabel + `categoryUuid` di transactions, migrasi v2→v3 aman + backfill otomatis, semua query siap soft-delete, `actions`/`debt_actions` bump `updatedAt`. Persiapan Google Sign-In + Firestore (Fase 1-2: auth + household + sync engine).
 - **v1.15.0** (9 Okt 2026): Manajer utang-piutang (100% offline) — tab Utang ke-5 + kartu ringkas Beranda (sisa utang vs piutang, tap → Kelola). Utang = pinjam (catat = pemasukan, bayar = pengeluaran), Piutang = meminjami (catat = pengeluaran, terima = pemasukan); tiap aksi menulis transaksi cermin otomatis sehingga saldo, laporan, riwayat, PDF & CSV ikut tanpa ubah query lama. Cicilan parsial + anti-overpay + jatuh tempo + progress + lunas otomatis. Skema DB v2 (migrasi v1→v2 aman).

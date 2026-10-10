@@ -633,7 +633,7 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
     );
     if (ok != true) return;
     try {
-      await BackupService.closeDatabase(ref);
+      // restoreFrom menutup koneksi sendiri (urutan path → close → copy).
       await BackupService.restoreFrom(ref, src);
       if (mounted) {
         await showDialog<void>(
@@ -719,7 +719,7 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
     );
     if (second != true || !mounted) return;
     try {
-      await BackupService.closeDatabase(ref);
+      // wipeAll menutup koneksi sendiri (urutan path → close → hapus).
       await BackupService.wipeAll(ref);
       if (mounted) {
         await showDialog<void>(

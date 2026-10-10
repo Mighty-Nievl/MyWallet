@@ -18,7 +18,7 @@
 - **Penyimpanan:** 100% lokal, SQLite via Drift — tanpa login, tanpa server.
 - **State:** flutter_riverpod 3.x (`StreamProvider` auto-refresh, `StateProvider` via `legacy.dart`).
 - **File DB:** `mywallet.sqlite` di folder dokumen aplikasi.
-- **Status:** v1.16.1 — Rename package + wiring Firebase Fase 1 (tetap offline) · 94 test hijau.
+- **Status:** v1.16.2 — Fix restore/wipe database · 103 test hijau.
 
 ## Peta kode
 

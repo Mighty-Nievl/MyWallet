@@ -11,6 +11,11 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String text})>[
   (
+    version: 'v1.16.2',
+    text:
+        'Perbaiki restore/wipe database (bug Bad state connection closed): lokasi file DB dihitung langsung tanpa query (aman setelah koneksi ditutup), WAL checkpoint sebelum backup, validasi header SQLite sebelum timpa (file sampah ditolak, data aman). Restore antar-package v1.16.0 → v1.16.1+ bisa jalan.',
+  ),
+  (
     version: 'v1.16.1',
     text:
         'Ganti package Android ke com.rezal.mywallet + wiring Firebase Fase 1 (project mywallet-7614d): plugin google-services 4.5.0, firebase_core init aman-gagal (tanpa config = tetap offline murni), paket firebase_auth + cloud_firestore + google_sign_in v7, minSdk 23. google-services.json di-gitignore + CI via secret. CATATAN: update ini = install app baru (data lokal mulai nol, backup dulu via Kelola).',
