@@ -245,12 +245,13 @@ class _AppearanceSettingsPageState
                         SettingRow(
                           icon: Icons.waving_hand_outlined,
                           title: 'Nama sapaan',
-                          subtitle: 'Sapaan di Beranda, mis. “Hai, Nievi”',
+                          subtitle:
+                              'Sapaan di Beranda, mis. “Selamat pagi, ReWin”',
                           trailing: SettingValue(
                             value: displayName.when(
                               loading: () => '…',
                               error: (_, _) => '…',
-                              data: (n) => n.isEmpty ? 'Hai!' : n,
+                              data: (n) => n.isEmpty ? 'Ikut akun' : n,
                             ),
                           ),
                           onTap: editDisplayName,

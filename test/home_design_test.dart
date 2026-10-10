@@ -158,7 +158,11 @@ void main() {
     }
 
     expect(find.text('SALDO SAAT INI'), findsOneWidget);
-    expect(find.text('Hai, Nievi'), findsOneWidget);
+    // Sapaan production-grade (v1.18): berbasis waktu + nama (manual →
+    // Google → polos). Test tanpa login/nama = sapaan polos pagi/siang/
+    // sore/malam — tanpa koma menggantung, tanpa nama mockup.
+    expect(find.textContaining('Selamat '), findsOneWidget);
+    expect(find.text('Hai, Nievi'), findsNothing);
     expect(find.text('Sisa budget'), findsOneWidget);
     // Delta dari provider (bukan FutureBuilder) — harus ter-render.
     expect(find.textContaining('vs '), findsWidgets);

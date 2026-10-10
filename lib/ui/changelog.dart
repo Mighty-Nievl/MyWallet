@@ -26,6 +26,22 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.18.0',
+    date: '10 Okt 2026',
+    user:
+        'Halaman Keluarga naik kelas: tombol mati sendiri saat offline (bukan '
+        'gagal sesudah ditekan), nama dibatasi 40 huruf, daftar anggota tampil, '
+        'kode bisa dibagikan ke WA, dan sapaan Beranda ikut waktu (Selamat '
+        'pagi/siang/sore/malam) + nama akunmu.',
+    tech:
+        'Production-grade Keluarga+sapaan: isOfflineProvider (connectivity_plus) '
+        'disable preemptif Buat/Gabung/Salin/Putar, validateHouseholdName max 40 + '
+        'counter live, fetchMembers + isOwner guard, SharePlus invite + fallback '
+        'salin, greeting.dart murni (title/resolve/text) + copy Baru, test +4, '
+        'full 147/147.',
+    breaking: null,
+  ),
+  (
     version: 'v1.17.4',
     date: '10 Okt 2026',
     user:

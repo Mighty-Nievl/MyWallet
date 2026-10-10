@@ -233,11 +233,12 @@ final showMonthTotalsProvider = FutureProvider<bool>((ref) async {
   return p.getBool(SettingsKeys.showMonthTotals) ?? true;
 });
 
-/// Nama sapaan di Beranda — tampil sebagai "Hai, {nama}!".
-/// Default 'Nievi' (mockup), kosongkan = sapaan polos "Hai!".
+/// Nama sapaan MANUAL di Beranda — menimpa nama akun Google bila diisi.
+/// Kosong (default) = ikut nama akun Google; keduanya kosong = sapaan
+/// polos berbasis waktu ("Selamat pagi", tanpa nama).
 final displayNameProvider = FutureProvider<String>((ref) async {
   final p = await ref.watch(prefsProvider.future);
-  return p.getString(SettingsKeys.displayName) ?? 'Nievi';
+  return p.getString(SettingsKeys.displayName) ?? '';
 });
 
 /// Tampilkan ringkasan harian (hari ini) di Beranda.

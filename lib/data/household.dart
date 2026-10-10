@@ -83,8 +83,15 @@ String friendlyAuthError(Object e) {
       m.contains('socket') ||
       m.contains('timeout') ||
       m.contains('unreachable') ||
-      m.contains('failed host lookup')) {
+      m.contains('failed host lookup') ||
+      m.contains('unavailable') ||
+      m.contains('deadline') ||
+      m.contains('aborted') ||
+      m.contains('connection')) {
     return 'Tidak ada internet — coba lagi saat online. Data lokal tetap aman.';
+  }
+  if (m.contains('unauthenticated') || m.contains('auth-token-expired')) {
+    return 'Sesi login kedaluwarsa — keluar lalu masuk lagi.';
   }
   if (m.contains('developer_error') ||
       m.contains('api_not_connected') ||
@@ -127,6 +134,59 @@ String friendlyJoinError(JoinFailure f) => switch (f) {
 
 /// Alasan gabung gagal (murni, testable).
 enum JoinFailure { badCode, notFound, expired }
+
+/// Batas nama rumah tangga (UX + Firestore: cukup untuk "Keluarga Besar
+/// Bramantara", tidak selebar spanduk).
+const householdNameMaxLength = 40;
+
+/// Validasi nama rumah tangga (murni): null = valid, string = pesan error
+/// Indonesia yang siap tampil. Dipakai service + tombol Buat (disable
+/// saat tidak valid) agar gagal-cepat tanpa menyentuh jaringan.
+String? validateHouseholdName(String raw) {
+  final t = raw.trim();
+  if (t.isEmpty) return 'Nama rumah tangga wajib diisi.';
+  if (t.length > householdNameMaxLength) {
+    return 'Maksimal $householdNameMaxLength karakter.';
+  }
+  return null;
+}
+
+/// Teks share invite (murni): siap kirim ke WA/pasangan.
+String inviteShareText(String formattedCode, String? householdName) {
+  final h = (householdName ?? '').trim();
+  final name = h.isEmpty ? 'Keluarga' : h;
+  return 'Gabung rumah tangga "$name" di MyWallet pakai kode $formattedCode '
+      '(berlaku 24 jam). Buka Pengaturan → Keluarga → Gabung.';
+}
+
+/// Anggota rumah tangga (ringan untuk daftar UI).
+class HouseholdMember {
+  const HouseholdMember({
+    required this.uid,
+    this.email,
+    this.displayName,
+    this.role = 'member',
+  });
+
+  final String uid;
+  final String? email;
+  final String? displayName;
+  final String role;
+
+  bool get isOwner => role == HouseholdPaths.roleOwner;
+
+  /// Label peran Indonesia untuk UI.
+  String get roleLabel => isOwner ? 'Pengelola' : 'Anggota';
+
+  /// Nama tampil: displayName → email → 'Anggota'.
+  String get shownName {
+    final d = (displayName ?? '').trim();
+    if (d.isNotEmpty) return d;
+    final e = (email ?? '').trim();
+    if (e.isNotEmpty) return e;
+    return 'Anggota';
+  }
+}
 
 /// Exception layanan keluarga — [message] SUDAH ramah untuk snackbar.
 class FamilyException implements Exception {

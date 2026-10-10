@@ -119,7 +119,10 @@ class AuthService {
       final u = await _currentUserSafe();
       if (u == null) {
         try {
-          await _ensureGsInit();
+          await _ensureGsInit().timeout(
+            bootTimeout,
+            onTimeout: () => throw TimeoutException('init Google lama'),
+          );
           await GoogleSignIn.instance
               .attemptLightweightAuthentication()
               ?.timeout(bootTimeout);
@@ -242,13 +245,13 @@ class AuthService {
   }
 
   /// Buat rumah tangga baru → jadi owner + kode invite 24 jam.
+  /// Nama divalidasi lokal dulu (gagal-cepat tanpa menyentuh jaringan).
   Future<FamilySession> createHousehold(String name) async {
     final u = _auth?.currentUser;
     if (u == null) throw const FamilyException('Login dulu sebelum buat.');
+    final nameErr = validateHouseholdName(name);
+    if (nameErr != null) throw FamilyException(nameErr);
     final clean = name.trim();
-    if (clean.isEmpty) {
-      throw const FamilyException('Nama rumah tangga wajib diisi.');
-    }
     try {
       final code = InviteCode.generate();
       final now = DateTime.now();
@@ -284,7 +287,20 @@ class AuthService {
       }, SetOptions(merge: true));
       await batch.commit().timeout(signInStoreTimeout);
       await _saveHouseholdCache(hid, clean);
-      return _emit(await _sessionFor(u));
+      // Server tulis sukses, tapi baca balik jangan gantung UI:
+      // timeout + fallback household dari cache yang baru ditulis.
+      try {
+        return _emit(await _sessionFor(u).timeout(signInStoreTimeout));
+      } catch (_) {
+        return _emit(FamilySession(
+          status: FamilyStatus.household,
+          uid: u.uid,
+          email: u.email,
+          displayName: u.displayName,
+          householdId: hid,
+          householdName: clean,
+        ));
+      }
     } catch (e) {
       if (e is FamilyException) rethrow;
       throw FamilyException(friendlyAuthError(e));
@@ -338,7 +354,19 @@ class AuthService {
       }, SetOptions(merge: true));
       await batch.commit().timeout(signInStoreTimeout);
       await _saveHouseholdCache(hid, hName);
-      return _emit(await _sessionFor(u));
+      // Baca balik anti-gantung: fallback household dari cache.
+      try {
+        return _emit(await _sessionFor(u).timeout(signInStoreTimeout));
+      } catch (_) {
+        return _emit(FamilySession(
+          status: FamilyStatus.household,
+          uid: u.uid,
+          email: u.email,
+          displayName: u.displayName,
+          householdId: hid,
+          householdName: hName,
+        ));
+      }
     } on FamilyException {
       rethrow;
     } catch (e) {
@@ -385,6 +413,7 @@ class AuthService {
 
   /// Kode invite aktif rumah tangga (untuk ditampilkan + disalin).
   /// Return null bila tidak ada / kedaluwarsa (minta putar kode baru).
+  /// Timeout agar tombol salin tidak gantung saat offline.
   Future<String?> activeInviteCode() async {
     final s = await currentCached();
     final hid = s.householdId;
@@ -393,7 +422,8 @@ class AuthService {
       final snap = await _needStore()
           .collection(HouseholdPaths.households)
           .doc(hid)
-          .get(GetOptions(source: Source.serverAndCache));
+          .get(GetOptions(source: Source.serverAndCache))
+          .timeout(signInStoreTimeout);
       final code = snap.data()?['inviteCode'] as String?;
       final exp =
           (snap.data()?['inviteExpiresAt'] as Timestamp?)?.toDate();
@@ -412,9 +442,11 @@ class AuthService {
     final hid = s.householdId;
     if (u == null || hid == null) {
       await _clearHouseholdCache();
-      return _emit(const FamilySession(
+      return _emit(FamilySession(
         status: FamilyStatus.signedIn,
-        uid: null,
+        uid: u?.uid,
+        email: u?.email,
+        displayName: u?.displayName,
       ));
     }
     try {
@@ -423,11 +455,12 @@ class AuthService {
           .doc(hid)
           .collection(HouseholdPaths.members)
           .doc(u.uid)
-          .delete();
+          .delete()
+          .timeout(signInStoreTimeout);
       await _needStore().collection(HouseholdPaths.users).doc(u.uid).set(
         {'householdId': null, 'updatedAt': FieldValue.serverTimestamp()},
         SetOptions(merge: true),
-      );
+      ).timeout(signInStoreTimeout);
     } catch (_) {
       // Lanjut: cache lokal tetap dibersihkan.
     }
@@ -501,23 +534,36 @@ class AuthService {
     final cached = await currentCached();
     String? hid = cached.householdId;
     String? hName = cached.householdName;
-    // Bila cache kosong, tanya server (users/{uid}) — gagal = tetap signedIn.
+    // Bila cache kosong, tanya server (users/{uid}) — gagal = coba cache
+    // Firestore, tetap gagal = signedIn (jangan gantung UI).
     if (hid == null) {
       try {
         final snap = await _needStore()
             .collection(HouseholdPaths.users)
             .doc(u.uid)
-            .get(GetOptions(source: Source.server));
+            .get(GetOptions(source: Source.server))
+            .timeout(signInStoreTimeout);
         hid = snap.data()?['householdId'] as String?;
         if (hid != null && hid.isNotEmpty) {
           try {
             final hSnap = await _needStore()
                 .collection(HouseholdPaths.households)
                 .doc(hid)
-                .get(GetOptions(source: Source.server));
+                .get(GetOptions(source: Source.server))
+                .timeout(signInStoreTimeout);
             hName = hSnap.data()?['name'] as String?;
           } catch (_) {
-            // Nama gagal: pakai default.
+            // Server gagal (offline/lemot): coba cache Firestore lokal.
+            try {
+              final hSnap = await _needStore()
+                  .collection(HouseholdPaths.households)
+                  .doc(hid)
+                  .get(GetOptions(source: Source.cache))
+                  .timeout(signInStoreTimeout);
+              hName = hSnap.data()?['name'] as String?;
+            } catch (_) {
+              // Nama gagal: pakai cache prefs.
+            }
           }
           await _saveHouseholdCache(hid, hName);
         }
@@ -547,6 +593,54 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(householdIdKey, hid);
     if (name != null) await prefs.setString(householdNameKey, name);
+  }
+
+  /// Daftar anggota rumah tangga aktif (untuk UI).
+  /// Kosong bila offline/gagal — UI tampil fallback, bukan error.
+  Future<List<HouseholdMember>> fetchMembers() async {
+    final s = await currentCached();
+    final hid = s.householdId;
+    if (hid == null) return const [];
+    try {
+      final snap = await _needStore()
+          .collection(HouseholdPaths.households)
+          .doc(hid)
+          .collection(HouseholdPaths.members)
+          .get(GetOptions(source: Source.serverAndCache))
+          .timeout(signInStoreTimeout);
+      return snap.docs.map((d) {
+        final m = d.data();
+        return HouseholdMember(
+          uid: d.id,
+          email: m['email'] as String?,
+          displayName: m['displayName'] as String?,
+          role: (m['role'] as String?) ?? HouseholdPaths.roleMember,
+        );
+      }).toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// true bila user ini owner rumah tangga aktif (untuk guard tombol
+  /// Putar kode di UI — rules juga dicek di server).
+  Future<bool> isOwner() async {
+    final s = await currentCached();
+    final hid = s.householdId;
+    final u = _auth?.currentUser;
+    if (hid == null || u == null) return false;
+    try {
+      final snap = await _needStore()
+          .collection(HouseholdPaths.households)
+          .doc(hid)
+          .collection(HouseholdPaths.members)
+          .doc(u.uid)
+          .get(GetOptions(source: Source.serverAndCache))
+          .timeout(signInStoreTimeout);
+      return (snap.data()?['role'] as String?) == HouseholdPaths.roleOwner;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> _clearHouseholdCache() async {

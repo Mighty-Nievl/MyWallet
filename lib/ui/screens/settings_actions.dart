@@ -281,8 +281,9 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                  'Muncul di sapaan Beranda, mis. “Hai, Nie!”. '
-                  'Kosongkan untuk sapaan polos “Hai!”.'),
+                  'Muncul di sapaan Beranda, mis. “Selamat pagi, ReWin”. '
+                  'Kosongkan untuk ikut nama akun Google; tanpa nama pun '
+                  'tetap disapa (“Selamat pagi”).'),
               const SizedBox(height: 12),
               TextField(
                 controller: ctrl,
@@ -290,7 +291,7 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
                 maxLength: 20,
                 decoration: const InputDecoration(
                   labelText: 'Nama',
-                  hintText: 'cth. Nie',
+                  hintText: 'cth. ReWin',
                 ),
               ),
             ],

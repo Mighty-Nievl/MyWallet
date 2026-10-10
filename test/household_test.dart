@@ -140,4 +140,59 @@ void main() {
       expect(friendlyJoinError(JoinFailure.expired), contains('kedaluwarsa'));
     });
   });
+
+  group('v1.18 production-grade: validasi + anggota + share', () {
+    test('validateHouseholdName: kosong & >40 ditolak', () {
+      expect(validateHouseholdName(''), 'Nama rumah tangga wajib diisi.');
+      expect(validateHouseholdName('   '), 'Nama rumah tangga wajib diisi.');
+      expect(
+        validateHouseholdName(List.filled(41, 'A').join()),
+        contains('Maksimal 40'),
+      );
+      expect(validateHouseholdName('Bramantara'), isNull);
+      expect(validateHouseholdName('  Keluarga Besar Bramantara  '), isNull);
+    });
+
+    test('HouseholdMember: roleLabel + shownName', () {
+      const owner = HouseholdMember(
+        uid: 'u1',
+        displayName: 'ReWin',
+        email: 'a@b.c',
+        role: 'owner',
+      );
+      expect(owner.isOwner, isTrue);
+      expect(owner.roleLabel, 'Pengelola');
+      expect(owner.shownName, 'ReWin');
+      const member = HouseholdMember(uid: 'u2', email: 'm@x.id');
+      expect(member.isOwner, isFalse);
+      expect(member.roleLabel, 'Anggota');
+      expect(member.shownName, 'm@x.id');
+      const anon = HouseholdMember(uid: 'u3');
+      expect(anon.shownName, 'Anggota');
+    });
+
+    test('inviteShareText: kode + nama + 24 jam + alur', () {
+      final t = inviteShareText('ABCD-EFGH', 'Bramantara');
+      expect(t, contains('ABCD-EFGH'));
+      expect(t, contains('Bramantara'));
+      expect(t, contains('24 jam'));
+      expect(t, contains('Keluarga'));
+      expect(inviteShareText('ABCD-EFGH', null), contains('Keluarga'));
+    });
+
+    test('unavailable/deadline → internet; unauthenticated → sesi', () {
+      expect(
+        friendlyAuthError(Exception('[cloud_firestore/unavailable]')),
+        contains('internet'),
+      );
+      expect(
+        friendlyAuthError(Exception('Deadline exceeded')),
+        contains('internet'),
+      );
+      expect(
+        friendlyAuthError(Exception('[firebase_auth/unauthenticated]')),
+        contains('kedaluwarsa'),
+      );
+    });
+  });
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/auth_service.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../../data/settings.dart';
@@ -19,6 +20,7 @@ import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../display.dart';
 import '../format.dart';
+import '../greeting.dart';
 import '../widgets/tx_tile.dart';
 import 'settings_screen.dart';
 import 'tx_form_screen.dart';
@@ -141,7 +143,14 @@ class HomeScreen extends ConsumerWidget {
     final showRecent = ref.watch(showRecentProvider).value ?? true;
     final recentCount = ref.watch(recentCountProvider).value ?? 5;
 
-    final name = ref.watch(displayNameProvider).value ?? 'Nievi';
+    // Sapaan production-grade (v1.18): berbasis waktu + resolusi nama
+    // (setting manual → nama akun Google → polos). Tanpa nama mockup.
+    final manualName = ref.watch(displayNameProvider).value ?? '';
+    final googleName = ref.watch(familySessionProvider).value?.displayName;
+    final greetName = resolveGreetingName(
+      manualName: manualName,
+      googleName: googleName,
+    );
     final showDaily = ref.watch(showDailyTotalsProvider).value ?? true;
     final now = DateTime.now();
     // Tinggi bar status perangkat (0 di golden/mockup) — konten kepala
@@ -206,7 +215,7 @@ class HomeScreen extends ConsumerWidget {
                                   context,
                                 ).colorScheme.primary,
                                 child: Text(
-                                  _avatarInitial(name),
+                                  _avatarInitial(greetName ?? ''),
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w600,
@@ -227,7 +236,11 @@ class HomeScreen extends ConsumerWidget {
                                   children: [
                                     Flexible(
                                       child: Text(
-                                        _greeting(name),
+                                        greetingText(
+                                          now,
+                                          manualName: manualName,
+                                          googleName: googleName,
+                                        ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: AppType.screenTitle(context)
@@ -237,7 +250,9 @@ class HomeScreen extends ConsumerWidget {
                                             ),
                                       ),
                                     ),
-                                    if (name.isNotEmpty) ...[
+                                    // Mahkota hanya bila ada nama (sapaan polos
+                                    // tanpa nama = tanpa mahkota).
+                                    if (greetName != null) ...[
                                       const SizedBox(width: 4),
                                       // Mahkota kecil ala mockup.
                                       const Text(
@@ -408,11 +423,7 @@ Widget _pad(Widget child, {double top = 0}) {
   );
 }
 
-/// Sapaan personal ala mockup ("Hai, Nievi" + mahkota) — nama di
-/// Pengaturan → Tampilan → Nama sapaan. Kosong = sapaan polos "Hai!".
-String _greeting(String name) => name.isEmpty ? 'Hai!' : 'Hai, $name';
-
-/// Inisial avatar header (mockup: lingkaran inisial di kiri sapaan).
+/// Inisial avatar header (lingkaran inisial di kiri sapaan).
 /// Nama kosong → 'M' (MyWallet).
 String _avatarInitial(String name) {
   final t = name.trim();

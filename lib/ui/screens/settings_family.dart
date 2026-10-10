@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../data/auth_service.dart';
+import '../../data/connectivity.dart';
 import '../../data/household.dart';
 import '../components/app_feedback.dart';
 import '../components/setting_row.dart';
@@ -48,10 +50,19 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
     super.initState();
     _q = widget.initialQuery.trim().toLowerCase();
     if (_q.isNotEmpty) _searchCtrl.text = widget.initialQuery;
+    // Validasi live: tombol Buat/Gabung aktif-nonaktif mengikuti isi field.
+    _nameCtrl.addListener(_onFormChanged);
+    _codeCtrl.addListener(_onFormChanged);
+  }
+
+  void _onFormChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    _nameCtrl.removeListener(_onFormChanged);
+    _codeCtrl.removeListener(_onFormChanged);
     _searchCtrl.dispose();
     _nameCtrl.dispose();
     _codeCtrl.dispose();
@@ -70,6 +81,32 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg)),
     );
+  }
+
+  /// Bagikan kode invite via share sheet (WA, dll). Kode diambil dari
+  /// server (timeout di service); gagal = error inline + Coba lagi hilang.
+  Future<void> _shareInvite(AuthService svc, FamilySession s) async {
+    final code = await svc.activeInviteCode();
+    if (!mounted) return;
+    if (code == null) {
+      setState(() {
+        _errorMsg = 'Kode kedaluwarsa — putar kode baru di bawah.';
+        _retryJob = null;
+      });
+      return;
+    }
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          text: inviteShareText(code, s.householdName),
+          subject: 'Kode gabung MyWallet',
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      await Clipboard.setData(ClipboardData(text: code));
+      _snack('Share gagal — kode $code disalin.');
+    }
   }
 
   Future<void> _run(Future<FamilySession> Function() job) async {
@@ -213,6 +250,10 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
 
   Widget _body(FamilySession s, ColorScheme scheme) {
     final svc = ref.read(authServiceProvider);
+    // Offline preemptif: tombol jaringan mati sebelum ditekan (bukan
+    // gagal sesudahnya). Service tetap punya timeout + pesan ramah
+    // sebagai lapis kedua bila sinyal drop di tengah jalan.
+    final offline = ref.watch(isOfflineProvider).value ?? false;
     switch (s.status) {
       case FamilyStatus.loading:
         return const Padding(
@@ -270,14 +311,23 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                           TextField(
                             controller: _nameCtrl,
                             textCapitalization: TextCapitalization.words,
-                            decoration: const InputDecoration(
+                            maxLength: householdNameMaxLength,
+                            decoration: InputDecoration(
                               labelText: 'Nama rumah tangga',
                               hintText: 'cth. Keluarga Rezal',
+                              counterText:
+                                  '${_nameCtrl.text.trim().length}/$householdNameMaxLength',
+                              errorText: _nameCtrl.text.isEmpty
+                                  ? null
+                                  : validateHouseholdName(_nameCtrl.text),
                             ),
                           ),
                           const SizedBox(height: 8),
                           FilledButton(
-                            onPressed: _busy
+                            onPressed: (_busy ||
+                                    offline ||
+                                    validateHouseholdName(_nameCtrl.text) !=
+                                        null)
                                 ? null
                                 : () => _run(() => svc.createHousehold(
                                     _nameCtrl.text)),
@@ -288,8 +338,16 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                                     child: CircularProgressIndicator(
                                         strokeWidth: 2),
                                   )
-                                : const Text('Buat'),
+                                : Text(offline ? 'Buat (offline)' : 'Buat'),
                           ),
+                          if (offline)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Text(
+                                'Tidak ada internet — tombol mati. Data lokal tetap aman.',
+                                style: AppType.secondary(context),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -313,14 +371,22 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                           TextField(
                             controller: _codeCtrl,
                             textCapitalization: TextCapitalization.characters,
-                            decoration: const InputDecoration(
+                            maxLength: 9,
+                            decoration: InputDecoration(
                               labelText: 'Kode invite',
                               hintText: 'cth. ABCD-EFGH',
+                              errorText: _codeCtrl.text.isEmpty
+                                  ? null
+                                  : (InviteCode.isValid(_codeCtrl.text)
+                                      ? null
+                                      : friendlyJoinError(JoinFailure.badCode)),
                             ),
                           ),
                           const SizedBox(height: 8),
                           FilledButton(
-                            onPressed: _busy
+                            onPressed: (_busy ||
+                                    offline ||
+                                    !InviteCode.isValid(_codeCtrl.text))
                                 ? null
                                 : () => _run(() =>
                                     svc.joinHousehold(_codeCtrl.text)),
@@ -331,8 +397,18 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                                     child: CircularProgressIndicator(
                                         strokeWidth: 2),
                                   )
-                                : const Text('Gabung'),
+                                : Text(offline
+                                    ? 'Gabung (offline)'
+                                    : 'Gabung'),
                           ),
+                          if (offline)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Text(
+                                'Tidak ada internet — tombol mati. Data lokal tetap aman.',
+                                style: AppType.secondary(context),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -359,68 +435,125 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                       child: const Text('Keluar'),
                     ),
                   ),
+                  // Daftar anggota (ringan, dari members/). Offline/gagal =
+                  // fallback teks, bukan error.
+                  FutureBuilder<List<HouseholdMember>>(
+                    future: svc.fetchMembers(),
+                    builder: (c, snap) {
+                      final members = snap.data ?? const <HouseholdMember>[];
+                      if (members.isEmpty) {
+                        return SettingRow(
+                          icon: Icons.people_outlined,
+                          title: 'Anggota',
+                          subtitle: offline
+                              ? 'Offline — daftar tampil saat online.'
+                              : 'Memuat…',
+                        );
+                      }
+                      return SettingRow(
+                        icon: Icons.people_outlined,
+                        title:
+                            'Anggota (${members.length})',
+                        subtitle: members
+                            .map((m) =>
+                                '${m.shownName} · ${m.roleLabel}')
+                            .join('\n'),
+                      );
+                    },
+                  ),
                   SettingRow(
                     icon: Icons.key_outlined,
                     title: 'Kode invite',
                     subtitle: 'Berlaku 24 jam — bagikan ke pasangan',
-                    trailing: IconButton(
-                      icon: const Icon(Icons.copy, size: 20),
-                      tooltip: 'Salin kode',
-                      onPressed: () async {
-                        final code = await svc.activeInviteCode();
-                        if (!mounted) return;
-                        if (code == null) {
-                          setState(() {
-                            _errorMsg =
-                                'Kode kedaluwarsa — putar kode baru di bawah.';
-                            _retryJob = null;
-                          });
-                          return;
-                        }
-                        await Clipboard.setData(
-                            ClipboardData(text: code));
-                        _snack('Kode $code disalin.');
-                      },
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.share_outlined, size: 20),
+                          tooltip: 'Bagikan kode (WA, dll)',
+                          onPressed: (_busy || offline)
+                              ? null
+                              : () => _shareInvite(svc, s),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.copy, size: 20),
+                          tooltip: 'Salin kode',
+                          onPressed: (_busy || offline)
+                              ? null
+                              : () async {
+                                  final code =
+                                      await svc.activeInviteCode();
+                                  if (!mounted) return;
+                                  if (code == null) {
+                                    setState(() {
+                                      _errorMsg =
+                                          'Kode kedaluwarsa — putar kode baru di bawah.';
+                                      _retryJob = null;
+                                    });
+                                    return;
+                                  }
+                                  await Clipboard.setData(
+                                      ClipboardData(text: code));
+                                  _snack('Kode $code disalin.');
+                                },
+                        ),
+                      ],
                     ),
                   ),
-                  SettingRow(
-                    icon: Icons.refresh_outlined,
-                    title: 'Putar kode baru',
-                    subtitle: 'Kode lama langsung hangus',
-                    trailing: _busy
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : null,
-                    onTap: _busy
-                        ? null
-                        : () async {
-                            setState(() {
-                              _busy = true;
-                              _errorMsg = null;
-                              _retryJob = null;
-                            });
-                            try {
-                              final code =
-                                  await svc.rotateInviteCode();
-                              if (!mounted) return;
-                              await Clipboard.setData(
-                                  ClipboardData(text: code));
-                              _snack('Kode baru $code disalin.');
-                            } on FamilyException catch (e) {
-                              if (mounted) {
+                  // Putar kode: hanya owner. Non-owner = baris info, bukan
+                  // tombol gagal di server.
+                  FutureBuilder<bool>(
+                    future: svc.isOwner(),
+                    builder: (c, snap) {
+                      final owner = snap.data ?? false;
+                      if (!owner) {
+                        return const SettingRow(
+                          icon: Icons.refresh_outlined,
+                          title: 'Putar kode baru',
+                          subtitle: 'Hanya pengelola yang bisa putar kode',
+                        );
+                      }
+                      return SettingRow(
+                        icon: Icons.refresh_outlined,
+                        title: 'Putar kode baru',
+                        subtitle: 'Kode lama langsung hangus',
+                        trailing: _busy
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2),
+                              )
+                            : null,
+                        onTap: (_busy || offline)
+                            ? null
+                            : () async {
                                 setState(() {
-                                  _errorMsg = e.message;
+                                  _busy = true;
+                                  _errorMsg = null;
+                                  _retryJob = null;
                                 });
-                              }
-                            } finally {
-                              if (mounted) {
-                                setState(() => _busy = false);
-                              }
-                            }
-                          },
+                                try {
+                                  final code =
+                                      await svc.rotateInviteCode();
+                                  if (!mounted) return;
+                                  await Clipboard.setData(
+                                      ClipboardData(text: code));
+                                  _snack('Kode baru $code disalin.');
+                                } on FamilyException catch (e) {
+                                  if (mounted) {
+                                    setState(() {
+                                      _errorMsg = e.message;
+                                    });
+                                  }
+                                } finally {
+                                  if (mounted) {
+                                    setState(() => _busy = false);
+                                  }
+                                }
+                              },
+                      );
+                    },
                   ),
                 ],
               ),
