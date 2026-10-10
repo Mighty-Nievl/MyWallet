@@ -26,6 +26,20 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.17.1',
+    date: '10 Okt 2026',
+    user:
+        'Halaman Keluarga dirapikan: ada penjelasan manfaat + tombol masuk '
+        'yang besar, dan kalau login gagal pesannya jelas (ada tombol Coba '
+        'lagi), bukan tulisan samar di bawah.',
+    tech:
+        'UX Keluarga: hero empty-state + error card inline (kontras tinggi, '
+        'ada retry), perluas friendlyAuthError (config v7, provider '
+        'nonaktif), AuthService null-safe tanpa Firebase init, '
+        'family_ux_test. Full 127/127.',
+    breaking: null,
+  ),
+  (
     version: 'v1.17.0',
     date: '10 Okt 2026',
     user:

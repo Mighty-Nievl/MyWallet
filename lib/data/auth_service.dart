@@ -55,12 +55,45 @@ class FamilySession {
 ///   (silent) → `authenticate()` (interaktif) → `idToken` →
 ///   `GoogleAuthProvider.credential`.
 class AuthService {
-  AuthService({FirebaseAuth? auth, FirebaseFirestore? store})
-      : _auth = auth ?? FirebaseAuth.instance,
-        _store = store ?? FirebaseFirestore.instance;
+  AuthService({FirebaseAuth? auth, FirebaseFirestore? store}) {
+    // SENGAJA try/catch per-getter: di flutter test (tanpa
+    // Firebase.initializeApp) `FirebaseAuth.instance` melempar
+    // [core/no-app]. Konstruktor TIDAK boleh lempar agar provider tetap
+    // bisa dibuat dan halaman Keluarga jatuh ke mode personal/offline.
+    try {
+      _auth = auth ?? FirebaseAuth.instance;
+    } catch (_) {
+      _auth = null;
+    }
+    try {
+      _store = store ?? FirebaseFirestore.instance;
+    } catch (_) {
+      _store = null;
+    }
+  }
 
-  final FirebaseAuth _auth;
-  final FirebaseFirestore _store;
+  FirebaseAuth? _auth;
+  FirebaseFirestore? _store;
+
+  /// Auth siap-pakai, atau [FamilyException] ramah bila Firebase belum
+  /// init (test/offline-ekstrem). PemanggilUI menangkapnya jadi pesan
+  /// inline — bukan crash.
+  FirebaseAuth _needAuth() {
+    final a = _auth;
+    if (a == null) {
+      throw const FamilyException('Layanan login belum siap di HP ini.');
+    }
+    return a;
+  }
+
+  /// Firestore siap-pakai, atau [FamilyException] ramah.
+  FirebaseFirestore _needStore() {
+    final s = _store;
+    if (s == null) {
+      throw const FamilyException('Layanan login belum siap di HP ini.');
+    }
+    return s;
+  }
   bool _gsInit = false;
   StreamSubscription<GoogleSignInAuthenticationEvent>? _gsSub;
   final _sessionCtrl = StreamController<FamilySession>.broadcast();
@@ -99,7 +132,7 @@ class AuthService {
   /// null, bukan lempar.
   Future<User?> _currentUserSafe() async {
     try {
-      return _auth.currentUser;
+      return _auth?.currentUser;
     } catch (_) {
       return null;
     }
@@ -119,10 +152,10 @@ class AuthService {
       if (idToken == null || idToken.isEmpty) {
         throw StateError('empty-id-token');
       }
-      final cred = await _auth.signInWithCredential(
+      final cred = await _needAuth().signInWithCredential(
         GoogleAuthProvider.credential(idToken: idToken),
       );
-      final u = cred.user ?? _auth.currentUser;
+      final u = cred.user ?? _auth?.currentUser;
       if (u == null) throw StateError('empty-firebase-user');
       await _ensureUserDoc(u);
       return _emit(await _sessionFor(u));
@@ -136,7 +169,7 @@ class AuthService {
   /// Data transaksi lokal TIDAK dihapus (tetap milik HP ini).
   Future<FamilySession> signOut() async {
     try {
-      await _auth.signOut();
+      await _auth?.signOut();
     } catch (_) {
       // Lanjut: sesi lokal tetap dibersihkan.
     }
@@ -151,7 +184,7 @@ class AuthService {
 
   /// Buat rumah tangga baru → jadi owner + kode invite 24 jam.
   Future<FamilySession> createHousehold(String name) async {
-    final u = _auth.currentUser;
+    final u = _auth?.currentUser;
     if (u == null) throw const FamilyException('Login dulu sebelum buat.');
     final clean = name.trim();
     if (clean.isEmpty) {
@@ -160,9 +193,9 @@ class AuthService {
     try {
       final code = InviteCode.generate();
       final now = DateTime.now();
-      final hid = _store.collection(HouseholdPaths.households).doc().id;
-      final hRef = _store.collection(HouseholdPaths.households).doc(hid);
-      final batch = _store.batch();
+      final hid = _needStore().collection(HouseholdPaths.households).doc().id;
+      final hRef = _needStore().collection(HouseholdPaths.households).doc(hid);
+      final batch = _needStore().batch();
       batch.set(hRef, {
         'name': clean,
         'createdBy': u.uid,
@@ -177,13 +210,13 @@ class AuthService {
         'role': HouseholdPaths.roleOwner,
         'joinedAt': FieldValue.serverTimestamp(),
       });
-      batch.set(_store.collection(HouseholdPaths.invites).doc(code), {
+      batch.set(_needStore().collection(HouseholdPaths.invites).doc(code), {
         'householdId': hid,
         'createdBy': u.uid,
         'createdAt': FieldValue.serverTimestamp(),
         'expiresAt': Timestamp.fromDate(now.add(HouseholdPaths.inviteTtl)),
       });
-      batch.set(_store.collection(HouseholdPaths.users).doc(u.uid), {
+      batch.set(_needStore().collection(HouseholdPaths.users).doc(u.uid), {
         'email': u.email,
         'displayName': u.displayName,
         'householdId': hid,
@@ -200,7 +233,7 @@ class AuthService {
 
   /// Gabung via kode invite (8 char). Validasi format lokal dulu.
   Future<FamilySession> joinHousehold(String rawCode) async {
-    final u = _auth.currentUser;
+    final u = _auth?.currentUser;
     if (u == null) throw const FamilyException('Login dulu sebelum gabung.');
     final code = InviteCode.parse(rawCode);
     if (!InviteCode.isValid(rawCode)) {
@@ -208,7 +241,7 @@ class AuthService {
     }
     try {
       final invSnap =
-          await _store.collection(HouseholdPaths.invites).doc(code).get();
+          await _needStore().collection(HouseholdPaths.invites).doc(code).get();
       if (!invSnap.exists) {
         throw FamilyException(friendlyJoinError(JoinFailure.notFound));
       }
@@ -222,17 +255,17 @@ class AuthService {
         throw FamilyException(friendlyJoinError(JoinFailure.expired));
       }
       final hSnap =
-          await _store.collection(HouseholdPaths.households).doc(hid).get();
+          await _needStore().collection(HouseholdPaths.households).doc(hid).get();
       final hName = (hSnap.data()?['name'] as String?) ?? 'Keluarga';
-      final hRef = _store.collection(HouseholdPaths.households).doc(hid);
-      final batch = _store.batch();
+      final hRef = _needStore().collection(HouseholdPaths.households).doc(hid);
+      final batch = _needStore().batch();
       batch.set(hRef.collection(HouseholdPaths.members).doc(u.uid), {
         'email': u.email,
         'displayName': u.displayName,
         'role': HouseholdPaths.roleMember,
         'joinedAt': FieldValue.serverTimestamp(),
       });
-      batch.set(_store.collection(HouseholdPaths.users).doc(u.uid), {
+      batch.set(_needStore().collection(HouseholdPaths.users).doc(u.uid), {
         'email': u.email,
         'displayName': u.displayName,
         'householdId': hid,
@@ -253,22 +286,22 @@ class AuthService {
   Future<String> rotateInviteCode() async {
     final s = await currentCached();
     final hid = s.householdId;
-    final u = _auth.currentUser;
+    final u = _auth?.currentUser;
     if (u == null || hid == null) {
       throw const FamilyException('Bukan anggota rumah tangga.');
     }
     try {
       final code = InviteCode.generate();
       final now = DateTime.now();
-      final batch = _store.batch();
+      final batch = _needStore().batch();
       batch.update(
-          _store.collection(HouseholdPaths.households).doc(hid),
+          _needStore().collection(HouseholdPaths.households).doc(hid),
           {
             'inviteCode': code,
             'inviteExpiresAt':
                 Timestamp.fromDate(now.add(HouseholdPaths.inviteTtl)),
           });
-      batch.set(_store.collection(HouseholdPaths.invites).doc(code), {
+      batch.set(_needStore().collection(HouseholdPaths.invites).doc(code), {
         'householdId': hid,
         'createdBy': u.uid,
         'createdAt': FieldValue.serverTimestamp(),
@@ -289,7 +322,7 @@ class AuthService {
     final hid = s.householdId;
     if (hid == null) return null;
     try {
-      final snap = await _store
+      final snap = await _needStore()
           .collection(HouseholdPaths.households)
           .doc(hid)
           .get(GetOptions(source: Source.serverAndCache));
@@ -306,7 +339,7 @@ class AuthService {
 
   /// Keluar dari rumah tangga (data lokal tetap, sync Fase 2 berhenti).
   Future<FamilySession> leaveHousehold() async {
-    final u = _auth.currentUser;
+    final u = _auth?.currentUser;
     final s = await currentCached();
     final hid = s.householdId;
     if (u == null || hid == null) {
@@ -317,13 +350,13 @@ class AuthService {
       ));
     }
     try {
-      await _store
+      await _needStore()
           .collection(HouseholdPaths.households)
           .doc(hid)
           .collection(HouseholdPaths.members)
           .doc(u.uid)
           .delete();
-      await _store.collection(HouseholdPaths.users).doc(u.uid).set(
+      await _needStore().collection(HouseholdPaths.users).doc(u.uid).set(
         {'householdId': null, 'updatedAt': FieldValue.serverTimestamp()},
         SetOptions(merge: true),
       );
@@ -336,7 +369,7 @@ class AuthService {
 
   /// Sesi dari cache lokal (offline-safe, untuk boot cepat).
   Future<FamilySession> currentCached() async {
-    final u = _auth.currentUser;
+    final u = _auth?.currentUser;
     final prefs = await SharedPreferences.getInstance();
     final hid = prefs.getString(householdIdKey);
     final hName = prefs.getString(householdNameKey);
@@ -385,7 +418,7 @@ class AuthService {
 
   Future<void> _ensureUserDoc(User u) async {
     try {
-      await _store.collection(HouseholdPaths.users).doc(u.uid).set({
+      await _needStore().collection(HouseholdPaths.users).doc(u.uid).set({
         'email': u.email,
         'displayName': u.displayName,
         'updatedAt': FieldValue.serverTimestamp(),
@@ -403,14 +436,14 @@ class AuthService {
     // Bila cache kosong, tanya server (users/{uid}) — gagal = tetap signedIn.
     if (hid == null) {
       try {
-        final snap = await _store
+        final snap = await _needStore()
             .collection(HouseholdPaths.users)
             .doc(u.uid)
             .get(GetOptions(source: Source.server));
         hid = snap.data()?['householdId'] as String?;
         if (hid != null && hid.isNotEmpty) {
           try {
-            final hSnap = await _store
+            final hSnap = await _needStore()
                 .collection(HouseholdPaths.households)
                 .doc(hid)
                 .get(GetOptions(source: Source.server));

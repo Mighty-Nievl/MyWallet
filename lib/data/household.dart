@@ -87,8 +87,20 @@ String friendlyAuthError(Object e) {
   }
   if (m.contains('developer_error') ||
       m.contains('api_not_connected') ||
-      m.contains('10:')) {
-    return 'Konfigurasi Google di HP ini belum cocok (SHA-1). Hubungi Rezal.';
+      m.contains('apiexception') ||
+      m.contains('serverclientid') ||
+      m.contains('server_client_id') ||
+      m.contains('clientconfigurationerror') ||
+      m.contains('providerconfigurationerror') ||
+      m.contains('empty-id-token')) {
+    return 'Konfigurasi Google di HP ini belum cocok (SHA-1 / OAuth). Hubungi Rezal.';
+  }
+  if (m.contains('operation-not-allowed') ||
+      m.contains('provider-not-enabled')) {
+    return 'Login Google belum diaktifkan di server. Hubungi Rezal.';
+  }
+  if (m.contains('user-disabled')) {
+    return 'Akun Google ini dinonaktifkan. Coba akun lain.';
   }
   if (m.contains('supportsauthenticate') ||
       m.contains('unsupported') ||

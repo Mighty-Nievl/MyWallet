@@ -6,6 +6,7 @@ import '../../data/auth_service.dart';
 import '../../data/household.dart';
 import '../components/app_feedback.dart';
 import '../components/setting_row.dart';
+import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 
@@ -14,6 +15,10 @@ import '../design/app_typography.dart';
 ///
 /// STEP 4 — bahasa presentasi: [BackHeader] + [SettingsGroup] +
 /// [SettingRow]; font-scale ikut via [AppType].
+///
+/// v1.17.1 UX: status personal = hero empty-state (manfaat + tombol
+/// Google besar), error tampil INLINE (kartu error + tombol Coba lagi),
+/// bukan snackbar kontras-rendah yang gampang kelewat.
 class FamilySettingsPage extends ConsumerStatefulWidget {
   const FamilySettingsPage({super.key, this.initialQuery = ''});
 
@@ -32,6 +37,11 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
   bool _busy = false;
   bool _showCreate = false;
   bool _showJoin = false;
+
+  /// Error terakhir + aksi ulangannya — ditampilkan INLINE di layar
+  /// (bukan snackbar) agar kontras + ada tombol Coba lagi.
+  String? _errorMsg;
+  Future<FamilySession> Function()? _retryJob;
 
   @override
   void initState() {
@@ -55,20 +65,20 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
     return hay.contains(_q);
   }
 
-  void _snack(String msg, {bool error = false}) {
+  void _snack(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor:
-            error ? Theme.of(context).colorScheme.errorContainer : null,
-      ),
+      SnackBar(content: Text(msg)),
     );
   }
 
   Future<void> _run(Future<FamilySession> Function() job) async {
     if (_busy) return;
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _errorMsg = null;
+      _retryJob = null;
+    });
     try {
       await job();
       if (mounted) {
@@ -78,9 +88,19 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
         });
       }
     } on FamilyException catch (e) {
-      _snack(e.message, error: true);
+      if (mounted) {
+        setState(() {
+          _errorMsg = e.message;
+          _retryJob = job;
+        });
+      }
     } catch (_) {
-      _snack('Gagal — coba lagi.', error: true);
+      if (mounted) {
+        setState(() {
+          _errorMsg = 'Gagal — coba lagi.';
+          _retryJob = job;
+        });
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -152,6 +172,45 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
     );
   }
 
+  /// Kartu error inline: ikon + pesan kontras-tinggi + tombol Coba lagi.
+  /// Muncul tepat di atas konten yang gagal (bukan snackbar bawah).
+  Widget _errorCard() {
+    final scheme = Theme.of(context).colorScheme;
+    final retry = _retryJob;
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.s12),
+      padding: const EdgeInsets.all(AppSpacing.s12),
+      decoration: BoxDecoration(
+        color: scheme.errorContainer,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, color: scheme.onErrorContainer),
+          const SizedBox(width: AppSpacing.s12),
+          Expanded(
+            child: Text(
+              _errorMsg ?? 'Gagal.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: scheme.onErrorContainer,
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+          ),
+          if (retry != null)
+            TextButton(
+              onPressed: _busy ? null : () => _run(retry),
+              style: TextButton.styleFrom(
+                foregroundColor: scheme.onErrorContainer,
+              ),
+              child: const Text('Coba lagi'),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _body(FamilySession s, ColorScheme scheme) {
     final svc = ref.read(authServiceProvider);
     switch (s.status) {
@@ -160,40 +219,17 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
             padding: EdgeInsets.all(16), child: AppSkeleton(lines: 3));
       case FamilyStatus.personal:
         return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (_errorMsg != null) _errorCard(),
             if (_match('login', 'google', const ['login', 'masuk']))
-              SettingsGroup(
-                title: 'Akun',
-                children: [
-                  SettingRow(
-                    icon: Icons.login,
-                    title: 'Masuk dengan Google',
-                    subtitle:
-                        'Opsional — tanpa login app tetap offline seperti sekarang',
-                    trailing: _busy
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : null,
-                    onTap: _busy ? null : () => _run(svc.signIn),
-                  ),
-                ],
-              ),
-            const SizedBox(height: AppSpacing.sectionGap),
-            if (_match(
-                'pasangan', 'bareng', const ['keluarga', 'sync', 'online']))
-              Text(
-                'Masuk dulu untuk catat bareng pasangan. '
-                'Data lokal HP ini tidak tersentuh.',
-                style: AppType.secondary(context),
-              ),
+              _personalHero(svc),
           ],
         );
       case FamilyStatus.signedIn:
         return Column(
           children: [
+            if (_errorMsg != null) _errorCard(),
             if (_match('akun', 'keluar', const ['email', 'profil']))
               SettingsGroup(
                 title: 'Akun',
@@ -201,11 +237,9 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                   SettingRow(
                     icon: Icons.account_circle_outlined,
                     title: s.displayName ?? s.email ?? 'Akun Google',
-                    subtitle: (s.email ?? '') +
-                        (s.displayName != null ? '' : ''),
+                    subtitle: s.email ?? 'Masuk — belum gabung rumah tangga',
                     trailing: TextButton(
-                      onPressed:
-                          _busy ? null : () => _run(svc.signOut),
+                      onPressed: _busy ? null : () => _run(svc.signOut),
                       child: const Text('Keluar'),
                     ),
                   ),
@@ -231,9 +265,11 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           TextField(
                             controller: _nameCtrl,
+                            textCapitalization: TextCapitalization.words,
                             decoration: const InputDecoration(
                               labelText: 'Nama rumah tangga',
                               hintText: 'cth. Keluarga Rezal',
@@ -245,7 +281,14 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                                 ? null
                                 : () => _run(() => svc.createHousehold(
                                     _nameCtrl.text)),
-                            child: const Text('Buat'),
+                            child: _busy
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  )
+                                : const Text('Buat'),
                           ),
                         ],
                       ),
@@ -265,6 +308,7 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           TextField(
                             controller: _codeCtrl,
@@ -280,7 +324,14 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                                 ? null
                                 : () => _run(() =>
                                     svc.joinHousehold(_codeCtrl.text)),
-                            child: const Text('Gabung'),
+                            child: _busy
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  )
+                                : const Text('Gabung'),
                           ),
                         ],
                       ),
@@ -292,6 +343,7 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
       case FamilyStatus.household:
         return Column(
           children: [
+            if (_errorMsg != null) _errorCard(),
             if (_match('anggota', 'rumah', const ['household', 'nama']))
               SettingsGroup(
                 title: 'Rumah tangga',
@@ -299,7 +351,8 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                   SettingRow(
                     icon: Icons.home_outlined,
                     title: s.householdName ?? 'Keluarga',
-                    subtitle: s.email ?? '',
+                    subtitle:
+                        'Masuk sebagai ${s.displayName ?? s.email ?? 'anggota'}',
                     trailing: TextButton(
                       onPressed:
                           _busy ? null : () => _run(svc.leaveHousehold),
@@ -317,8 +370,11 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                         final code = await svc.activeInviteCode();
                         if (!mounted) return;
                         if (code == null) {
-                          _snack('Kode kedaluwarsa — putar kode baru.',
-                              error: true);
+                          setState(() {
+                            _errorMsg =
+                                'Kode kedaluwarsa — putar kode baru di bawah.';
+                            _retryJob = null;
+                          });
                           return;
                         }
                         await Clipboard.setData(
@@ -341,7 +397,11 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                     onTap: _busy
                         ? null
                         : () async {
-                            setState(() => _busy = true);
+                            setState(() {
+                              _busy = true;
+                              _errorMsg = null;
+                              _retryJob = null;
+                            });
                             try {
                               final code =
                                   await svc.rotateInviteCode();
@@ -350,7 +410,11 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                                   ClipboardData(text: code));
                               _snack('Kode baru $code disalin.');
                             } on FamilyException catch (e) {
-                              _snack(e.message, error: true);
+                              if (mounted) {
+                                setState(() {
+                                  _errorMsg = e.message;
+                                });
+                              }
                             } finally {
                               if (mounted) {
                                 setState(() => _busy = false);
@@ -385,5 +449,103 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
           ],
         );
     }
+  }
+
+  /// Hero empty-state status personal: ikon + ajakan + 3 manfaat +
+  /// tombol Google besar. Mengisi ruang kosong yang sebelumnya kopong.
+  Widget _personalHero(AuthService svc) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.s16),
+            child: Column(
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: scheme.primaryContainer,
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.group_outlined,
+                    size: 32,
+                    color: scheme.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.s12),
+                Text(
+                  'Catat bareng pasangan',
+                  style: AppType.sectionTitle(context),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.s4),
+                Text(
+                  'Satu rumah tangga, dua HP. Opsional — '
+                  'tanpa login aplikasi tetap 100% offline.',
+                  style: AppType.secondary(context),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.s12),
+                _benefit(Icons.sync_outlined,
+                    'Saling nyatat, saldo ikut (segera Fase 2)'),
+                _benefit(Icons.lock_outlined,
+                    'Data lokal HP ini tidak tersentuh'),
+                _benefit(Icons.key_outlined,
+                    'Gabung cukup pakai kode 8 huruf'),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.s12),
+        FilledButton.icon(
+          onPressed: _busy ? null : () => _run(svc.signIn),
+          icon: _busy
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Icon(Icons.login),
+          label: Text(_busy ? 'Menghubungkan…' : 'Masuk dengan Google'),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(52),
+            textStyle: Theme.of(context)
+                .textTheme
+                .titleSmall
+                ?.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.s8),
+        Text(
+          'Butuh internet sekali saat login. Gagal? Pesan merah '
+          'di atas menjelaskan sebabnya + tombol Coba lagi.',
+          style: AppType.secondary(context),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Widget _benefit(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: AppColors.mutedOf(context)),
+          const SizedBox(width: AppSpacing.s8),
+          Expanded(
+            child: Text(text, style: AppType.secondaryStrong(context)),
+          ),
+        ],
+      ),
+    );
   }
 }

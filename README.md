@@ -10,8 +10,8 @@ Tanpa login, tanpa server — semua data cuma tinggal di perangkatmu.
 ![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.12-0175C2?logo=dart&logoColor=white)
 ![Drift](https://img.shields.io/badge/Drift-2.35-EAECED?logo=sqlite&logoColor=black)
-![Version](https://img.shields.io/badge/version-1.17.0-6C5CE7)
-![Tests](https://img.shields.io/badge/tests-122%2F122-2ECC71)
+![Version](https://img.shields.io/badge/version-1.17.1-6C5CE7)
+![Tests](https://img.shields.io/badge/tests-127%2F127-2ECC71)
 [![Build](https://github.com/Mighty-Nievl/MyWallet/actions/workflows/build.yml/badge.svg)](https://github.com/Mighty-Nievl/MyWallet/actions/workflows/build.yml)
 
 [**Ringkasan**](#-ringkasan) · [**Fitur**](#-fitur) · [**Mulai Cepat**](#-mulai-cepat) · [**Dokumentasi**](#-dokumentasi) · [**Rilis**](#-instal-dan-rilis)
@@ -29,7 +29,7 @@ Datanya disimpan penuh di lokal (SQLite lewat Drift), jadi aman, cepat, dan bisa
 - **Privasi di depan** — kunci PIN/biometrik, sembunyikan nominal, mode privacy scale.
 - **Visual rapi** — tema Material 3, 6 warna aksen + Material You, mode gelap hitam pekat.
 - **Siap pakai harian** — budget per kategori, laporan 6 bulan, export CSV, pengingat mencatat.
-- **Sehat secara teknis** — `flutter analyze` bersih, **122/122 test hijau**, CI jalan di tiap push/PR.
+- **Sehat secara teknis** — `flutter analyze` bersih, **127/127 test hijau**, CI jalan di tiap push/PR.
 
 ## 🧩 Fitur
 

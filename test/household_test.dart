@@ -80,7 +80,31 @@ void main() {
 
     test('SHA-1 salah → hubungi Rezal', () {
       expect(friendlyAuthError(Exception('DEVELOPER_ERROR 10:')),
-          contains('SHA-1'));
+          contains('Hubungi Rezal'));
+    });
+
+    test('config v7: clientConfigurationError → hubungi Rezal', () {
+      expect(
+          friendlyAuthError(Exception(
+              'GoogleSignInException(code GoogleSignInExceptionCode.clientConfigurationError, serverClientId must be provided, null)')),
+          contains('Hubungi Rezal'));
+    });
+
+    test('provider belum nyala: operation-not-allowed → hubungi Rezal', () {
+      expect(
+          friendlyAuthError(Exception(
+              '[firebase_auth/operation-not-allowed] The identity provider is not enabled.')),
+          contains('belum diaktifkan'));
+    });
+
+    test('akun dinonaktifkan → coba akun lain', () {
+      expect(friendlyAuthError(Exception('[firebase_auth/user-disabled]')),
+          contains('dinonaktifkan'));
+    });
+
+    test('idToken kosong → hubungi Rezal', () {
+      expect(friendlyAuthError(StateError('empty-id-token')),
+          contains('Hubungi Rezal'));
     });
 
     test('desktop → hanya HP Android', () {
