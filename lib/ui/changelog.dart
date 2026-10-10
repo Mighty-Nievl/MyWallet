@@ -26,6 +26,18 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.23.0',
+    date: '11 Okt 2026',
+    user:
+        'Beranda kini simple tanpa kartu streak — bersih dan minimalis. '
+        'Saldo, budget, dan semua fitur lain tetap sama.',
+    tech:
+        'Hapus _StreakCard + _streakProvider/_calcStreak + slot home:streak, '
+        'rapikan stagger 1-5, test streak jadi absence-test, golden '
+        'diregenerasi.',
+    breaking: null,
+  ),
+  (
     version: 'v1.22.0',
     date: '11 Okt 2026',
     user:

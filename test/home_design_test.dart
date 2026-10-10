@@ -103,13 +103,7 @@ Future<void> _seed(AppDatabase db) async {
     DateTime(now.year, now.month, 9, 8),
     note: 'Gaji',
   );
-  await tx(
-    1688000,
-    false,
-    9,
-    DateTime(now.year, now.month, 2),
-    note: 'Bonus',
-  );
+  await tx(1688000, false, 9, DateTime(now.year, now.month, 2), note: 'Bonus');
   await tx(45000, true, 1, bulanIni, note: 'Makan siang');
   await tx(
     18000,
@@ -207,8 +201,11 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
 
-    expect(find.text('Detail'), findsNothing,
-        reason: 'pill Detail (alias Laporan) harus dihapus');
+    expect(
+      find.text('Detail'),
+      findsNothing,
+      reason: 'pill Detail (alias Laporan) harus dihapus',
+    );
     expect(find.text('+ Catat keluar'), findsOneWidget);
     expect(find.text('+ Pemasukan'), findsOneWidget);
     // Lonceng lama dihapus — ia cuma snackbar, bukan jalan ke fitur
@@ -353,8 +350,11 @@ void main() {
       final ctx = tester.element(find.byType(HomeScreen));
       final income = AppColors.incomeOf(ctx);
       final expense = AppColors.expenseOf(ctx);
-      expect(income, isNot(equals(expense)),
-          reason: 'Masuk tidak boleh sama dengan Keluar (aksen merah)');
+      expect(
+        income,
+        isNot(equals(expense)),
+        reason: 'Masuk tidak boleh sama dengan Keluar (aksen merah)',
+      );
       // Kontras vs surface kartu di tema aktif.
       final surface = t.cardTheme.color ?? t.colorScheme.surface;
       expect(ratio(income, surface), greaterThanOrEqualTo(4.5));
@@ -524,9 +524,10 @@ void main() {
     await _flushDriftCloseTimer(tester);
   });
 
-  // B2C: kartu streak tampil dari data transaksi (seed: hari ini ada
-  // 2 transaksi → streak ≥1). Streak 0 = ajakan, bukan kartu kosong.
-  testWidgets('kartu streak tampil dari riwayat catat', (tester) async {
+  // Simple-minimalis (v1.23): kartu streak DIHAPUS atas permintaan
+  // user — Beranda tanpa gamifikasi. Test ini mengunci: tidak ada teks
+  // streak/dots di Beranda walau ada transaksi hari ini.
+  testWidgets('tidak ada kartu streak di beranda', (tester) async {
     final db = await _newDb(tester);
     await tester.runAsync(() async {
       await _loadFonts();
@@ -545,17 +546,14 @@ void main() {
     for (var i = 0; i < 60; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
-    // Streak ≥1 hari (seed catat hari ini) → judul + dots + counter.
-    expect(find.textContaining('Streak'), findsWidgets);
-    expect(find.textContaining('/7'), findsOneWidget);
+    expect(find.textContaining('Streak'), findsNothing);
+    expect(find.textContaining('/7'), findsNothing);
     await _flushDriftCloseTimer(tester);
   });
 
   // B2C: Catat Kilat — chip nominal membuka form pengeluaran dengan
   // nominal SUDAH terisi (initialAmount).
-  testWidgets('catat kilat membuka form dengan nominal terisi', (
-    tester,
-  ) async {
+  testWidgets('catat kilat membuka form dengan nominal terisi', (tester) async {
     final db = await _newDb(tester);
     await tester.runAsync(() async {
       await _loadFonts();

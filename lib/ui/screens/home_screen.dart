@@ -109,42 +109,6 @@ final _prevMonthExpenseProvider = FutureProvider<int>((ref) async {
   return (await db.getTotals(from, to)).$2;
 });
 
-/// Streak pencatatan: jumlah hari BERURUTAN (mundur dari hari ini)
-/// yang punya ≥1 transaksi. Mesin retensi B2C (kartu streak + misi).
-///
-/// Reaktif seperti [balanceProvider]: dengarkan tabel transaksi, hitung
-/// ulang tiap ada perubahan. Read-only (customSelect DISTINCT tanggal),
-/// tidak menyentuh schema/query lain.
-final _streakProvider = StreamProvider<int>((ref) {
-  final db = ref.watch(dbProvider);
-  return db.select(db.transactions).watch().asyncMap((_) => _calcStreak(db));
-});
-
-Future<int> _calcStreak(AppDatabase db) async {
-  // Hitung di Dart murni (tanpa SQL mentah): ambil tanggal semua
-  // transaksi hidup, petakan ke hari lokal. Aman untuk semua backend
-  // drift + tidak menambah query baru ke database.dart.
-  final rows = await (db.select(
-    db.transactions,
-  )..where((t) => t.deletedAt.isNull())).get();
-  final days = <DateTime>{
-    for (final r in rows) DateTime(r.date.year, r.date.month, r.date.day),
-  };
-  final now = DateTime.now();
-  var cursor = DateTime(now.year, now.month, now.day);
-  // Hari ini belum catat → streak dihitung dari kemarin (belum putus).
-  if (!days.contains(cursor)) {
-    cursor = cursor.subtract(const Duration(days: 1));
-  }
-  var streak = 0;
-  while (days.contains(cursor)) {
-    streak++;
-    cursor = cursor.subtract(const Duration(days: 1));
-    if (streak > 3650) break;
-  }
-  return streak;
-}
-
 /// Beranda: kepala sapaan berwarna aksen, kartu saldo gradien aksen,
 /// nav bulan (selalu tampil), tile metrik, banner insight,
 /// top kategori proporsional, terakhir dikelompokkan per tanggal.
@@ -351,12 +315,8 @@ class HomeScreen extends ConsumerWidget {
                       child: _pad(_DebtCard(onGoTab: onGoTab), stagger: 2),
                     ),
                   SliverToBoxAdapter(
-                    key: const ValueKey('home:streak'),
-                    child: _pad(const _StreakCard(), stagger: 3),
-                  ),
-                  SliverToBoxAdapter(
                     key: const ValueKey('home:quickadd'),
-                    child: _pad(const _QuickAdd(), stagger: 4),
+                    child: _pad(const _QuickAdd(), stagger: 3),
                   ),
                   // Top kategori + terakhir dicatat: tanpa quick-actions,
                   // strip kategori ganda, & banner ganda, judul seksi sudah
@@ -378,7 +338,7 @@ class HomeScreen extends ConsumerWidget {
                                 ),
                           child: _CategoryList(byCat: byCat, display: display),
                         ),
-                        stagger: 5,
+                        stagger: 4,
                       ),
                     ),
                   ],
@@ -405,7 +365,7 @@ class HomeScreen extends ConsumerWidget {
                             ],
                           ),
                         ),
-                        stagger: 6,
+                        stagger: 5,
                       ),
                     ),
                   ],
@@ -1009,124 +969,6 @@ class _CountUp extends StatelessWidget {
       duration: AppMotion.slow,
       curve: AppMotion.easeOut,
       builder: (context, v, _) => Text(format(v.round()), style: style),
-    );
-  }
-}
-
-/// Kartu streak B2C: mesin retensi — N hari berurutan + dots 7 +
-/// misi hari ini. Streak 0 = ajakan mulai (bukan kartu kosong).
-/// Sumber: [_streakProvider] (hitung dari transaksi, tanpa schema baru).
-class _StreakCard extends ConsumerWidget {
-  const _StreakCard();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final streak = ref.watch(_streakProvider);
-    return streak.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.only(top: AppSpacing.s16),
-        child: AppSkeleton(lines: 2),
-      ),
-      error: (_, _) => const SizedBox.shrink(),
-      data: (n) {
-        final title = n <= 0
-            ? 'Mulai streak hari ini'
-            : n == 1
-            ? 'Streak 1 hari!'
-            : 'Streak $n hari!';
-        final sub = n <= 0
-            ? 'Catat 1 transaksi — besok lanjut lagi'
-            : 'Catat lagi hari ini biar jadi ${n + 1}';
-        // Dots 7: N terisi (capped 7), sisanya kosong.
-        final filled = n.clamp(0, 7);
-        return Padding(
-          padding: const EdgeInsets.only(top: AppSpacing.s16),
-          child: Container(
-            padding: const EdgeInsets.all(AppSpacing.s16),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceOf(context),
-              border: Border.all(
-                color: n > 0
-                    ? _warnAmber.withValues(alpha: 0.7)
-                    : AppColors.borderOf(context),
-              ),
-              borderRadius: AppRadius.xlAll,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          // Ikon api vektor (bukan emoji 🔥): font test/
-                          // golden (Segoe/DejaVu) tidak punya glyph emoji
-                          // → tofu '[]' di golden QA.
-                          Icon(
-                            Icons.local_fire_department,
-                            size: 18,
-                            color: n > 0
-                                ? _warnAmber
-                                : AppColors.mutedOf(context),
-                          ),
-                          const SizedBox(width: AppSpacing.s4),
-                          Flexible(
-                            child: Text(
-                              title,
-                              style: AppType.amount(context, size: 15),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.s4),
-                      Text(
-                        sub,
-                        style: AppType.secondary(context),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: AppSpacing.s8),
-                      Row(
-                        children: [
-                          for (var i = 0; i < 7; i++) ...[
-                            Container(
-                              width: 14,
-                              height: 14,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: i < filled
-                                    ? _warnAmber
-                                    : AppColors.subtleOf(context),
-                                border: i < filled
-                                    ? null
-                                    : Border.all(
-                                        color: AppColors.borderOf(context),
-                                      ),
-                              ),
-                            ),
-                            if (i < 6) const SizedBox(width: AppSpacing.s4),
-                          ],
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.s12),
-                Text(
-                  '$n/7',
-                  style: AppType.balance(context).copyWith(
-                    fontSize: 22,
-                    color: n > 0 ? _warnAmber : AppColors.mutedOf(context),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }
