@@ -1,11 +1,14 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Status internet reaktif untuk UI Keluarga (v1.18).
+/// Status SINYAL reaktif untuk UI Keluarga (v1.18.1).
 ///
-/// `true` = offline (tidak ada radio / ConnectivityResult.none).
-/// Dipakai untuk disable tombol Buat/Gabung/Salin preemptif — bukan
-/// menggantikan timeout + pesan ramah di service (pertahanan berlapis).
+/// `true` = radio mati total (ConnectivityResult.none: mode pesawat /
+/// WiFi+data mati semua). BUKAN "tidak ada internet": WiFi nyala tapi
+/// uplink mati (kasus 0,76 KB/S) tetap lolos sebagai `false` di sini —
+/// kebenaran internet diputus di service via timeout 20 dtk + pesan
+/// ramah (lapis kedua). Jadi teks UI preemptif bicara "sinyal", bukan
+/// "internet", agar jujur.
 final isOfflineProvider = StreamProvider<bool>((ref) async* {
   final c = Connectivity();
   List<ConnectivityResult> current;

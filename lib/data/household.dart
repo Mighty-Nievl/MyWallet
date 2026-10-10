@@ -79,14 +79,19 @@ String friendlyAuthError(Object e) {
       m.contains('sign_in_canceled')) {
     return 'Login dibatalkan.';
   }
+  if (m.contains('timeout') ||
+      m.contains('deadline') ||
+      m.contains('aborted')) {
+    // WiFi nyala tapi internet mati/lemot (kasus 0,76 KB/S): Firestore
+    // gagal handshake dalam 20 dtk. Bedakan dari "tanpa sinyal" agar
+    // user tahu harus pindah jaringan, bukan bunuh app.
+    return 'Internet lambat/tidak stabil — coba lagi saat sinyal kuat. Data lokal tetap aman.';
+  }
   if (m.contains('network') ||
       m.contains('socket') ||
-      m.contains('timeout') ||
       m.contains('unreachable') ||
       m.contains('failed host lookup') ||
       m.contains('unavailable') ||
-      m.contains('deadline') ||
-      m.contains('aborted') ||
       m.contains('connection')) {
     return 'Tidak ada internet — coba lagi saat online. Data lokal tetap aman.';
   }

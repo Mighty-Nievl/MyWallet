@@ -250,9 +250,10 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
 
   Widget _body(FamilySession s, ColorScheme scheme) {
     final svc = ref.read(authServiceProvider);
-    // Offline preemptif: tombol jaringan mati sebelum ditekan (bukan
-    // gagal sesudahnya). Service tetap punya timeout + pesan ramah
-    // sebagai lapis kedua bila sinyal drop di tengah jalan.
+    // Sinyal preemptif: tombol jaringan mati saat RADIO mati (mode
+    // pesawat / WiFi+data mati semua). WiFi nyala tapi internet zonk
+    // (0,76 KB/S) tetap lolos — kebenaran diputus service via timeout
+    // 20 dtk + pesan ramah (lapis kedua).
     final offline = ref.watch(isOfflineProvider).value ?? false;
     switch (s.status) {
       case FamilyStatus.loading:
@@ -338,13 +339,13 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                                     child: CircularProgressIndicator(
                                         strokeWidth: 2),
                                   )
-                                : Text(offline ? 'Buat (offline)' : 'Buat'),
+                                : Text(offline ? 'Buat (tanpa sinyal)' : 'Buat'),
                           ),
                           if (offline)
                             Padding(
                               padding: const EdgeInsets.only(top: 6),
                               child: Text(
-                                'Tidak ada internet — tombol mati. Data lokal tetap aman.',
+                                'Tanpa sinyal — tombol mati. WiFi nyala tapi lemot tetap bisa dicoba; bila gagal, banner merah yang bicara. Data lokal tetap aman.',
                                 style: AppType.secondary(context),
                               ),
                             ),
@@ -398,14 +399,14 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                                         strokeWidth: 2),
                                   )
                                 : Text(offline
-                                    ? 'Gabung (offline)'
+                                    ? 'Gabung (tanpa sinyal)'
                                     : 'Gabung'),
                           ),
                           if (offline)
                             Padding(
                               padding: const EdgeInsets.only(top: 6),
                               child: Text(
-                                'Tidak ada internet — tombol mati. Data lokal tetap aman.',
+                                'Tanpa sinyal — tombol mati. WiFi nyala tapi lemot tetap bisa dicoba; bila gagal, banner merah yang bicara. Data lokal tetap aman.',
                                 style: AppType.secondary(context),
                               ),
                             ),

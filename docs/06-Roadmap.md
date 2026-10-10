@@ -135,6 +135,7 @@ Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi 
 - [x] **Anti-hang boot (v1.17.3)**: timeout 8 detik silent-login + `_sessionFor`, fallback signedIn/personal, `family_ux_test` +bootTimeout, full 128/128.
 - [x] **Audit login (v1.17.4)**: timeout berlapis signIn + fallback signedIn, fix join via `householdName` di invite, pesan permission-denied, full 131/131. WAJIB: publish `firestore.rules` ke console.
 - [x] **Keluarga + sapaan production-grade (v1.18.0)**: `isOfflineProvider` disable preemptif, `validateHouseholdName` max 40 + counter, `fetchMembers` + daftar anggota, share invite WA + fallback salin, `isOwner` guard putar kode, `greeting.dart` murni + copy baru, full 147/147.
+- [x] **Pesan error jujur (v1.18.1)**: audit screenshot ReWin (WiFi on, 0,76 KB/S, tombol aktif + banner merah) — pisah timeout/deadline/aborted ("sinyal lemot") dari network/unavailable ("tanpa internet"), copy "tanpa sinyal", full 148/148.
 - [ ] Fase 2 — sync engine beta (opt-in): push/pull transactions + categories, antrean offline, indikator status. Cermin utang di-rebuild per-HP (jangan sync mentah → ganda).
 - [ ] Fase 3 — utang + budget ikut sync + uji 2 emulator bareng.
 - [ ] Fase 4 — hardening production-grade: RLS audit, hapus akun, kebijakan privasi (wajib Play Store), crash reporting.

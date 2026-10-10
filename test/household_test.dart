@@ -120,7 +120,16 @@ void main() {
 
     test('timeout jaringan → pesan internet + data aman', () {
       final m = friendlyAuthError(TimeoutException('after 0:00:20'));
-      expect(m, contains('internet'));
+      expect(m, contains('lambat'));
+      expect(m, contains('Data lokal tetap aman'));
+    });
+
+    test('timeout = WiFi zonk (0,76 KB/S), bukan tanpa sinyal', () {
+      // Firestore gagal handshake dalam 20 dtk padahal radio nyala:
+      // pesan harus suruh pindah jaringan, bukan bunuh app.
+      final m = friendlyAuthError(Exception('TimeoutException after 20s'));
+      expect(m, isNot(contains('Tidak ada internet')));
+      expect(m, contains('sinyal kuat'));
       expect(m, contains('Data lokal tetap aman'));
     });
 
@@ -180,14 +189,16 @@ void main() {
       expect(inviteShareText('ABCD-EFGH', null), contains('Keluarga'));
     });
 
-    test('unavailable/deadline → internet; unauthenticated → sesi', () {
+    test('unavailable → tanpa internet; deadline → sinyal lemot', () {
       expect(
         friendlyAuthError(Exception('[cloud_firestore/unavailable]')),
         contains('internet'),
       );
+      // deadline = timeout handshake (WiFi nyala tapi zonk): pesan baru
+      // suruh cari sinyal kuat, bukan "tidak ada internet".
       expect(
         friendlyAuthError(Exception('Deadline exceeded')),
-        contains('internet'),
+        contains('sinyal kuat'),
       );
       expect(
         friendlyAuthError(Exception('[firebase_auth/unauthenticated]')),

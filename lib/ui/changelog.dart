@@ -26,6 +26,19 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.18.1',
+    date: '10 Okt 2026',
+    user:
+        'Pesan error Keluarga sekarang jujur: WiFi nyala tapi internet lemot '
+        '(kasus 0,76 KB/S) dibilang "sinyal lemot — pindah jaringan", bukan '
+        '"tidak ada internet". Tombol bicara "tanpa sinyal" saat radio mati.',
+    tech:
+        'Audit screenshot ReWin: pisah timeout/deadline/aborted (sinyal lemot) '
+        'dari network/unavailable (tanpa internet), copy UI preemptif jujur '
+        '"tanpa sinyal", test +1, full 148/148.',
+    breaking: null,
+  ),
+  (
     version: 'v1.18.0',
     date: '10 Okt 2026',
     user:
