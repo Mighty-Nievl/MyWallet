@@ -26,6 +26,17 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.24.2',
+    date: '11 Okt 2026',
+    user:
+        'Beranda makin rapi: jarak antar bagian lebih lega, kartu lebih '
+        'jelas di mode gelap, dan tombol mata lebih mudah disentuh.',
+    tech:
+        'Beranda: token spacing/tipe/border baru, header ramping, status '
+        'bar adaptif tema, saldo anti-kepotong, golden diregenerasi.',
+    breaking: null,
+  ),
+  (
     version: 'v1.24.1',
     date: '11 Okt 2026',
     user:

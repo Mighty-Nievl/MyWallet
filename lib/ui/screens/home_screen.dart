@@ -41,43 +41,46 @@ class HomeScreen extends ConsumerWidget {
     final recentCount = ref.watch(recentCountProvider).value ?? 5;
     final showDaily = ref.watch(showDailyTotalsProvider).value ?? true;
     final statusPad = MediaQuery.paddingOf(context).top;
+    // Status bar adaptif (kritik brutal v1.24.2): ikon terang di dark,
+    // gelap di light — bukan hardcode gelap terus.
+    final isDark = AppColors.isDark(context);
 
     void shift(int d) =>
         ref.read(selectedMonthProvider.notifier).state = shiftMonth(month, d);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      // Header netral (redesign v1.24 B2C minimalis) → status bar gelap.
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       ),
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header minimalis B2C (redesign v1.24): strip netral ramping,
-            // CUMA gear kanan atas. Sapaan + tanggal + avatar DIHAPUS.
-            Container(
+            // Header minimalis B2C: CUMA gear kanan atas (strip netral).
+            // v1.24.2: Row+Spacer → Align (20 baris untuk 1 tombol itu bau).
+            Align(
               key: const ValueKey('home:header'),
-              color: Theme.of(context).scaffoldBackgroundColor,
-              padding: EdgeInsets.only(top: statusPad + 8, bottom: 8, right: 8),
-              child: Row(
-                children: [
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                    ),
-                    tooltip: 'Pengaturan',
-                    icon: Icon(
-                      Icons.settings_outlined,
-                      color: Theme.of(context).colorScheme.onSurface,
-                      size: 22,
-                    ),
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  top: statusPad + 8,
+                  bottom: 8,
+                  right: 8,
+                ),
+                child: IconButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
                   ),
-                ],
+                  tooltip: 'Pengaturan',
+                  icon: Icon(
+                    Icons.settings_outlined,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    size: 22,
+                  ),
+                ),
               ),
             ),
             Expanded(
@@ -95,14 +98,16 @@ class HomeScreen extends ConsumerWidget {
                     key: const ValueKey('home:monthnav'),
                     child: _pad(
                       AppMonthNav(month: month, onShift: shift),
-                      top: 32,
+                      top: AppSpacing.sectionGapLarge,
                     ),
                   ),
                   // Redesign v1.24 B2C minimalis: delta/kilat/debts DIHAPUS
-                  // (cognitive load). Spacing lega 32px antar seksi.
+                  // (cognitive load). Spacing lega via token sectionGapLarge.
                   // Top kategori + terakhir dicatat tampil langsung.
                   if (showTop) ...[
-                    const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: AppSpacing.sectionGapLarge),
+                    ),
                     SliverToBoxAdapter(
                       key: const ValueKey('home:topcats'),
                       child: _pad(
@@ -120,7 +125,9 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ],
                   if (showRecent) ...[
-                    const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: AppSpacing.sectionGapLarge),
+                    ),
                     SliverToBoxAdapter(
                       key: const ValueKey('home:recent'),
                       child: _pad(
@@ -188,11 +195,14 @@ class _HeroCard extends ConsumerWidget {
         AppSpacing.page,
         0,
       ),
-      padding: const EdgeInsets.all(AppSpacing.s24),
+      padding: AppSpacing.cardPaddingLarge,
       decoration: BoxDecoration(
         color: AppColors.surfaceOf(context),
         borderRadius: AppRadius.xlAll,
-        border: Border.all(color: AppColors.borderOf(context), width: 1),
+        border: Border.all(
+          color: AppColors.borderOf(context),
+          width: AppColors.borderWidthOf(context),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,13 +221,14 @@ class _HeroCard extends ConsumerWidget {
                 ),
               ),
               SizedBox(
-                width: 36,
-                height: 36,
+                // v1.24.2: 36→44 (touch target, kritik brutal).
+                width: 44,
+                height: 44,
                 child: IconButton(
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(
-                    minWidth: 36,
-                    minHeight: 36,
+                    minWidth: 44,
+                    minHeight: 44,
                   ),
                   onPressed: () =>
                       ref.read(settingsServiceProvider).setHideBalance(!hide),
@@ -225,7 +236,9 @@ class _HeroCard extends ConsumerWidget {
                     hide
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined,
-                    size: 18,
+                    // v1.24.2: glyph 18→20 (vision: hit-area 44 tapi
+                    // ikon masih kebaca kecil).
+                    size: 20,
                     color: AppColors.mutedOf(context),
                   ),
                   tooltip: hide ? 'Tampilkan saldo' : 'Sembunyikan saldo',
@@ -251,15 +264,17 @@ class _HeroCard extends ConsumerWidget {
                 ),
               ],
             ),
-            data: (b) => Text(
-              hide ? 'Rp••••••' : display.money(b),
-              style: AppType.balance(context).copyWith(
-                fontSize: 48,
-                fontWeight: FontWeight.w700,
-                height: 1.1,
+            data: (b) => FittedBox(
+              // v1.24.2: scaleDown agar nominal miliaran mengecil,
+              // bukan kepotong '...' (kritik brutal).
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                hide ? 'Rp••••••' : display.money(b),
+                style: AppType.balanceHero(context),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
           const SizedBox(height: AppSpacing.s24),
@@ -294,17 +309,6 @@ class _HeroCard extends ConsumerWidget {
     );
   }
 }
-
-/// _MiniStat: dipakai di _DebtCard yang dihapus di redesign v1.24.
-/// Dipertahankan untuk kompatibilitas backward jika debts dikembalikan.
-// class _MiniStat extends StatelessWidget {
-//   const _MiniStat({required this.label, required this.value, this.valueColor});
-//   final String label;
-//   final String value;
-//   final Color? valueColor;
-//   @override
-//   Widget build(BuildContext context) { ... }
-// }
 
 /// Top kategori PROPORSIONAL terhadap total (bukan terhadap maksimum):
 /// bar terpanjang = porsi terbesar, plus persen per baris.

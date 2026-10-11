@@ -28,6 +28,12 @@ abstract final class AppColors {
   static Color borderOf(BuildContext context) =>
       isDark(context) ? darkBorder : lightBorder;
 
+  /// Lebar border kartu — 1.5px di dark agar batas kartu (#111 vs #0A0A0A)
+  /// tetap effortless terbaca; 1px cukup di light (putih vs #FAFAFA).
+  /// B2C v1.24.2 (kritik brutal: kartu dark nyaris lebur).
+  static double borderWidthOf(BuildContext context) =>
+      isDark(context) ? 1.5 : 1;
+
   /// Permukaan sekunder (track progress, tile ikon netral, dsb).
   static Color subtleOf(BuildContext context) =>
       isDark(context) ? darkSubtle : lightSubtle;

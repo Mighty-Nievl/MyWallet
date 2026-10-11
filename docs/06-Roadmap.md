@@ -143,6 +143,7 @@ Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi 
 - [x] **Redesign Beranda editorial (v1.22.0)**: header strip ramping, hero ledger full-bleed (saldo 40px + Masuk/Keluar + budget + tombol 2 kolom), strip delta ganti banner ganda, golden regenerasi, logo redesigned + mipmap. Full 163/163.
 - [x] **Beranda B2C minimalis (v1.24.0)**: header netral ramping, hero kartu putih bersih (saldo 48px + 1 CTA solid), delta/kilat/debts dihapus, spacing 32px. Full 163/163.
 - [x] **Fix kontras tombol gelap (v1.24.1)**: foreground tombol ikut tema, test kontras 12 pengukuran, golden regenerasi. Full 163/163.
+- [x] **Polish B2C Beranda (v1.24.2)**: token spacing/tipe/border, header ramping, statusbar adaptif, saldo anti-kepotong, mata 44px. Full 163/163.
 - [ ] Fase 3 — utang + budget ikut sync + uji 2 emulator bareng.
 - [ ] Fase 4 — hardening production-grade: RLS audit, hapus akun, kebijakan privasi (wajib Play Store), crash reporting.
 

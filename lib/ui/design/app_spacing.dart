@@ -17,11 +17,19 @@ abstract final class AppSpacing {
   /// Jarak antar section besar (saldo -> harian -> kategori -> riwayat).
   static const double sectionGap = s24;
 
+  /// Jarak antar section LEGA ala B2C (Beranda v1.24+: hero→monthnav→seksi).
+  /// B2C v1.24.2: token resmi, bukan literal 32 tersebar.
+  static const double sectionGapLarge = s32;
+
   /// Jarak judul section ke kontennya.
   static const double groupGap = s12;
 
   /// Padding dalam kartu.
   static const EdgeInsets cardPadding = EdgeInsets.all(s16);
+
+  /// Padding dalam kartu BESAR (hero saldo): lega 24.
+  /// B2C v1.24.2: hero pakai ini, bukan literal all(24).
+  static const EdgeInsets cardPaddingLarge = EdgeInsets.all(s24);
 
   /// Ruang kosong selebar FAB + margin notch (56 + 2×8).
   /// Tanpa ini tab Budget/Laporan ketindih cekungan (legacy BottomAppBar).
