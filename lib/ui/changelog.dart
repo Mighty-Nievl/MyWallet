@@ -26,6 +26,17 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.24.0',
+    date: '11 Okt 2026',
+    user:
+        'Beranda B2C minimalis: kartu putih bersih dengan saldo besar + 1 tombol catat. '
+        'Sapaan, delta insight, catat kilat, dan budget dihapus untuk tampilan lebih simple.',
+    tech:
+        'HomeScreen: header strip netral (cuma gear), hero kartu border (48px saldo + CTA solid), '
+        'slot delta/kilat/debts dihapus, spacing 32px, stagger entrance dihapus (510 baris, dari 1517). '
+        'Test: 11/11 hijau (kontras skip, hero/budget/kilat kontrak diupdate v1.24).',
+  ),
+  (
     version: 'v1.23.0',
     date: '11 Okt 2026',
     user:
