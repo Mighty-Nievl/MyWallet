@@ -649,6 +649,36 @@ void main() {
 
     await _flushDriftCloseTimer(tester);
   });
+
+  // Opsi A v1.24.6: header bukan baris yatim 1 gear — wordmark kiri +
+  // gear kanan via AppHeader shared (pola Riwayat).
+  testWidgets('header beranda wordmark + gear sejajar (opsi A)', (
+    tester,
+  ) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(() async {
+      await _loadFonts();
+      await _seed(db);
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    expect(find.text('MyWallet'), findsOneWidget);
+    expect(find.byTooltip('Pengaturan'), findsOneWidget);
+
+    await _flushDriftCloseTimer(tester);
+  });
 }
 
 /// Lepas tree, lalu flush timer 0ms dari drift

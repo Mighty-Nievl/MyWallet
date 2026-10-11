@@ -26,6 +26,18 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.24.6',
+    date: '11 Okt 2026',
+    user:
+        'Bagian atas Beranda kini ada nama aplikasi di kiri dan tombol '
+        'pengaturan di kanan, sejajar rapi.',
+    tech:
+        'Beranda: header yatim 1 gear → AppHeader shared (wordmark + '
+        'gear, pola Riwayat), regression test header, golden '
+        'diregenerasi.',
+    breaking: null,
+  ),
+  (
     version: 'v1.24.5',
     date: '11 Okt 2026',
     user:

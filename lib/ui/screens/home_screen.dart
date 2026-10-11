@@ -7,6 +7,7 @@ import '../../data/providers.dart';
 import '../../data/settings.dart';
 import '../components/app_empty_state.dart';
 import '../components/app_feedback.dart';
+import '../components/app_header.dart';
 import '../components/app_month_nav.dart';
 import '../components/app_progress.dart';
 import '../components/app_section.dart';
@@ -59,27 +60,23 @@ class HomeScreen extends ConsumerWidget {
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header minimalis B2C: CUMA gear kanan atas (strip netral).
-            // v1.24.2: Row+Spacer → Align (20 baris untuk 1 tombol itu bau).
-            Align(
+            // Header B2C: wordmark kiri + gear kanan via AppHeader shared
+            // (Opsi A: baris yatim 1 gear → app bar normal kayak
+            // Riwayat). Padding ikut pola history_screen.
+            Padding(
               key: const ValueKey('home:header'),
-              alignment: Alignment.centerRight,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  top: statusPad + AppSpacing.s8,
-                  bottom: AppSpacing.s8,
-                  right: AppSpacing.s8,
-                ),
-                child: IconButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                  ),
-                  tooltip: 'Pengaturan',
-                  icon: Icon(
-                    Icons.settings_outlined,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    size: 22,
-                  ),
+              padding: EdgeInsets.only(
+                left: AppSpacing.page,
+                top: statusPad + AppSpacing.s8,
+                bottom: AppSpacing.s8,
+                right: AppSpacing.page,
+              ),
+              child: AppHeader(
+                title: 'MyWallet',
+                actionIcon: Icons.settings_outlined,
+                actionTooltip: 'Pengaturan',
+                onAction: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
                 ),
               ),
             ),

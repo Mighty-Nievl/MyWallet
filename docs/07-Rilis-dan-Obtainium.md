@@ -30,6 +30,7 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 | **Release MyWallet** (`release.yml`) | push tag `v*` / manual | GitHub Release berisi `mywallet-vX.Y.Z.apk` + `.aab` → Obtainium |
 
 ## Riwayat rilis
+- **v1.24.6** (11 Okt 2026): Header wordmark + gear — baris atas Beranda rapi sejajar. Full 167/167.
 - **v1.24.5** (11 Okt 2026): Nominal rata kanan + strip ringkas — angka sejajar, ringkasan satu baris. Full 166/166.
 - **v1.24.4** (11 Okt 2026): List rapi + logo baru — tanggal tidak diulang per baris, logo bg-white. Full 164/164.
 - **v1.24.3** (11 Okt 2026): Brutal-polish Beranda — tombol utama menonjol, link spesifik, monthnav selaras. Full 163/163.
