@@ -44,4 +44,8 @@ abstract final class AppSpacing {
 
   /// Target sentuh minimum Material (48×48).
   static const double touchMin = 48;
+
+  /// Tinggi tombol aksi utama (hero Beranda): lega 52.
+  /// B2C v1.24.3: token resmi, bukan literal di hero.
+  static const double ctaHeight = 52;
 }

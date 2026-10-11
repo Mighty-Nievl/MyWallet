@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../design/app_colors.dart';
+import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../format.dart';
 import 'app_feedback.dart';
@@ -37,35 +39,35 @@ class AppMonthNav extends StatelessWidget {
             // Di HP normal label penuh tetap muat.
             Flexible(
               child: Tooltip(
-              message: isCurrent
-                  ? 'Geser chevron untuk ganti bulan'
-                  : 'Ketuk untuk kembali ke bulan ini',
-              child: ActionChip(
-                label: Text(
-                  monthLabel(month),
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w600),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                avatar: Icon(
-                  Icons.calendar_month_outlined,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                onPressed: isCurrent
-                    ? null
-                    : () => onShift(_deltaToCurrent(month)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  side: BorderSide(
-                    color: Theme.of(context).colorScheme.outlineVariant,
+                message: isCurrent
+                    ? 'Geser chevron untuk ganti bulan'
+                    : 'Ketuk untuk kembali ke bulan ini',
+                child: ActionChip(
+                  label: Text(
+                    monthLabel(month),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                backgroundColor:
-                    Theme.of(context).colorScheme.surfaceContainerLow,
+                  avatar: Icon(
+                    Icons.calendar_month_outlined,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  onPressed: isCurrent
+                      ? null
+                      : () => onShift(_deltaToCurrent(month)),
+                  // v1.24.3: sekeluarga hero — border token + radius lg
+                  // (kritik brutal L5: dulu M3-default, kini shadcn-flat).
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppRadius.lgAll,
+                    side: BorderSide(color: AppColors.borderOf(context)),
+                  ),
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerLow,
                 ),
               ),
             ),

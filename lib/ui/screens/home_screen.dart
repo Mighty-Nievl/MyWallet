@@ -66,9 +66,9 @@ class HomeScreen extends ConsumerWidget {
               alignment: Alignment.centerRight,
               child: Padding(
                 padding: EdgeInsets.only(
-                  top: statusPad + 8,
-                  bottom: 8,
-                  right: 8,
+                  top: statusPad + AppSpacing.s8,
+                  bottom: AppSpacing.s8,
+                  right: AppSpacing.s8,
                 ),
                 child: IconButton(
                   onPressed: () => Navigator.of(context).push(
@@ -116,8 +116,10 @@ class HomeScreen extends ConsumerWidget {
                           trailing: onGoTab == null
                               ? null
                               : TextButton(
+                                  // v1.24.3: label konteks, bukan generik
+                                  // "Lihat semua" (kritik brutal L5).
                                   onPressed: () => onGoTab!(3),
-                                  child: const Text('Lihat semua'),
+                                  child: const Text('Semua kategori'),
                                 ),
                           child: _CategoryList(byCat: byCat, display: display),
                         ),
@@ -136,8 +138,9 @@ class HomeScreen extends ConsumerWidget {
                           trailing: onGoTab == null
                               ? null
                               : TextButton(
+                                  // v1.24.3: label konteks (kritik brutal L5).
                                   onPressed: () => onGoTab!(1),
-                                  child: const Text('Lihat semua'),
+                                  child: const Text('Semua transaksi'),
                                 ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,10 +281,11 @@ class _HeroCard extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.s24),
-          // CTA tunggal: Catat pengeluaran (solid aksen, full-width)
+          // CTA tunggal: Catat pengeluaran (solid aksen, full-width).
+          // v1.24.3: 15→17px agar menang atas judul seksi 16px (kritik brutal L3).
           SizedBox(
             width: double.infinity,
-            height: 52,
+            height: AppSpacing.ctaHeight,
             child: FilledButton(
               onPressed: () {
                 HapticFeedback.lightImpact();
@@ -300,7 +304,7 @@ class _HeroCard extends ConsumerWidget {
               ),
               child: const Text(
                 '+ Catat keluar',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -369,7 +373,7 @@ class _CategoryList extends ConsumerWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: AppSpacing.s4),
                           AppProgress(
                             value: total == 0
                                 ? 0
@@ -382,7 +386,8 @@ class _CategoryList extends ConsumerWidget {
                     const SizedBox(width: AppSpacing.s12),
                     Text(
                       display.money(c.total),
-                      style: AppType.amount(context, size: 14),
+                      // v1.24.3: 14→15 samakan nominal transaksi (kritik L3).
+                      style: AppType.amount(context),
                     ),
                   ],
                 ),
@@ -455,7 +460,9 @@ class _RecentList extends ConsumerWidget {
             icon: '💸',
             title: 'Belum ada transaksi',
             subtitle:
-                'Ketuk + Catat keluar saat ada pemasukan atau pengeluaran.',
+                // v1.24.3: jujur — CTA Beranda buka form pengeluaran
+                // (kritik brutal L4: janji "pemasukan" meleset).
+                'Ketuk + Catat keluar untuk mencatat pengeluaran.',
           );
         }
         final groups = <DateTime, List<TxWithCategory>>{};

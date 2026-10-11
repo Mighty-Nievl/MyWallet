@@ -30,6 +30,7 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 | **Release MyWallet** (`release.yml`) | push tag `v*` / manual | GitHub Release berisi `mywallet-vX.Y.Z.apk` + `.aab` → Obtainium |
 
 ## Riwayat rilis
+- **v1.24.3** (11 Okt 2026): Brutal-polish Beranda — tombol utama menonjol, link spesifik, monthnav selaras. Full 163/163.
 - **v1.24.2** (11 Okt 2026): Polish B2C Beranda — spacing lega via token, kartu jelas di mode gelap, tombol mata 44px. Full 163/163.
 - **v1.24.1** (11 Okt 2026): Fix kontras tombol Beranda mode gelap — teks kini jelas terbaca. Full 163/163.
 - **v1.24.0** (11 Okt 2026): Beranda B2C minimalis — kartu putih bersih, saldo besar, 1 CTA. Full 163/163.

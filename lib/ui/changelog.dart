@@ -26,6 +26,18 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.24.3',
+    date: '11 Okt 2026',
+    user:
+        'Beranda makin jelas: tombol utama lebih menonjol, tulisan '
+        'link lebih spesifik, dan tampilan bulan selaras dengan kartu.',
+    tech:
+        'Beranda: token tinggi tombol, teks tombol 17px, trailing '
+        'konteks, monthnav ikut token border, microcopy jujur, golden '
+        'diregenerasi.',
+    breaking: null,
+  ),
+  (
     version: 'v1.24.2',
     date: '11 Okt 2026',
     user:
