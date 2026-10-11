@@ -26,6 +26,21 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.24.9',
+    date: '11 Okt 2026',
+    user:
+        'Pencarian Riwayat kini menemukan nama kategori dan nominal, '
+        'angka total jujur saat data banyak, dan pesan kosong yang '
+        'tidak lagi menuduh.',
+    tech:
+        'Search note+kategori+nominal; watchHistoryCount + strip '
+        '"Menampilkan X dari N"; Semua sadar keyword + toggle tipe; '
+        'debounce 300ms; empty bercabang; chip Semantics + minHeight 48 '
+        '+ ellipsis; TxTile dense arsip; hint scope bulan; 7 test baru, '
+        'golden identik.',
+    breaking: null,
+  ),
+  (
     version: 'v1.24.8',
     date: '11 Okt 2026',
     user:

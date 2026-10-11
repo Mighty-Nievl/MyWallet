@@ -22,12 +22,22 @@ import '../display.dart';
 /// "9 Okt 2026") — ngulang di tiap baris cuma bikin kepotong "Ke...".
 /// Riwayat (flat, tanpa grup) pakai true (default): tanggal per baris
 /// di sana itu informasi, bukan redundansi.
+///
+/// [dense]: kepadatan arsip (v1.24.9) — padding vertikal s8, khusus
+/// Riwayat yang list-nya panjang. Beranda (teaser 5 item) tetap lega s12.
 class TxTile extends ConsumerWidget {
-  const TxTile({super.key, required this.tx, this.onTap, this.showDate = true});
+  const TxTile({
+    super.key,
+    required this.tx,
+    this.onTap,
+    this.showDate = true,
+    this.dense = false,
+  });
 
   final TxWithCategory tx;
   final VoidCallback? onTap;
   final bool showDate;
+  final bool dense;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -60,7 +70,12 @@ class TxTile extends ConsumerWidget {
             },
       borderRadius: AppRadius.mdAll,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.s12),
+        // v1.24.9: dense = arsip rapat s8 (Riwayat); default lega s12
+        // (Beranda teaser 5 item — kritik L2: 24px antar-baris boros
+        // untuk arsip 50 baris).
+        padding: EdgeInsets.symmetric(
+          vertical: dense ? AppSpacing.s8 : AppSpacing.s12,
+        ),
         child: Row(
           children: [
             if (display.showIcons) ...[

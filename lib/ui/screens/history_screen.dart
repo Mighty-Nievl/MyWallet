@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -30,9 +32,14 @@ class HistoryScreen extends ConsumerStatefulWidget {
 
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   final _searchCtrl = TextEditingController();
+  // v1.24.9: debounce ketikan (kritik L1 — dulu re-query + regroup +
+  // resort per huruf). Timer UI biasa, bukan animasi (aturan no-Timer
+  // hanya untuk Stagger).
+  Timer? _searchTimer;
 
   @override
   void dispose() {
+    _searchTimer?.cancel();
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -42,6 +49,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final filter = ref.watch(historyFilterProvider);
     final display = ref.watch(displayPrefsProvider);
     final history = ref.watch(historyProvider);
+    // v1.24.9: total jujur tanpa limit (strip "Menampilkan 100 dari N").
+    final totalAsync = ref.watch(historyCountProvider);
     final cats = ref.watch(categoriesProvider);
     final month = ref.watch(selectedMonthProvider);
 
@@ -79,7 +88,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               child: TextField(
                 controller: _searchCtrl,
                 decoration: InputDecoration(
-                  hintText: 'Cari transaksi...',
+                  // v1.24.9: hint jujur scope (kritik L4 — dulu
+                  // "Cari transaksi..." padahal cuma bulan aktif).
+                  hintText: 'Cari di ${monthLabel(month)}...',
                   prefixIcon: const Icon(Icons.search, size: 20),
                   suffixIcon: filter.keyword.isNotEmpty
                       ? IconButton(
@@ -97,14 +108,22 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       : null,
                   isDense: true,
                 ),
-                onChanged: (v) =>
+                onChanged: (v) {
+                  // v1.24.9: debounce 300ms — query + regroup + resort
+                  // jalan setelah user berhenti mengetik, bukan per huruf.
+                  _searchTimer?.cancel();
+                  _searchTimer = Timer(const Duration(milliseconds: 300), () {
+                    if (!mounted) return;
+                    final f = ref.read(historyFilterProvider);
                     ref
                         .read(historyFilterProvider.notifier)
                         .state = HistoryFilter(
-                      categoryId: filter.categoryId,
-                      isExpense: filter.isExpense,
+                      categoryId: f.categoryId,
+                      isExpense: f.isExpense,
                       keyword: v,
-                    ),
+                    );
+                  });
+                },
               ),
             ),
             SingleChildScrollView(
@@ -117,8 +136,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 children: [
                   _FilterChip(
                     label: 'Semua',
-                    selected: filter.isExpense == null &&
-                        filter.categoryId == null,
+                    // v1.24.9: selected buta keyword ditutup (kritik L4 —
+                    // dulu keyword aktif tapi Semua tetap menyala).
+                    selected:
+                        filter.isExpense == null &&
+                        filter.categoryId == null &&
+                        filter.keyword.trim().isEmpty,
                     // v1.24.8: "Semua" beneran semua — reset kategori juga
                     // (kritik brutal L4: dulu categoryId dipertahankan,
                     // label klaim semua padahal daftar tersaring).
@@ -130,16 +153,33 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   _FilterChip(
                     label: 'Pemasukan',
                     selected: filter.isExpense == false,
-                    onTap: () => _setFilter(filter, false),
+                    // v1.24.9: toggle-off konsisten dgn chip kategori
+                    // (kritik L1 — dulu tipe terkunci, kategori bisa lepas).
+                    onTap: () => _setFilter(
+                      filter,
+                      filter.isExpense == false ? null : false,
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.s8),
                   _FilterChip(
                     label: 'Pengeluaran',
                     selected: filter.isExpense == true,
-                    onTap: () => _setFilter(filter, true),
+                    onTap: () => _setFilter(
+                      filter,
+                      filter.isExpense == true ? null : true,
+                    ),
                   ),
                   cats.when(
-                    loading: () => const SizedBox.shrink(),
+                    // v1.24.9: skeleton selebar chip, bukan shrink
+                    // (kritik L1 — dulu baris melebar 1 frame saat datang).
+                    loading: () => const Row(
+                      children: [
+                        SizedBox(width: AppSpacing.s8),
+                        _ChipSkeleton(),
+                        SizedBox(width: AppSpacing.s8),
+                        _ChipSkeleton(),
+                      ],
+                    ),
                     error: (e, s) => const SizedBox.shrink(),
                     data: (list) => Row(
                       children: [
@@ -181,7 +221,16 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 ),
                 data: (list) {
                   if (list.isEmpty) {
-                    return const _EmptyState();
+                    // v1.24.9: empty bercabang (kritik L4 — dulu satu state
+                    // menuduh veteran "catat transaksi pertamamu").
+                    final hasFilter =
+                        filter.categoryId != null ||
+                        filter.isExpense != null ||
+                        filter.keyword.trim().isNotEmpty;
+                    return _EmptyState(
+                      hasFilter: hasFilter,
+                      monthLabel: monthLabel(month),
+                    );
                   }
                   // v1.24.8: strip hasil (kritik brutal L3 — Riwayat tanpa
                   // total = arsip bisu). Pola _DailyStrip Beranda: satu
@@ -198,7 +247,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   final groups = <DateTime, List<TxWithCategory>>{};
                   for (final tx in list) {
                     final d = DateTime(
-                        tx.date.year, tx.date.month, tx.date.day);
+                      tx.date.year,
+                      tx.date.month,
+                      tx.date.day,
+                    );
                     (groups[d] ??= []).add(tx);
                   }
                   final entries = groups.entries.toList()
@@ -213,7 +265,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                     ),
                     children: [
                       _ResultStrip(
-                        count: list.length,
+                        shown: list.length,
+                        // v1.24.9: total tanpa limit — null selagi loading,
+                        // strip tampil biasa dulu lalu jujur saat datang.
+                        total: totalAsync.value,
                         inTotal: inTotal,
                         outTotal: outTotal,
                       ),
@@ -225,19 +280,20 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           ),
                           child: Text(
                             display.date(entries[i].key),
-                            style: AppType.sectionTitle(context)
-                                .copyWith(fontSize: 14),
+                            style: AppType.sectionTitle(
+                              context,
+                            ).copyWith(fontSize: 14),
                           ),
                         ),
                         for (final tx in entries[i].value)
                           TxTile(
                             tx: tx,
                             showDate: false,
-                            onTap: () =>
-                                Navigator.of(context).push(
+                            // v1.24.9: arsip rapat (kritik L2).
+                            dense: true,
+                            onTap: () => Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (ctx) =>
-                                    TxFormScreen(existing: tx),
+                                builder: (ctx) => TxFormScreen(existing: tx),
                               ),
                             ),
                           ),
@@ -305,13 +361,36 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
+/// Skeleton selebar chip (reserve space selagi kategori loading).
+class _ChipSkeleton extends StatelessWidget {
+  const _ChipSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: 96,
+      height: 48,
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(999),
+      ),
+    );
+  }
+}
+
 class _LoadingState extends StatelessWidget {
   const _LoadingState();
 
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.page, AppSpacing.s8, AppSpacing.page, AppSpacing.bottomPad),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.page,
+        AppSpacing.s8,
+        AppSpacing.page,
+        AppSpacing.bottomPad,
+      ),
       children: const [AppCard(child: AppSkeleton(lines: 3))],
     );
   }
@@ -324,21 +403,32 @@ class _LoadingState extends StatelessWidget {
 /// tanggal ikut header grup di bawahnya).
 class _ResultStrip extends ConsumerWidget {
   const _ResultStrip({
-    required this.count,
+    required this.shown,
+    required this.total,
     required this.inTotal,
     required this.outTotal,
   });
-  final int count;
+
+  /// Baris yang tampil (≤ limit query).
+  final int shown;
+
+  /// Total hasil filter tanpa limit (null = masih loading → tampil biasa).
+  final int? total;
   final int inTotal;
   final int outTotal;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final display = ref.watch(displayPrefsProvider);
+    // v1.24.9: jujur soal limit (kritik L4 — dulu "100 transaksi"
+    // padahal datanya 150). total null = tampil biasa tanpa embel-embel.
+    final head = (total != null && total! > shown)
+        ? 'Menampilkan $shown dari $total transaksi · '
+        : '$shown transaksi · ';
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.s8),
       child: Text(
-        '$count transaksi · '
+        '$head'
         'Masuk ${display.signed(inTotal, isExpense: false)} · '
         'Keluar ${display.signed(outTotal, isExpense: true)}',
         style: AppType.secondary(context),
@@ -350,15 +440,22 @@ class _ResultStrip extends ConsumerWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+  const _EmptyState({required this.hasFilter, required this.monthLabel});
+
+  /// true = filter aktif (bukan bulan kosong) → microcopy beda.
+  final bool hasFilter;
+  final String monthLabel;
 
   @override
   Widget build(BuildContext context) {
-    return const AppEmptyState(
+    // v1.24.9: dua sebab, dua bahasa (kritik L4 — dulu satu state
+    // menuduh veteran "catat transaksi pertamamu").
+    return AppEmptyState(
       icon: '🧾',
-      title: 'Belum ada yang cocok',
-      subtitle:
-          'Tidak ada transaksi untuk periode atau filter ini. Coba ubah bulan, kata kunci, atau catat transaksi pertamamu!',
+      title: hasFilter ? 'Tidak ada yang cocok' : 'Belum ada transaksi',
+      subtitle: hasFilter
+          ? 'Coba longgarkan filter atau kata kunci di atas.'
+          : 'Belum ada catatan di $monthLabel. Ketuk + untuk mencatat yang pertama.',
     );
   }
 }

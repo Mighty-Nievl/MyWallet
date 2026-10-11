@@ -100,8 +100,9 @@ final monthTotalsProvider = StreamProvider<(int, int)>((ref) {
 });
 
 /// Ringkasan pengeluaran per kategori bulan yang dipilih.
-final monthExpenseByCategoryProvider =
-    StreamProvider<List<CategoryTotal>>((ref) {
+final monthExpenseByCategoryProvider = StreamProvider<List<CategoryTotal>>((
+  ref,
+) {
   final db = ref.watch(dbProvider);
   final (from, to) = ref.watch(monthRangeProvider);
   return db
@@ -118,8 +119,9 @@ class HistoryFilter {
   final String keyword;
 }
 
-final historyFilterProvider =
-    StateProvider<HistoryFilter>((ref) => const HistoryFilter());
+final historyFilterProvider = StateProvider<HistoryFilter>(
+  (ref) => const HistoryFilter(),
+);
 
 /// Stream riwayat sesuai filter aktif + bulan yang dipilih.
 final historyProvider = StreamProvider<List<TxWithCategory>>((ref) {
@@ -135,54 +137,72 @@ final historyProvider = StreamProvider<List<TxWithCategory>>((ref) {
   );
 });
 
+/// Jumlah TOTAL hasil filter aktif (tanpa limit) — strip Riwayat jujur
+/// soal limit (v1.24.9: "Menampilkan 100 dari N").
+final historyCountProvider = StreamProvider<int>((ref) {
+  final db = ref.watch(dbProvider);
+  final f = ref.watch(historyFilterProvider);
+  final (from, to) = ref.watch(monthRangeProvider);
+  return db.watchHistoryCount(
+    categoryId: f.categoryId,
+    isExpense: f.isExpense,
+    keyword: f.keyword,
+    from: from,
+    to: to,
+  );
+});
+
 /// Stream budget bulan yang dipilih + total terpakai per kategori.
 /// Trigger dengarkan budgets + transactions (fix v1.7.2) —
 /// hitung beratnya di [fetchBudgets] (fungsi murni, testable).
 final budgetsProvider =
-    StreamProvider<List<({Budget budget, String name, String icon, int spent})>>(
-        (ref) {
-  final db = ref.watch(dbProvider);
-  final month = ref.watch(selectedMonthProvider);
-  final (from, to) = ref.watch(monthRangeProvider);
-  final result = db
-      .customSelect('SELECT 1', readsFrom: {db.budgets, db.transactions})
-      .watch()
-      .asyncMap((_) => fetchBudgets(db, month: month, from: from, to: to));
-  return result;
-});
+    StreamProvider<
+      List<({Budget budget, String name, String icon, int spent})>
+    >((ref) {
+      final db = ref.watch(dbProvider);
+      final month = ref.watch(selectedMonthProvider);
+      final (from, to) = ref.watch(monthRangeProvider);
+      final result = db
+          .customSelect('SELECT 1', readsFrom: {db.budgets, db.transactions})
+          .watch()
+          .asyncMap((_) => fetchBudgets(db, month: month, from: from, to: to));
+      return result;
+    });
 
 /// Ambil budget + spent per kategori, urutan stabil abjad.
 /// Fungsi murni (tanpa ref) agar bisa di-test langsung dengan db in-memory.
 Future<List<({Budget budget, String name, String icon, int spent})>>
-    fetchBudgets(
+fetchBudgets(
   AppDatabase db, {
   required String month,
   required DateTime from,
   required DateTime to,
 }) async {
-  final rows = await (db.select(db.budgets)
-        ..where((b) => b.month.equals(month)))
-      .get();
+  final rows = await (db.select(
+    db.budgets,
+  )..where((b) => b.month.equals(month))).get();
   final out = <({Budget budget, String name, String icon, int spent})>[];
   for (final b in rows) {
     // Budget terhapus-lembut (Fase 2) disembunyikan.
     if (b.deletedAt != null) continue;
-    final cat = await (db.select(db.categories)
-          ..where((c) => c.id.equals(b.categoryId)))
-        .getSingleOrNull();
+    final cat = await (db.select(
+      db.categories,
+    )..where((c) => c.id.equals(b.categoryId))).getSingleOrNull();
     // Kategori terhapus-lembut → tampil sebagai '?' (baris budget
     // fisiknya masih ada di Fase 0).
     final catAlive = (cat == null || cat.deletedAt != null) ? null : cat;
-    final spentRows = await db.customSelect(
-      'SELECT COALESCE(SUM(amount),0) AS s FROM transactions '
-      'WHERE is_expense = 1 AND deleted_at IS NULL AND category_id = ? AND date BETWEEN ? AND ?',
-      variables: [
-        Variable.withInt(b.categoryId),
-        Variable.withDateTime(from),
-        Variable.withDateTime(to),
-      ],
-      readsFrom: {db.transactions},
-    ).getSingle();
+    final spentRows = await db
+        .customSelect(
+          'SELECT COALESCE(SUM(amount),0) AS s FROM transactions '
+          'WHERE is_expense = 1 AND deleted_at IS NULL AND category_id = ? AND date BETWEEN ? AND ?',
+          variables: [
+            Variable.withInt(b.categoryId),
+            Variable.withDateTime(from),
+            Variable.withDateTime(to),
+          ],
+          readsFrom: {db.transactions},
+        )
+        .getSingle();
     out.add((
       budget: b,
       name: catAlive?.name ?? '?',
@@ -199,12 +219,7 @@ Future<List<({Budget budget, String name, String icon, int spent})>>
 
 /// Satu utang + progress bayar (paid dihitung dari cicilan).
 /// Lunas = paid >= total (tidak disimpan agar tidak basi).
-typedef DebtEntry = ({
-  Debt debt,
-  int paid,
-  int remaining,
-  bool done,
-});
+typedef DebtEntry = ({Debt debt, int paid, int remaining, bool done});
 
 int _debtRemain(int total, int paid) => total - paid;
 
@@ -212,17 +227,20 @@ int _debtRemain(int total, int paid) => total - paid;
 /// terdekat), lalu lunas abjad. Fungsi murni (testable in-memory).
 /// Baris terhapus-lembut disembunyikan (Fase 2 baru mengisinya).
 Future<List<DebtEntry>> fetchDebts(AppDatabase db) async {
-  final debts = await (db.select(db.debts)
-        ..where((d) => d.deletedAt.isNull())
-        ..orderBy([(d) => OrderingTerm.asc(d.name)]))
-      .get();
+  final debts =
+      await (db.select(db.debts)
+            ..where((d) => d.deletedAt.isNull())
+            ..orderBy([(d) => OrderingTerm.asc(d.name)]))
+          .get();
   final out = <DebtEntry>[];
   for (final d in debts) {
-    final row = await db.customSelect(
-      'SELECT COALESCE(SUM(amount),0) AS s FROM debt_payments WHERE debt_id = ? AND deleted_at IS NULL',
-      variables: [Variable.withInt(d.id)],
-      readsFrom: {db.debtPayments},
-    ).getSingle();
+    final row = await db
+        .customSelect(
+          'SELECT COALESCE(SUM(amount),0) AS s FROM debt_payments WHERE debt_id = ? AND deleted_at IS NULL',
+          variables: [Variable.withInt(d.id)],
+          readsFrom: {db.debtPayments},
+        )
+        .getSingle();
     final paid = row.read<int>('s');
     out.add((
       debt: d,
@@ -257,8 +275,10 @@ Future<List<DebtEntry>> fetchDebts(AppDatabase db) async {
 final debtsProvider = StreamProvider<List<DebtEntry>>((ref) {
   final db = ref.watch(dbProvider);
   return db
-      .customSelect('SELECT 1',
-          readsFrom: {db.debts, db.debtPayments, db.transactions})
+      .customSelect(
+        'SELECT 1',
+        readsFrom: {db.debts, db.debtPayments, db.transactions},
+      )
       .watch()
       .asyncMap((_) => fetchDebts(db));
 });
@@ -268,23 +288,25 @@ final debtsProvider = StreamProvider<List<DebtEntry>>((ref) {
 final debtSummaryProvider = StreamProvider<(int, int)>((ref) {
   final db = ref.watch(dbProvider);
   return db
-      .customSelect('SELECT 1',
-          readsFrom: {db.debts, db.debtPayments, db.transactions})
+      .customSelect(
+        'SELECT 1',
+        readsFrom: {db.debts, db.debtPayments, db.transactions},
+      )
       .watch()
       .asyncMap((_) async {
-    final list = await fetchDebts(db);
-    var utang = 0;
-    var piutang = 0;
-    for (final e in list) {
-      if (e.done) continue;
-      if (e.debt.isDebt) {
-        utang += e.remaining;
-      } else {
-        piutang += e.remaining;
-      }
-    }
-    return (utang, piutang);
-  });
+        final list = await fetchDebts(db);
+        var utang = 0;
+        var piutang = 0;
+        for (final e in list) {
+          if (e.done) continue;
+          if (e.debt.isDebt) {
+            utang += e.remaining;
+          } else {
+            piutang += e.remaining;
+          }
+        }
+        return (utang, piutang);
+      });
 });
 
 /// Cicilan satu utang, terbaru dulu (sembunyikan yang terhapus-lembut).

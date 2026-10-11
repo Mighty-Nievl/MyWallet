@@ -150,6 +150,7 @@ Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi 
 - [x] **Header wordmark + gear (v1.24.6)**: baris yatim 1 gear → AppHeader shared Opsi A. Full 167/167.
 - [x] **Unifikasi desain global (v1.24.7)**: BackHeader + slot aksi, ±60 literal → token lintas 14 file, golden nol piksel berubah. Full 167/167.
 - [x] **Tombol polos + Riwayat menjawab (v1.24.8)**: bordered:false gear/chevron/mata; Semua reset kategori, strip hasil, grup tanggal, picker jujur. Full 171/171.
+- [x] **Riwayat jujur penuh (v1.24.9)**: search kategori+nominal, strip "Menampilkan X dari N", Semua sadar keyword, toggle tipe, debounce, empty bercabang, chip a11y+48px, tile dense. Full 178/178.
 - [ ] Fase 3 — utang + budget ikut sync + uji 2 emulator bareng.
 - [ ] Fase 4 — hardening production-grade: RLS audit, hapus akun, kebijakan privasi (wajib Play Store), crash reporting.
 

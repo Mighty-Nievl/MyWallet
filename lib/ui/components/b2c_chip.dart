@@ -21,33 +21,51 @@ class B2CFilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return _PressScale(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        onTap();
-      },
-      child: AnimatedContainer(
-        duration: AppMotion.fast,
-        curve: AppMotion.easeOut,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.s16,
-          vertical: 10,
-        ),
-        decoration: BoxDecoration(
-          color: selected ? scheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: selected ? scheme.primary : scheme.outlineVariant,
-            width: 1,
+    // v1.24.9: semantik tombol eksplisit (kritik L1 — dulu GestureDetector
+    // mentah: tak ada buat pembaca layar/keyboard). excludeSemantics agar
+    // output bersih satu label, bukan label + teks anak dobel.
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
+      child: _PressScale(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: AnimatedContainer(
+          duration: AppMotion.fast,
+          curve: AppMotion.easeOut,
+          // v1.24.9: min 48 = touchMin apa pun font-nya (padding 14×2 +
+          // label ≈ 48 di font asli; constraint yang menjamin, bukan
+          // aritmetika metrik).
+          constraints:
+              const BoxConstraints(minHeight: AppSpacing.touchMin),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s16,
+            // v1.24.9: 10→14 — dulu total ~40px, di bawah target sentuh
+            // yang kita pegang di semua tombol lain (kritik L1).
+            vertical: 14,
           ),
-        ),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
-              ),
-          maxLines: 1,
+          decoration: BoxDecoration(
+            color: selected ? scheme.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: selected ? scheme.primary : scheme.outlineVariant,
+              width: 1,
+            ),
+          ),
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
+            ),
+            maxLines: 1,
+            // v1.24.9: elipsis eksplisit (kritik L1 — dulu ke-clip tiba-tiba).
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ),
     );

@@ -24,66 +24,65 @@ LazyDatabase _openConnection() {
 class AppDatabase extends _$AppDatabase {
   /// [executor] opsional agar bisa di-test in-memory
   /// (`NativeDatabase.memory()`) — default tetap file HP.
-  AppDatabase([QueryExecutor? executor])
-      : super(executor ?? _openConnection());
+  AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
   int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) async {
-          await m.createAll();
-          // Seed kategori bawaan.
-          for (final c in defaultCategories) {
-            await into(categories).insert(
-              CategoriesCompanion.insert(
-                name: c['name'] as String,
-                icon: Value(c['icon'] as String),
-                isExpense: Value(c['isExpense'] as bool),
-              ),
-            );
-          }
-        },
-        onUpgrade: (m, from, to) async {
-          // v1 → v2 (utang-piutang): 2 kolom tautan di transactions +
-          // 2 tabel baru. Data lama aman (kolom nullable, tabel kosong).
-          if (from < 2) {
-            await m.addColumn(transactions, transactions.debtId);
-            await m.addColumn(transactions, transactions.debtPaymentId);
-            await m.createTable(debts);
-            await m.createTable(debtPayments);
-          }
-          // v2 → v3 (sync-ready Fase 0): 4 kolom meta di SEMUA tabel +
-          // categoryUuid di transactions. Semua nullable → data lama utuh.
-          // Backfill via Dart (bukan SQL random): uuid v4 asli + updatedAt
-          // = createdAt (budgets = jam migrasi) + categoryUuid dari induk.
-          if (from < 3) {
-            await m.addColumn(categories, categories.uuid);
-            await m.addColumn(categories, categories.updatedAt);
-            await m.addColumn(categories, categories.deletedAt);
-            await m.addColumn(categories, categories.householdId);
-            await m.addColumn(transactions, transactions.categoryUuid);
-            await m.addColumn(transactions, transactions.uuid);
-            await m.addColumn(transactions, transactions.updatedAt);
-            await m.addColumn(transactions, transactions.deletedAt);
-            await m.addColumn(transactions, transactions.householdId);
-            await m.addColumn(budgets, budgets.uuid);
-            await m.addColumn(budgets, budgets.updatedAt);
-            await m.addColumn(budgets, budgets.deletedAt);
-            await m.addColumn(budgets, budgets.householdId);
-            await m.addColumn(debts, debts.uuid);
-            await m.addColumn(debts, debts.updatedAt);
-            await m.addColumn(debts, debts.deletedAt);
-            await m.addColumn(debts, debts.householdId);
-            await m.addColumn(debtPayments, debtPayments.uuid);
-            await m.addColumn(debtPayments, debtPayments.updatedAt);
-            await m.addColumn(debtPayments, debtPayments.deletedAt);
-            await m.addColumn(debtPayments, debtPayments.householdId);
-            await backfillSyncMeta();
-          }
-        },
-      );
+    onCreate: (m) async {
+      await m.createAll();
+      // Seed kategori bawaan.
+      for (final c in defaultCategories) {
+        await into(categories).insert(
+          CategoriesCompanion.insert(
+            name: c['name'] as String,
+            icon: Value(c['icon'] as String),
+            isExpense: Value(c['isExpense'] as bool),
+          ),
+        );
+      }
+    },
+    onUpgrade: (m, from, to) async {
+      // v1 → v2 (utang-piutang): 2 kolom tautan di transactions +
+      // 2 tabel baru. Data lama aman (kolom nullable, tabel kosong).
+      if (from < 2) {
+        await m.addColumn(transactions, transactions.debtId);
+        await m.addColumn(transactions, transactions.debtPaymentId);
+        await m.createTable(debts);
+        await m.createTable(debtPayments);
+      }
+      // v2 → v3 (sync-ready Fase 0): 4 kolom meta di SEMUA tabel +
+      // categoryUuid di transactions. Semua nullable → data lama utuh.
+      // Backfill via Dart (bukan SQL random): uuid v4 asli + updatedAt
+      // = createdAt (budgets = jam migrasi) + categoryUuid dari induk.
+      if (from < 3) {
+        await m.addColumn(categories, categories.uuid);
+        await m.addColumn(categories, categories.updatedAt);
+        await m.addColumn(categories, categories.deletedAt);
+        await m.addColumn(categories, categories.householdId);
+        await m.addColumn(transactions, transactions.categoryUuid);
+        await m.addColumn(transactions, transactions.uuid);
+        await m.addColumn(transactions, transactions.updatedAt);
+        await m.addColumn(transactions, transactions.deletedAt);
+        await m.addColumn(transactions, transactions.householdId);
+        await m.addColumn(budgets, budgets.uuid);
+        await m.addColumn(budgets, budgets.updatedAt);
+        await m.addColumn(budgets, budgets.deletedAt);
+        await m.addColumn(budgets, budgets.householdId);
+        await m.addColumn(debts, debts.uuid);
+        await m.addColumn(debts, debts.updatedAt);
+        await m.addColumn(debts, debts.deletedAt);
+        await m.addColumn(debts, debts.householdId);
+        await m.addColumn(debtPayments, debtPayments.uuid);
+        await m.addColumn(debtPayments, debtPayments.updatedAt);
+        await m.addColumn(debtPayments, debtPayments.deletedAt);
+        await m.addColumn(debtPayments, debtPayments.householdId);
+        await backfillSyncMeta();
+      }
+    },
+  );
 
   /// Backfill kolom sync untuk baris lama (migrasi v2→v3).
   ///
@@ -109,20 +108,25 @@ class AppDatabase extends _$AppDatabase {
       for (final r in rows) {
         final u = newSyncUuid();
         if (r is Category) {
-          await (update(categories)..where((c) => c.id.equals(r.id)))
-              .write(CategoriesCompanion(uuid: Value(u)));
+          await (update(categories)..where((c) => c.id.equals(r.id))).write(
+            CategoriesCompanion(uuid: Value(u)),
+          );
         } else if (r is Transaction) {
-          await (update(transactions)..where((t) => t.id.equals(r.id)))
-              .write(TransactionsCompanion(uuid: Value(u)));
+          await (update(transactions)..where((t) => t.id.equals(r.id))).write(
+            TransactionsCompanion(uuid: Value(u)),
+          );
         } else if (r is Budget) {
-          await (update(budgets)..where((b) => b.id.equals(r.id)))
-              .write(BudgetsCompanion(uuid: Value(u)));
+          await (update(budgets)..where((b) => b.id.equals(r.id))).write(
+            BudgetsCompanion(uuid: Value(u)),
+          );
         } else if (r is Debt) {
-          await (update(debts)..where((d) => d.id.equals(r.id)))
-              .write(DebtsCompanion(uuid: Value(u)));
+          await (update(debts)..where((d) => d.id.equals(r.id))).write(
+            DebtsCompanion(uuid: Value(u)),
+          );
         } else if (r is DebtPayment) {
-          await (update(debtPayments)..where((p) => p.id.equals(r.id)))
-              .write(DebtPaymentsCompanion(uuid: Value(u)));
+          await (update(debtPayments)..where((p) => p.id.equals(r.id))).write(
+            DebtPaymentsCompanion(uuid: Value(u)),
+          );
         }
       }
     }
@@ -133,34 +137,38 @@ class AppDatabase extends _$AppDatabase {
     for (final rows in [
       await (select(transactions)..where((t) => t.updatedAt.isNull())).get(),
       await (select(debts)..where((d) => d.updatedAt.isNull())).get(),
-      await (select(debtPayments)
-            ..where((p) => p.updatedAt.isNull()))
-          .get(),
+      await (select(debtPayments)..where((p) => p.updatedAt.isNull())).get(),
     ]) {
       for (final r in rows) {
         if (r is Transaction) {
           await (update(transactions)..where((t) => t.id.equals(r.id))).write(
-              TransactionsCompanion(updatedAt: Value(r.createdAt)));
+            TransactionsCompanion(updatedAt: Value(r.createdAt)),
+          );
         } else if (r is Debt) {
-          await (update(debts)..where((d) => d.id.equals(r.id)))
-              .write(DebtsCompanion(updatedAt: Value(r.createdAt)));
+          await (update(debts)..where((d) => d.id.equals(r.id))).write(
+            DebtsCompanion(updatedAt: Value(r.createdAt)),
+          );
         } else if (r is DebtPayment) {
           await (update(debtPayments)..where((p) => p.id.equals(r.id))).write(
-              DebtPaymentsCompanion(updatedAt: Value(r.createdAt)));
+            DebtPaymentsCompanion(updatedAt: Value(r.createdAt)),
+          );
         }
       }
     }
     // categories + budgets tak punya createdAt → jam migrasi.
-    for (final c
-        in await (select(categories)..where((c) => c.updatedAt.isNull()))
-            .get()) {
-      await (update(categories)..where((x) => x.id.equals(c.id)))
-          .write(CategoriesCompanion(updatedAt: Value(migNow)));
+    for (final c in await (select(
+      categories,
+    )..where((c) => c.updatedAt.isNull())).get()) {
+      await (update(categories)..where((x) => x.id.equals(c.id))).write(
+        CategoriesCompanion(updatedAt: Value(migNow)),
+      );
     }
-    for (final b
-        in await (select(budgets)..where((b) => b.updatedAt.isNull())).get()) {
-      await (update(budgets)..where((x) => x.id.equals(b.id)))
-          .write(BudgetsCompanion(updatedAt: Value(migNow)));
+    for (final b in await (select(
+      budgets,
+    )..where((b) => b.updatedAt.isNull())).get()) {
+      await (update(budgets)..where((x) => x.id.equals(b.id))).write(
+        BudgetsCompanion(updatedAt: Value(migNow)),
+      );
     }
 
     // 3) categoryUuid ← uuid kategori induk (transaksi berkategori lama).
@@ -206,15 +214,14 @@ class AppDatabase extends _$AppDatabase {
     return (inRow.read<int>('s'), outRow.read<int>('s'));
   }
 
-  /// Riwayat transaksi + nama kategori, terbaru dulu.
-  Stream<List<TxWithCategory>> watchHistory({
+  /// Klausa WHERE + variabel untuk filter riwayat — SATU sumber untuk
+  /// [watchHistory] + [watchHistoryCount] (v1.24.9: tak bisa drift).
+  ({List<String> where, List<Variable> vars}) _historyFilterParts({
     int? categoryId,
     bool? isExpense,
     String? keyword,
     DateTime? from,
     DateTime? to,
-    int limit = 100,
-    int offset = 0,
   }) {
     final where = <String>['t.deleted_at IS NULL'];
     final vars = <Variable>[];
@@ -227,8 +234,21 @@ class AppDatabase extends _$AppDatabase {
       vars.add(Variable.withBool(isExpense));
     }
     if (keyword != null && keyword.trim().isNotEmpty) {
-      where.add('t.note LIKE ?');
-      vars.add(Variable.withString('%${keyword.trim()}%'));
+      // v1.24.9: search jujur — cari di catatan + nama kategori
+      // (kritik L4: dulu cuma note LIKE, tx tanpa-note tak bisa ditemukan).
+      // Nominal ikut bila keyword murni angka (cari '60' ketemu 60000).
+      final k = keyword.trim();
+      final amount = int.tryParse(k.replaceAll(RegExp(r'[^0-9]'), ''));
+      if (amount != null && amount > 0) {
+        where.add('(t.note LIKE ? OR c.name LIKE ? OR t.amount = ?)');
+        vars.add(Variable.withString('%$k%'));
+        vars.add(Variable.withString('%$k%'));
+        vars.add(Variable.withInt(amount));
+      } else {
+        where.add('(t.note LIKE ? OR c.name LIKE ?)');
+        vars.add(Variable.withString('%$k%'));
+        vars.add(Variable.withString('%$k%'));
+      }
     }
     if (from != null) {
       where.add('t.date >= ?');
@@ -238,20 +258,71 @@ class AppDatabase extends _$AppDatabase {
       where.add('t.date <= ?');
       vars.add(Variable.withDateTime(to));
     }
+    return (where: where, vars: vars);
+  }
+
+  /// Riwayat transaksi + nama kategori, terbaru dulu.
+  Stream<List<TxWithCategory>> watchHistory({
+    int? categoryId,
+    bool? isExpense,
+    String? keyword,
+    DateTime? from,
+    DateTime? to,
+    int limit = 100,
+    int offset = 0,
+  }) {
+    final parts = _historyFilterParts(
+      categoryId: categoryId,
+      isExpense: isExpense,
+      keyword: keyword,
+      from: from,
+      to: to,
+    );
     final query = customSelect(
       'SELECT t.*, c.name AS cat_name, c.icon AS cat_icon '
       'FROM transactions t LEFT JOIN categories c ON c.id = t.category_id '
-      'WHERE ${where.join(' AND ')} '
+      'WHERE ${parts.where.join(' AND ')} '
       'ORDER BY t.date DESC, t.id DESC LIMIT $limit OFFSET $offset',
-      variables: vars,
+      variables: parts.vars,
       readsFrom: {transactions, categories},
     );
-    return query.watch().map((rows) => rows.map(TxWithCategory.fromRow).toList());
+    return query.watch().map(
+      (rows) => rows.map(TxWithCategory.fromRow).toList(),
+    );
+  }
+
+  /// Jumlah TOTAL hasil filter aktif (tanpa limit) — pasangan jujur
+  /// [watchHistory] (v1.24.9: strip "Menampilkan 100 dari N").
+  Stream<int> watchHistoryCount({
+    int? categoryId,
+    bool? isExpense,
+    String? keyword,
+    DateTime? from,
+    DateTime? to,
+  }) {
+    final parts = _historyFilterParts(
+      categoryId: categoryId,
+      isExpense: isExpense,
+      keyword: keyword,
+      from: from,
+      to: to,
+    );
+    final query = customSelect(
+      'SELECT COUNT(*) AS c '
+      'FROM transactions t LEFT JOIN categories c ON c.id = t.category_id '
+      'WHERE ${parts.where.join(' AND ')}',
+      variables: parts.vars,
+      readsFrom: {transactions, categories},
+    );
+    return query.watchSingle().map((row) => row.read<int>('c'));
   }
 
   /// Ringkasan pengeluaran per kategori dalam rentang tanggal.
   Future<List<CategoryTotal>> totalsByCategory(
-      DateTime from, DateTime to, bool expense) async {
+    DateTime from,
+    DateTime to,
+    bool expense,
+  ) async {
     final rows = await customSelect(
       'SELECT c.id AS cid, c.name AS cname, c.icon AS cicon, '
       'COALESCE(SUM(t.amount),0) AS total '
@@ -283,15 +354,15 @@ class TxWithCategory {
   });
 
   factory TxWithCategory.fromRow(QueryRow row) => TxWithCategory(
-        id: row.read<int>('id'),
-        amount: row.read<int>('amount'),
-        isExpense: row.read<bool>('is_expense'),
-        categoryId: row.readNullable<int>('category_id'),
-        date: row.read<DateTime>('date'),
-        note: row.read<String>('note'),
-        catName: row.readNullable<String>('cat_name'),
-        catIcon: row.readNullable<String>('cat_icon'),
-      );
+    id: row.read<int>('id'),
+    amount: row.read<int>('amount'),
+    isExpense: row.read<bool>('is_expense'),
+    categoryId: row.readNullable<int>('category_id'),
+    date: row.read<DateTime>('date'),
+    note: row.read<String>('note'),
+    catName: row.readNullable<String>('cat_name'),
+    catIcon: row.readNullable<String>('cat_icon'),
+  );
 
   final int id;
   final int amount;
@@ -313,11 +384,11 @@ class CategoryTotal {
   });
 
   factory CategoryTotal.fromRow(QueryRow row) => CategoryTotal(
-        categoryId: row.readNullable<int>('cid'),
-        name: row.readNullable<String>('cname') ?? 'Tanpa kategori',
-        icon: row.readNullable<String>('cicon') ?? '📦',
-        total: row.read<int>('total'),
-      );
+    categoryId: row.readNullable<int>('cid'),
+    name: row.readNullable<String>('cname') ?? 'Tanpa kategori',
+    icon: row.readNullable<String>('cicon') ?? '📦',
+    total: row.read<int>('total'),
+  );
 
   final int? categoryId;
   final String name;
