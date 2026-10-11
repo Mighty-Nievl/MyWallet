@@ -220,7 +220,7 @@ class _SumItem extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: AppType.labelMuted(context)),
-        const SizedBox(height: 2),
+        const SizedBox(height: AppSpacing.micro),
         Text(value,
             style: AppType.amount(context).copyWith(color: color),
             maxLines: 1,
@@ -376,7 +376,7 @@ class _SixMonthChart extends ConsumerWidget {
                     }
                     final parts = rows[i].$1.split('-');
                     return Padding(
-                      padding: const EdgeInsets.only(top: 4),
+                      padding: const EdgeInsets.only(top: AppSpacing.s4),
                       child: Text(
                         _short(parts[1]),
                         style:

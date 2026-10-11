@@ -147,8 +147,7 @@ class DebtScreen extends ConsumerWidget {
                           minimumSize:
                               const Size.fromHeight(48),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                                AppRadius.md),
+                            borderRadius: AppRadius.mdAll,
                           ),
                         ),
                       ),
@@ -235,11 +234,9 @@ class DebtScreen extends ConsumerWidget {
                               const Text('Catat utang / piutang'),
                           style: FilledButton.styleFrom(
                             minimumSize:
-                                const Size.fromHeight(52),
+                                const Size.fromHeight(AppSpacing.ctaHeight),
                             shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(
-                                      AppRadius.md),
+                              borderRadius: AppRadius.mdAll,
                             ),
                           ),
                         ),
@@ -430,8 +427,8 @@ class DebtScreen extends ConsumerWidget {
                         ),
                         padding:
                             const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8),
+                                horizontal: AppSpacing.s12,
+                                vertical: AppSpacing.s8),
                         child: Text(
                           existing.debt.isDebt
                               ? 'Utang (tipe dikunci)'
@@ -710,11 +707,9 @@ class DebtScreen extends ConsumerWidget {
                         : 'Terima (${formatRp(entry.remaining)} lagi)'),
                     style: FilledButton.styleFrom(
                       minimumSize:
-                          const Size.fromHeight(52),
+                          const Size.fromHeight(AppSpacing.ctaHeight),
                       shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(
-                                AppRadius.md),
+                        borderRadius: AppRadius.mdAll,
                       ),
                     ),
                   ),
@@ -992,7 +987,7 @@ class _DebtOverview extends ConsumerWidget {
                             .copyWith(
                                 color: AppColors.expenseOf(
                                     context))),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSpacing.s4),
                     AppProgress(
                         value: pctU,
                         color: scheme.error,
@@ -1014,7 +1009,7 @@ class _DebtOverview extends ConsumerWidget {
                             .copyWith(
                                 color: AppColors.incomeOf(
                                     context))),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSpacing.s4),
                     AppProgress(
                         value: pctP,
                         color: scheme.primary,
@@ -1119,7 +1114,7 @@ class _DebtItem extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSpacing.micro),
                   Text(
                     sub,
                     maxLines: 1,
@@ -1129,7 +1124,7 @@ class _DebtItem extends ConsumerWidget {
                             .copyWith(color: scheme.error)
                         : AppType.secondaryStrong(context),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSpacing.s8),
                   AppProgress(
                     value: pct,
                     color: entry.done
@@ -1305,7 +1300,7 @@ class _DayTile extends StatelessWidget {
       borderRadius: AppRadius.mdAll,
       child: Container(
         padding: const EdgeInsets.symmetric(
-            horizontal: 12, vertical: 10),
+            horizontal: AppSpacing.s12, vertical: AppSpacing.s8),
         decoration: BoxDecoration(
           border: Border.all(
               color: Theme.of(context)

@@ -94,8 +94,7 @@ class CategoriesScreen extends ConsumerWidget {
                           minimumSize:
                               const Size.fromHeight(48),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                                AppRadius.md),
+                            borderRadius: AppRadius.mdAll,
                           ),
                         ),
                       ),
@@ -165,11 +164,9 @@ class CategoriesScreen extends ConsumerWidget {
                               'Tambah kategori'),
                           style: FilledButton.styleFrom(
                             minimumSize:
-                                const Size.fromHeight(52),
+                                const Size.fromHeight(AppSpacing.ctaHeight),
                             shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(
-                                      AppRadius.md),
+                              borderRadius: AppRadius.mdAll,
                             ),
                           ),
                         ),
@@ -216,7 +213,7 @@ class CategoriesScreen extends ConsumerWidget {
                   onSubmitted: (_) =>
                       Navigator.pop(c, true),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.s12),
                 TextField(
                   controller: iconCtrl,
                   decoration: const InputDecoration(
@@ -224,7 +221,7 @@ class CategoriesScreen extends ConsumerWidget {
                     hintText: 'cth. 🍔',
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.s12),
                 SegmentedButton<bool>(
                   segments: const [
                     ButtonSegment(
@@ -243,8 +240,7 @@ class CategoriesScreen extends ConsumerWidget {
                       setS(() => isExpense = s.first),
                   style: SegmentedButton.styleFrom(
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                          AppRadius.md),
+                      borderRadius: AppRadius.mdAll,
                     ),
                     side: BorderSide(
                         color:

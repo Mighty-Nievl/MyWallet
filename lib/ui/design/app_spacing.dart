@@ -24,6 +24,10 @@ abstract final class AppSpacing {
   /// Jarak judul section ke kontennya.
   static const double groupGap = s12;
 
+  /// Micro-gap optik judul→subtitle dalam satu baris (2px, bukan skala).
+  /// Disatukan biar satu sumber — render tidak berubah 1px pun.
+  static const double micro = 2;
+
   /// Padding dalam kartu.
   static const EdgeInsets cardPadding = EdgeInsets.all(s16);
 

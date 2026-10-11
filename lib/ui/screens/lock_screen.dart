@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/lock_service.dart';
 import '../../data/settings.dart';
+import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 
@@ -99,7 +100,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                   children: [
                     Center(
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: AppRadius.xxlAll,
                         child: Image.asset(
                           // v1.24.4: logo baru dari bg-white.jpg.
                           'assets/images/bg-white.jpg',
@@ -153,7 +154,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                               'Buka dengan Biometrik'),
                           style: FilledButton.styleFrom(
                             minimumSize:
-                                const Size.fromHeight(52),
+                                const Size.fromHeight(AppSpacing.ctaHeight),
                           ),
                         ),
                       ),
@@ -186,7 +187,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                             _busy ? null : _submitPin,
                         style: FilledButton.styleFrom(
                           minimumSize:
-                              const Size.fromHeight(52),
+                              const Size.fromHeight(AppSpacing.ctaHeight),
                         ),
                         child: _busy
                             ? const SizedBox(

@@ -26,6 +26,18 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.24.7',
+    date: '11 Okt 2026',
+    user:
+        'Tampilan makin konsisten di semua halaman: jarak, tombol, '
+        'dan header kini satu bahasa desain.',
+    tech:
+        'Unifikasi global: BackHeader + slot aksi (tombol 48px + '
+        'haptic), tokenize ±60 literal padding/radius/gap lintas 14 '
+        'file, token micro optik, golden identik nol piksel berubah.',
+    breaking: null,
+  ),
+  (
     version: 'v1.24.6',
     date: '11 Okt 2026',
     user:

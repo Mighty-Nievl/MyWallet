@@ -11,6 +11,7 @@ import '../../data/sync_service.dart';
 import '../components/app_feedback.dart';
 import '../components/setting_row.dart';
 import '../design/app_colors.dart';
+import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 
@@ -262,10 +263,10 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                   const SizedBox(height: AppSpacing.s16),
                   session.when(
                     loading: () => const Padding(
-                        padding: EdgeInsets.all(16),
+                        padding: AppSpacing.cardPadding,
                         child: AppSkeleton(lines: 3)),
                     error: (_, _) => const Padding(
-                        padding: EdgeInsets.all(16),
+                        padding: AppSpacing.cardPadding,
                         child: Text(
                             'Gagal memuat sesi — mode pribadi (offline).')),
                     data: (s) => _body(s, scheme),
@@ -298,7 +299,7 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
         padding: const EdgeInsets.all(AppSpacing.s12),
         decoration: BoxDecoration(
           color: scheme.errorContainer,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: AppRadius.lgAll,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -334,7 +335,7 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
             ),
             if (_rawError != null && _rawError!.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(top: 4),
+                padding: const EdgeInsets.only(top: AppSpacing.s4),
                 child: Text(
                   'Tahan untuk salin detail teknis.',
                   style: Theme.of(context)
@@ -359,7 +360,7 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
     switch (s.status) {
       case FamilyStatus.loading:
         return const Padding(
-            padding: EdgeInsets.all(16), child: AppSkeleton(lines: 3));
+            padding: AppSpacing.cardPadding, child: AppSkeleton(lines: 3));
       case FamilyStatus.personal:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -453,7 +454,7 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                   ),
                   if (_showCreate)
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                      padding: const EdgeInsets.fromLTRB(AppSpacing.s12, 0, AppSpacing.s12, AppSpacing.s12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -471,7 +472,7 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                                   : validateHouseholdName(_nameCtrl.text),
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: AppSpacing.s8),
                           FilledButton(
                             onPressed: (_busy ||
                                     offline ||
@@ -491,7 +492,7 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                           ),
                           if (offline)
                             Padding(
-                              padding: const EdgeInsets.only(top: 6),
+                              padding: const EdgeInsets.only(top: AppSpacing.s8),
                               child: Text(
                                 'Tanpa sinyal — tombol mati. WiFi nyala tapi lemot tetap bisa dicoba; bila gagal, banner merah yang bicara. Data lokal tetap aman.',
                                 style: AppType.secondary(context),
@@ -513,7 +514,7 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                   ),
                   if (_showJoin)
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                      padding: const EdgeInsets.fromLTRB(AppSpacing.s12, 0, AppSpacing.s12, AppSpacing.s12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -531,7 +532,7 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                                       : friendlyJoinError(JoinFailure.badCode)),
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: AppSpacing.s8),
                           FilledButton(
                             onPressed: (_busy ||
                                     offline ||
@@ -552,7 +553,7 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                           ),
                           if (offline)
                             Padding(
-                              padding: const EdgeInsets.only(top: 6),
+                              padding: const EdgeInsets.only(top: AppSpacing.s8),
                               child: Text(
                                 'Tanpa sinyal — tombol mati. WiFi nyala tapi lemot tetap bisa dicoba; bila gagal, banner merah yang bicara. Data lokal tetap aman.',
                                 style: AppType.secondary(context),
@@ -760,7 +761,7 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
             children: [
               Text('Kelola anggota',
                   style: Theme.of(c).textTheme.titleMedium),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.s4),
               Text(
                 owner
                     ? 'Kamu pengelola — atur peran / keluarkan anggota.'
@@ -769,7 +770,7 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                       color: scheme.onSurfaceVariant,
                     ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.s12),
               for (final m in members) ...[
                 ListTile(
                   leading: CircleAvatar(
@@ -876,7 +877,7 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
                 ),
                 onTap: () => Navigator.pop(c, i),
               ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.s8),
           ],
         ),
       ),
@@ -1060,7 +1061,7 @@ class _FamilySettingsPageState extends ConsumerState<FamilySettingsPage> {
               : const Icon(Icons.login),
           label: Text(_busy ? 'Menghubungkan…' : 'Masuk dengan Google'),
           style: FilledButton.styleFrom(
-            minimumSize: const Size.fromHeight(52),
+            minimumSize: const Size.fromHeight(AppSpacing.ctaHeight),
             textStyle: Theme.of(context)
                 .textTheme
                 .titleSmall

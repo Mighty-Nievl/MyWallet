@@ -148,6 +148,7 @@ Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi 
 - [x] **List rapi + logo baru (v1.24.4)**: tanggal grup tanpa ulang per baris, subtitle tanpa duplikat, header grup naik gaya, logo bg-white in-app + launcher 5 densitas. Full 164/164.
 - [x] **Nominal rata kanan + strip ringkas (v1.24.5)**: kolom Expanded + chevron jangkar, sort grup eksplisit, strip satu baris. Full 166/166.
 - [x] **Header wordmark + gear (v1.24.6)**: baris yatim 1 gear → AppHeader shared Opsi A. Full 167/167.
+- [x] **Unifikasi desain global (v1.24.7)**: BackHeader + slot aksi, ±60 literal → token lintas 14 file, golden nol piksel berubah. Full 167/167.
 - [ ] Fase 3 — utang + budget ikut sync + uji 2 emulator bareng.
 - [ ] Fase 4 — hardening production-grade: RLS audit, hapus akun, kebijakan privasi (wajib Play Store), crash reporting.
 

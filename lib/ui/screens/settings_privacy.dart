@@ -205,10 +205,10 @@ class _PrivacySettingsPageState extends ConsumerState<PrivacySettingsPage>
                       if (_match('pengingat', 'notifikasi', const ['reminder']))
                         reminder.when(
                           loading: () => const Padding(
-                              padding: EdgeInsets.all(16),
+                              padding: AppSpacing.cardPadding,
                               child: AppSkeleton(lines: 2)),
                           error: (_, _) => const Padding(
-                              padding: EdgeInsets.all(16),
+                              padding: AppSpacing.cardPadding,
                               child: Text(
                                   'Gagal memuat pengaturan pengingat.')),
                           data: (r) => Column(

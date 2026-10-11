@@ -116,8 +116,7 @@ class BudgetScreen extends ConsumerWidget {
                           minimumSize:
                               const Size.fromHeight(48),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                                AppRadius.md),
+                            borderRadius: AppRadius.mdAll,
                           ),
                         ),
                       ),
@@ -176,11 +175,9 @@ class BudgetScreen extends ConsumerWidget {
                               const Text('Tambah budget'),
                           style: FilledButton.styleFrom(
                             minimumSize:
-                                const Size.fromHeight(52),
+                                const Size.fromHeight(AppSpacing.ctaHeight),
                             shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(
-                                      AppRadius.md),
+                              borderRadius: AppRadius.mdAll,
                             ),
                           ),
                         ),
@@ -393,7 +390,7 @@ class BudgetScreen extends ConsumerWidget {
                                   AppColors.borderOf(c)),
                         ),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
+                            horizontal: AppSpacing.s12, vertical: AppSpacing.s8),
                         child: Row(
                           children: [
                             CategoryGlyph(
@@ -443,8 +440,8 @@ class BudgetScreen extends ConsumerWidget {
                           return AppCard(
                             padding:
                                 const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8),
+                                    horizontal: AppSpacing.s12,
+                                    vertical: AppSpacing.s8),
                             child: InkWell(
                               onTap: () =>
                                   pickCategory(c, setS),
@@ -453,7 +450,7 @@ class BudgetScreen extends ConsumerWidget {
                               child: Padding(
                                 padding:
                                     const EdgeInsets.symmetric(
-                                        vertical: 4),
+                                        vertical: AppSpacing.s4),
                                 child: Row(
                                   children: [
                                     CategoryGlyph(
@@ -519,7 +516,7 @@ class BudgetScreen extends ConsumerWidget {
                               AppType.secondary(c),
                         ),
                       ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.s12),
                     TextField(
                       controller: limitCtrl,
                       autofocus: true,
@@ -778,7 +775,7 @@ class _BudgetItem extends ConsumerWidget {
                               fontWeight: FontWeight.w500),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSpacing.micro),
                   Row(
                     children: [
                       Text(display.money(b.spent),
@@ -797,11 +794,11 @@ class _BudgetItem extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSpacing.s8),
                   AppProgress(
                       value: pct,
                       color: color ?? scheme.primary),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.s4),
                   Text(
                     over
                         ? 'Lewat ${display.money(-remain)} (${(100 * b.spent / b.budget.limit).round()}%)'

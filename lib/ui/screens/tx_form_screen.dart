@@ -11,6 +11,7 @@ import '../../data/receipt_scan_service.dart';
 import '../amount_input.dart';
 import '../components/app_card.dart';
 import '../components/app_feedback.dart';
+import '../components/setting_row.dart';
 import '../components/b2c_chip.dart';
 import '../components/category_glyph.dart';
 import '../design/app_colors.dart';
@@ -204,15 +205,15 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
       await _applyDraft(result.draft);
     } on ReceiptScanEmpty catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     } on ReceiptScanUnsupported catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     } catch (_) {
       if (mounted) {
@@ -235,10 +236,11 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
     bool? catIsExpense;
     if (draft.suggestedCategory != null) {
       final db = ref.read(dbProvider);
-      final cat = await (db.select(db.categories)
-            ..where((c) => c.name.equals(draft.suggestedCategory!))
-            ..where((c) => c.deletedAt.isNull()))
-          .getSingleOrNull();
+      final cat =
+          await (db.select(db.categories)
+                ..where((c) => c.name.equals(draft.suggestedCategory!))
+                ..where((c) => c.deletedAt.isNull()))
+              .getSingleOrNull();
       if (cat != null) {
         catId = cat.id;
         catIsExpense = cat.isExpense;
@@ -304,11 +306,37 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
             AppSpacing.s32,
           ),
           children: [
-            _Header(
-              editing: _editing,
-              onDelete: _editing ? _delete : null,
-              onScan: _editing ? null : _pickScanSource,
-              scanning: _scanning,
+            // v1.24.7: _Header privat → BackHeader shared + slot aksi
+            // (satu keluarga header global, bukan 2 bahasa).
+            BackHeader(
+              title: _editing ? 'Edit Transaksi' : 'Catat Transaksi',
+              actions: [
+                if (!_editing)
+                  _scanning
+                      ? const SizedBox(
+                          width: AppSpacing.touchMin,
+                          height: AppSpacing.touchMin,
+                          child: Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                        )
+                      : AppIconButton(
+                          icon: Icons.document_scanner_outlined,
+                          tooltip: 'Scan struk',
+                          onPressed: _pickScanSource,
+                        ),
+                if (_editing)
+                  AppIconButton(
+                    icon: Icons.delete_outline,
+                    tooltip: 'Hapus',
+                    color: Theme.of(context).colorScheme.error,
+                    onPressed: _delete,
+                  ),
+              ],
             ),
             const SizedBox(height: AppSpacing.s16),
             _TypeSelector(
@@ -437,7 +465,12 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
         return SafeArea(
           child: ListView(
             shrinkWrap: true,
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.page,
+              AppSpacing.s8,
+              AppSpacing.page,
+              AppSpacing.sectionGap,
+            ),
             children: [
               _SheetRow(
                 icon: '📦',
@@ -478,7 +511,7 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
               decoration: const InputDecoration(labelText: 'Nama'),
               autofocus: true,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.s12),
             TextField(
               controller: iconCtrl,
               decoration: const InputDecoration(
@@ -509,72 +542,6 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
       );
       setState(() => _categoryId = id);
     }
-  }
-}
-
-/// Header form: tombol kembali + judul + (mode tambah) tombol scan +
-/// (mode edit) tombol hapus. Navigasi tidak berubah (pop).
-/// Tombol via [AppIconButton] shared.
-class _Header extends StatelessWidget {
-  const _Header({
-    required this.editing,
-    this.onDelete,
-    this.onScan,
-    this.scanning = false,
-  });
-  final bool editing;
-  final VoidCallback? onDelete;
-  final VoidCallback? onScan;
-  final bool scanning;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        AppIconButton(
-          icon: Icons.arrow_back,
-          tooltip: 'Kembali',
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        const SizedBox(width: AppSpacing.s12),
-        Expanded(
-          child: Text(
-            editing ? 'Edit Transaksi' : 'Catat Transaksi',
-            style: AppType.screenTitle(context),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        if (onScan != null) ...[
-          const SizedBox(width: AppSpacing.s8),
-          scanning
-              ? const SizedBox(
-                  width: AppSpacing.touchMin,
-                  height: AppSpacing.touchMin,
-                  child: Center(
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child:
-                          CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-                )
-              : AppIconButton(
-                  icon: Icons.document_scanner_outlined,
-                  tooltip: 'Scan struk',
-                  onPressed: onScan,
-                ),
-        ],
-        if (onDelete != null)
-          AppIconButton(
-            icon: Icons.delete_outline,
-            tooltip: 'Hapus',
-            color: Theme.of(context).colorScheme.error,
-            onPressed: onDelete,
-          ),
-      ],
-    );
   }
 }
 
@@ -685,7 +652,10 @@ class _AmountField extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: AppColors.borderOf(context)),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.page,
+        vertical: AppSpacing.s12,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.baseline,
         textBaseline: TextBaseline.alphabetic,
@@ -745,12 +715,15 @@ class _CategoryTile extends StatelessWidget {
       if (c.id == categoryId) current = c;
     }
     return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.s12,
+        vertical: AppSpacing.s8,
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius: AppRadius.mdAll,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
           child: Row(
             children: [
               CategoryGlyph(emoji: current?.icon ?? '📦', size: 40),
@@ -787,12 +760,15 @@ class _DateTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.s12,
+        vertical: AppSpacing.s8,
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius: AppRadius.mdAll,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
           child: Row(
             children: [
               CategoryGlyph(emoji: '📅', size: 40, iconSize: 18),
@@ -847,7 +823,7 @@ class _SheetRow extends StatelessWidget {
       onTap: onTap,
       borderRadius: AppRadius.mdAll,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.s8),
         child: Row(
           children: [
             CategoryGlyph(emoji: icon, size: 36, iconSize: 18),

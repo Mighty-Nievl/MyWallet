@@ -256,7 +256,7 @@ class _LoadingState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, AppSpacing.bottomPad),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.page, AppSpacing.s8, AppSpacing.page, AppSpacing.bottomPad),
       children: const [AppCard(child: AppSkeleton(lines: 3))],
     );
   }

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../components/setting_row.dart';
+import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import 'changelog_screen.dart';
@@ -49,7 +50,7 @@ class _AboutSettingsPageState extends ConsumerState<AboutSettingsPage>
                 children: [
                   Center(
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: AppRadius.xxlAll,
                       child: Image.asset(
                         // v1.24.4: logo baru dari bg-white.jpg.
                         'assets/images/bg-white.jpg',

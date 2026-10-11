@@ -82,7 +82,7 @@ class TxTile extends ConsumerWidget {
                   // v1.24.4: subtitle cuma dirender kalau ada isinya
                   // (Beranda tanpa-catatan = kosong total → judul saja).
                   if (subtitle.isNotEmpty) ...[
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.micro),
                     Text(
                       subtitle,
                       maxLines: 1,

@@ -257,7 +257,7 @@ class _HeroCard extends ConsumerWidget {
                   'Saldo gagal dimuat.',
                   style: AppType.balance(context).copyWith(fontSize: 20),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.s8),
                 TextButton(
                   onPressed: () => ref.invalidate(balanceProvider),
                   child: const Text('Coba lagi'),

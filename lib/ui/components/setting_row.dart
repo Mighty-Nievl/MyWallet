@@ -5,6 +5,7 @@ import '../design/app_colors.dart';
 import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
+import 'app_feedback.dart';
 
 /// Bahasa baris pengaturan STEP 4 — dipakai semua halaman settings +
 /// kategori. Satu gaya: ikon kotak subtle + judul + deskripsi +
@@ -32,8 +33,7 @@ class SettingRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final titleColor =
-        destructive ? scheme.error : null;
+    final titleColor = destructive ? scheme.error : null;
     final content = Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.s12,
@@ -67,18 +67,15 @@ class SettingRow extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        color: titleColor,
-                      ),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: titleColor,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (subtitle != null) ...[
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSpacing.micro),
                   Text(
                     subtitle!,
                     style: AppType.secondary(context),
@@ -148,7 +145,7 @@ class SettingValue extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: AppSpacing.s4),
         const SettingChevron(),
       ],
     );
@@ -177,8 +174,7 @@ class SettingsGroup extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(
-              left: 4, bottom: AppSpacing.s8),
+          padding: const EdgeInsets.only(left: 4, bottom: AppSpacing.s8),
           child: Text(
             title,
             style: TextStyle(
@@ -193,8 +189,7 @@ class SettingsGroup extends StatelessWidget {
           child: Column(
             children: [
               for (var i = 0; i < children.length; i++) ...[
-                if (i > 0)
-                  const Divider(height: 1, indent: 52),
+                if (i > 0) const Divider(height: 1, indent: 52),
                 children[i],
               ],
             ],
@@ -207,29 +202,24 @@ class SettingsGroup extends StatelessWidget {
 
 /// Header sub-halaman: tombol kembali berboder + judul besar.
 /// Bahasa yang sama dengan header custom STEP 1-3.
+///
+/// v1.24.7: tombol kembali via AppIconButton shared (48px + haptic,
+/// bukan manual 40px) — satu keluarga dengan AppHeader.
+/// [actions]: tombol aksi trailing opsional (form Catat: scan + hapus).
 class BackHeader extends StatelessWidget {
-  const BackHeader({super.key, required this.title});
+  const BackHeader({super.key, required this.title, this.actions = const []});
 
   final String title;
+  final List<Widget> actions;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: AppRadius.mdAll,
-            border: Border.all(
-                color: AppColors.borderOf(context)),
-          ),
-          child: IconButton(
-            onPressed: () => Navigator.maybePop(context),
-            icon: const Icon(Icons.arrow_back, size: 20),
-            tooltip: 'Kembali',
-            constraints: const BoxConstraints.tightFor(
-                width: 40, height: 40),
-            padding: EdgeInsets.zero,
-          ),
+        AppIconButton(
+          icon: Icons.arrow_back,
+          tooltip: 'Kembali',
+          onPressed: () => Navigator.maybePop(context),
         ),
         const SizedBox(width: AppSpacing.s12),
         Expanded(
@@ -240,6 +230,7 @@ class BackHeader extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
+        for (final a in actions) ...[const SizedBox(width: AppSpacing.s8), a],
       ],
     );
   }

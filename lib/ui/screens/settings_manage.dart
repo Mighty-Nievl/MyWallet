@@ -100,10 +100,10 @@ class _ManageSettingsPageState extends ConsumerState<ManageSettingsPage>
                       if (_match('kategori', 'kelola', const ['category']))
                         cats.when(
                           loading: () => const Padding(
-                              padding: EdgeInsets.all(16),
+                              padding: AppSpacing.cardPadding,
                               child: AppSkeleton(lines: 2)),
                           error: (_, _) => const Padding(
-                              padding: EdgeInsets.all(16),
+                              padding: AppSpacing.cardPadding,
                               child:
                                   Text('Gagal memuat kategori.')),
                           data: (list) => SettingRow(

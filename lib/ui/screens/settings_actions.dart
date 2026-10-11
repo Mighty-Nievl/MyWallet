@@ -45,7 +45,7 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
       context: context,
       builder: (c) => AlertDialog(
         title: Text(title),
-        contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        contentPadding: const EdgeInsets.fromLTRB(AppSpacing.page, AppSpacing.s12, AppSpacing.page, AppSpacing.s8),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -229,7 +229,7 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
               const Text(
                   'Uang yang sudah kamu pegang sebelum mulai mencatat. '
                   'Ditambahkan ke saldo.'),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.s12),
               TextField(
                 controller: ctrl,
                 keyboardType: TextInputType.number,
@@ -284,7 +284,7 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
                   'Muncul di sapaan Beranda, mis. “Selamat pagi, ReWin”. '
                   'Kosongkan untuk ikut nama akun Google; tanpa nama pun '
                   'tetap disapa (“Selamat pagi”).'),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.s12),
               TextField(
                 controller: ctrl,
                 autofocus: true,
@@ -396,7 +396,7 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
                   decoration: const InputDecoration(
                       labelText: 'PIN baru'),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.s8),
                 TextField(
                   controller: second,
                   keyboardType: TextInputType.number,
@@ -694,7 +694,7 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Ketik HAPUS (huruf besar) untuk lanjut.'),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.s12),
             TextField(
               controller: ctrl,
               decoration: const InputDecoration(
@@ -838,7 +838,7 @@ class _PickRow<V> extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (o.subtitle != null) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSpacing.micro),
                       Text(
                         o.subtitle!,
                         style: AppType.secondary(context),
@@ -911,7 +911,7 @@ class _AccentDot extends StatelessWidget {
                       size: 22, color: Colors.white)
                   : null,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.s4),
             SizedBox(
               width: 64,
               child: Text(

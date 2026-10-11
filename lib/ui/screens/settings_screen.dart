@@ -202,7 +202,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     if (results.isEmpty)
                       const Card(
                         child: Padding(
-                          padding: EdgeInsets.all(16),
+                          padding: AppSpacing.cardPadding,
                           child: Text(
                               'Tidak ada pengaturan yang cocok.'),
                         ),
