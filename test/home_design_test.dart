@@ -582,6 +582,73 @@ void main() {
 
     await _flushDriftCloseTimer(tester);
   });
+
+  // Audit arsitektur v1.24.5 fix 1 (kritik screenshot: tepi kanan
+  // -Rp8.000 mundur vs -Rp300.000 + chevron wobble). Seed: 'Makan siang'
+  // Rp45.000 vs 'Ojek' Rp18.000 — digit beda → tepi kanan HARUS sejajar.
+  testWidgets('nominal tile rata kanan sejajar (fix v1.24.5)', (tester) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(() async {
+      await _loadFonts();
+      await _seed(db); // 45.000 (6 digit) vs 18.000 (6 digit beda pola)
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    // Ambil posisi kanan kedua nominal — Expanded + textAlign.end
+    // menjamin sejajar (toleransi 1px render).
+    final r45 = tester.getRect(find.text('-Rp45.000'));
+    final r18 = tester.getRect(find.text('-Rp18.000'));
+    expect((r45.right - r18.right).abs(), lessThan(1.0));
+
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // Audit arsitektur v1.24.5 fix 3: strip ringkasan SATU baris, label
+  // "Hari ini" depan dihapus (tanggal ikut header grup). Seed hari ini:
+  // masuk Rp10.188.000 (Gaji+Bonus) · keluar Rp63.000.
+  testWidgets('strip ringkasan satu baris tanpa label Hari ini (v1.24.5)', (
+    tester,
+  ) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(() async {
+      await _loadFonts();
+      await _seed(db);
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    // Baris ringkasan baru: "Masuk ... · Keluar ..." (kapital, 1 baris).
+    expect(find.textContaining('Masuk +Rp'), findsOneWidget);
+    expect(find.textContaining('Keluar -Rp'), findsOneWidget);
+    // Label lama lowercase + dobel "Hari ini" depan SUDAH tidak ada.
+    expect(find.textContaining('masuk +Rp'), findsNothing);
+    expect(find.textContaining('keluar -Rp'), findsNothing);
+
+    await _flushDriftCloseTimer(tester);
+  });
 }
 
 /// Lepas tree, lalu flush timer 0ms dari drift

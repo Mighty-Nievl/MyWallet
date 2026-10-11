@@ -416,20 +416,15 @@ class _DailyStrip extends ConsumerWidget {
         if (d.$1 == 0 && d.$2 == 0) return const SizedBox.shrink();
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.s8),
-          child: Row(
-            children: [
-              Text('Hari ini', style: AppType.labelMuted(context)),
-              const SizedBox(width: AppSpacing.s8),
-              Expanded(
-                child: Text(
-                  'masuk ${display.signed(d.$1, isExpense: false)} · '
-                  'keluar ${display.signed(d.$2, isExpense: true)}',
-                  style: AppType.secondary(context),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+          // v1.24.5: SATU baris ringkasan (audit arsitektur: "Hari ini"
+          // dobel — strip + header grup pertama bertumpuk). Label depan
+          // dihapus, tanggal ikut header grup di bawahnya.
+          child: Text(
+            'Masuk ${display.signed(d.$1, isExpense: false)} · '
+            'Keluar ${display.signed(d.$2, isExpense: true)}',
+            style: AppType.secondary(context),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         );
       },
@@ -470,7 +465,10 @@ class _RecentList extends ConsumerWidget {
           final d = DateTime(tx.date.year, tx.date.month, tx.date.day);
           (groups[d] ??= []).add(tx);
         }
-        final entries = groups.entries.toList();
+        final entries = groups.entries.toList()
+          // v1.24.5: sort eksplisit DESC — urutan grup JANGAN kebetulan
+          // ikut ORDER BY query (audit arsitektur: bom waktu kecil).
+          ..sort((a, b) => b.key.compareTo(a.key));
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

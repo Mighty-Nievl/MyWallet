@@ -146,6 +146,7 @@ Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi 
 - [x] **Polish B2C Beranda (v1.24.2)**: token spacing/tipe/border, header ramping, statusbar adaptif, saldo anti-kepotong, mata 44px. Full 163/163.
 - [x] **Brutal-polish Beranda (v1.24.3)**: CTA 17px + token tinggi, trailing konteks, monthnav sekeluarga hero, microcopy jujur, literal nol. Full 163/163.
 - [x] **List rapi + logo baru (v1.24.4)**: tanggal grup tanpa ulang per baris, subtitle tanpa duplikat, header grup naik gaya, logo bg-white in-app + launcher 5 densitas. Full 164/164.
+- [x] **Nominal rata kanan + strip ringkas (v1.24.5)**: kolom Expanded + chevron jangkar, sort grup eksplisit, strip satu baris. Full 166/166.
 - [ ] Fase 3 — utang + budget ikut sync + uji 2 emulator bareng.
 - [ ] Fase 4 — hardening production-grade: RLS audit, hapus akun, kebijakan privasi (wajib Play Store), crash reporting.
 

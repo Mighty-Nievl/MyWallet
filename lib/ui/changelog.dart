@@ -26,6 +26,18 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.24.5',
+    date: '11 Okt 2026',
+    user:
+        'Angka transaksi kini rata kanan sejajar, dan ringkasan hari '
+        'ini tampil lebih ringkas.',
+    tech:
+        'Tile: kolom nominal Expanded + chevron jangkar, grup tanggal '
+        'sort eksplisit, strip satu baris, 2 regression test, golden '
+        'diregenerasi.',
+    breaking: null,
+  ),
+  (
     version: 'v1.24.4',
     date: '11 Okt 2026',
     user:

@@ -94,7 +94,11 @@ class TxTile extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.s8),
-            Flexible(
+            // v1.24.5: Expanded (bukan Flexible) — kolom nominal SELALU
+            // selebar sisa ruang + teks rata kanan → tepi kanan SEMUA
+            // nominal sejajar vertikal (kritik screenshot: -Rp8.000
+            // mundur vs -Rp300.000). Ellipsis tetap (anti-overflow 300px).
+            Expanded(
               child: Text(
                 display.signed(tx.amount, isExpense: tx.isExpense),
                 maxLines: 1,
@@ -104,6 +108,9 @@ class TxTile extends ConsumerWidget {
               ),
             ),
             // Seluruh baris tap → edit: chevron sebagai affordance.
+            // v1.24.5: chevron DIJANGKAR tepi layar (bukan nempel ujung
+            // teks) → kolom chevron stabil, tidak wobble ikut panjang
+            // nominal.
             if (onTap != null) ...[
               const SizedBox(width: AppSpacing.s4),
               Icon(
