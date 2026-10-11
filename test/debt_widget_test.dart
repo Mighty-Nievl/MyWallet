@@ -13,7 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Widget test manajer utang-piutang (v1.15) — level UI.
 ///
 /// - DebtScreen: empty state, list + ringkasan, dialog tambah end-to-end.
-/// - HomeScreen: kartu ringkas muncul + tombol Kelola lompat ke tab 4.
+/// - HomeScreen: kartu ringkas utang-piutang disembunyikan (redesign v1.24).
 ///
 /// Anti-flaky (insiden 9 Okt 2026 — framework noise saat run bareng):
 /// INSTRUMEN membuktikan app + stream BENAR (stream emit 2x, `Siti`
@@ -270,7 +270,7 @@ void main() {
     }
   });
 
-  testWidgets('kartu Beranda muncul + Kelola → tab Utang (4)',
+  testWidgets('kartu Beranda tetap tersembunyi meski ada utang (redesign v1.24)',
       (tester) async {
     final db = await _newDb(tester);
     try {
@@ -284,25 +284,20 @@ void main() {
             note: '');
       });
 
-      var tab = -1;
       await tester.pumpWidget(
         ProviderScope(
           overrides: [dbProvider.overrideWithValue(db)],
           child: MaterialApp(
             theme: AppTheme.light(),
-            home: HomeScreen(onGoTab: (i) => tab = i),
+            home: HomeScreen(onGoTab: (_) {}),
           ),
         ),
       );
 
-      expect(
-          await _waitFor(tester, find.text('Utang & piutang'),
-              rounds: 120),
-          isTrue,
-          reason: 'kartu ringkas harus muncul (summary stream lambat?)');
-      await tester.tap(find.text('Kelola'));
-      await _pump(tester, ticks: 4);
-      expect(tab, 4, reason: 'Kelola harus lompat ke tab Utang');
+      await _pump(tester, ticks: 30);
+      await _nap(tester, ms: 300);
+      await _pump(tester, ticks: 30);
+      expect(find.text('Utang & piutang'), findsNothing);
     } finally {
       await _cleanup(tester, db);
     }
