@@ -269,9 +269,7 @@ void main() {
 
   // Regresi kritik brutal v1.14.x (4): tile ketiga tanpa budget tidak
   // lagi kartu "— / belum diatur" setinggi tile bernilai.
-  testWidgets('tile budget kosong (dihapus v1.24)', (
-    tester,
-  ) async {
+  testWidgets('tile budget kosong (dihapus v1.24)', (tester) async {
     final db = await _newDb(tester);
     await tester.runAsync(() async {
       await _loadFonts();
@@ -383,68 +381,53 @@ void main() {
     await _flushDriftCloseTimer(tester);
   });
 
-  // Pengganti "lihat matanya": kontras WCAG diukur eksplisit, karena
-  // kartu saldo kini GRADIENT IKUT AKSEN TEMA (hijau default, biru
-  // ala GoPay, dst) di DUA kecerahan — aksen mode gelap itu TERANG,
-  // jadi diukur dari widget yang benar-benar dirender: dua ujung
-  // gradien (ber-key 'home:hero') + latar kepala ('home:header'),
-  // untuk 6 aksen × 2 tema = 24 pengukuran.
-  // testWidgets('kontras putih vs kartu+kepala minimal 4.5:1 (semua aksen)', (
-  // tester,
-  // ) async {
-  // double lum(Color c) {
-  // double f(double v) =>
-  // v <= 0.03928 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4).toDouble();
-  // return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
-  // }
-  //   // double ratio(Color a, Color b) {
-  // final hi = max(lum(a), lum(b));
-  // final lo = min(lum(a), lum(b));
-  // return (hi + 0.05) / (lo + 0.05);
-  // }
-  //   // final db = await _newDb(tester);
-  // await tester.runAsync(() async {
-  // await _loadFonts();
-  // await _seed(db);
-  // });
-  //   // final hasil = <String, double>{};
-  // for (final e in AppTheme.accentOptions.entries) {
-  // final temas = <String, ThemeData>{
-  // 'light': AppTheme.light(seed: e.value.color),
-  // 'dark': AppTheme.dark(seed: e.value.color),
-  // };
-  // for (final t in temas.entries) {
-  // await tester.pumpWidget(
-  // ProviderScope(
-  // overrides: [dbProvider.overrideWithValue(db)],
-  // child: MaterialApp(theme: t.value, home: const HomeScreen()),
-  // ),
-  // );
-  // for (var i = 0; i < 40; i++) {
-  // await tester.pump(const Duration(milliseconds: 50));
-  // }
-        // Redesign v1.24: hero pakai border solid, bukan gradien.
-  // final hero = tester.widget<Container>(
-  // find.byKey(const ValueKey('home:hero')),
-  // );
-  // final bg = (hero.decoration! as BoxDecoration).color!;
-  // hasil['${e.key}/${t.key} hero-bg'] = ratio(Colors.white, bg);
-  //   // final kepala = tester.widget<Container>(
-  // find.byKey(const ValueKey('home:header')),
-  // );
-  // hasil['${e.key}/${t.key} kepala'] = ratio(Colors.white, kepala.color!);
-  // }
-  // }
-  // hasil.forEach(
-  // (label, r) => expect(r, greaterThanOrEqualTo(4.5), reason: label),
-  // );
-  // final worst = hasil.entries.reduce((a, b) => a.value < b.value ? a : b);
-  // debugPrint(
-  // 'kontras minimum ${worst.value.toStringAsFixed(2)}:1 '
-  // '(${worst.key}) — ${hasil.length} pengukuran lolos ≥4.5:1',
-  // );
-  // await _flushDriftCloseTimer(tester);
-  // });
+  // Regresi audit visual v1.24.1: teks CTA "+ Catat keluar" di atas
+  // primary HARUS ≥4.5:1 di 6 aksen × 2 tema. Insiden: foreground
+  // putih hardcode jebol di dark mode (primary = mint terang).
+  // Fix: foreground = onPrimary. Test ini mengunci kontraknya.
+  testWidgets('kontras teks CTA vs primary minimal 4.5:1 (semua aksen)', (
+    tester,
+  ) async {
+    double lum(Color c) {
+      double f(double v) =>
+          v <= 0.03928 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4).toDouble();
+      return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+    }
+
+    double ratio(Color a, Color b) {
+      final hi = max(lum(a), lum(b));
+      final lo = min(lum(a), lum(b));
+      return (hi + 0.05) / (lo + 0.05);
+    }
+
+    final hasil = <String, double>{};
+    for (final e in AppTheme.accentOptions.entries) {
+      final temas = <String, ThemeData>{
+        'light': AppTheme.light(seed: e.value.color),
+        'dark': AppTheme.dark(seed: e.value.color),
+      };
+      for (final t in temas.entries) {
+        // Kontrak kode: bg = scheme.primary, fg = scheme.onPrimary
+        // (home_screen.dart _HeroCard). Ukur pasangan yang sama.
+        final r = ratio(
+          t.value.colorScheme.onPrimary,
+          t.value.colorScheme.primary,
+        );
+        hasil['${e.key}/${t.key} cta'] = r;
+      }
+    }
+    hasil.forEach(
+      (label, r) => expect(r, greaterThanOrEqualTo(4.5), reason: label),
+    );
+    final worst = hasil.entries.reduce((a, b) => a.value < b.value ? a : b);
+    debugPrint(
+      'kontras CTA minimum ${worst.value.toStringAsFixed(2)}:1 '
+      '(${worst.key}) — ${hasil.length} pengukuran lolos ≥4.5:1',
+    );
+  });
+
+  // (Riwayat: test kontras gradien hero v1.23 di-skip di v1.24 karena
+  // hero ganti kartu putih bersih — blok comment lama dihapus di sini.)
 
   // Regresi overflow CI v1.13.0: font fallback Linux lebih lebar dari
   // Segoe — Row hero, status budget jebol di 390px. Viewport 300px

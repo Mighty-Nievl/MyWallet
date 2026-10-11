@@ -26,6 +26,18 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.24.1',
+    date: '11 Okt 2026',
+    user:
+        'Perbaikan tampilan: tombol catat di Beranda kini jelas terbaca '
+        'di mode gelap.',
+    tech:
+        'Hero Beranda: foreground tombol ikut warna tema (bukan putih '
+        'tetap), tambah test kontras tombol 6 aksen x 2 tema, golden '
+        'diregenerasi.',
+    breaking: null,
+  ),
+  (
     version: 'v1.24.0',
     date: '11 Okt 2026',
     user:

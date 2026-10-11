@@ -28,7 +28,7 @@ class HomeScreen extends ConsumerWidget {
 
   final ValueChanged<int>? onGoTab;
 
-// SECTION: HomeScreen.build dengan header minimalis + slot redesign
+  // SECTION: HomeScreen.build dengan header minimalis + slot redesign
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final month = ref.watch(selectedMonthProvider);
@@ -62,19 +62,13 @@ class HomeScreen extends ConsumerWidget {
             Container(
               key: const ValueKey('home:header'),
               color: Theme.of(context).scaffoldBackgroundColor,
-              padding: EdgeInsets.only(
-                top: statusPad + 8,
-                bottom: 8,
-                right: 8,
-              ),
+              padding: EdgeInsets.only(top: statusPad + 8, bottom: 8, right: 8),
               child: Row(
                 children: [
                   const Spacer(),
                   IconButton(
                     onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const SettingsScreen(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
                     ),
                     tooltip: 'Pengaturan',
                     icon: Icon(
@@ -108,9 +102,7 @@ class HomeScreen extends ConsumerWidget {
                   // (cognitive load). Spacing lega 32px antar seksi.
                   // Top kategori + terakhir dicatat tampil langsung.
                   if (showTop) ...[
-                    const SliverToBoxAdapter(
-                      child: SizedBox(height: 32),
-                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 32)),
                     SliverToBoxAdapter(
                       key: const ValueKey('home:topcats'),
                       child: _pad(
@@ -128,9 +120,7 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ],
                   if (showRecent) ...[
-                    const SliverToBoxAdapter(
-                      child: SizedBox(height: 32),
-                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 32)),
                     SliverToBoxAdapter(
                       key: const ValueKey('home:recent'),
                       child: _pad(
@@ -202,10 +192,7 @@ class _HeroCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceOf(context),
         borderRadius: AppRadius.xlAll,
-        border: Border.all(
-          color: AppColors.borderOf(context),
-          width: 1,
-        ),
+        border: Border.all(color: AppColors.borderOf(context), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -216,9 +203,9 @@ class _HeroCard extends ConsumerWidget {
               Expanded(
                 child: Text(
                   'SALDO SAAT INI',
-                  style: AppType.labelMuted(context).copyWith(
-                    letterSpacing: 0.8,
-                  ),
+                  style: AppType.labelMuted(
+                    context,
+                  ).copyWith(letterSpacing: 0.8),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -232,9 +219,8 @@ class _HeroCard extends ConsumerWidget {
                     minWidth: 36,
                     minHeight: 36,
                   ),
-                  onPressed: () => ref
-                      .read(settingsServiceProvider)
-                      .setHideBalance(!hide),
+                  onPressed: () =>
+                      ref.read(settingsServiceProvider).setHideBalance(!hide),
                   icon: Icon(
                     hide
                         ? Icons.visibility_outlined
@@ -292,17 +278,14 @@ class _HeroCard extends ConsumerWidget {
               },
               style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: AppRadius.lgAll,
-                ),
+                // onPrimary (bukan putih hardcode): dark mode primary =
+                // mint terang → teks putih jebol kontras (bug audit v1.24.1).
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
               ),
               child: const Text(
                 '+ Catat keluar',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -311,7 +294,6 @@ class _HeroCard extends ConsumerWidget {
     );
   }
 }
-
 
 /// _MiniStat: dipakai di _DebtCard yang dihapus di redesign v1.24.
 /// Dipertahankan untuk kompatibilitas backward jika debts dikembalikan.
