@@ -220,29 +220,18 @@ class _HeroCard extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              SizedBox(
-                // v1.24.2: 36→44 (touch target, kritik brutal).
-                width: 44,
-                height: 44,
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 44,
-                    minHeight: 44,
-                  ),
-                  onPressed: () =>
-                      ref.read(settingsServiceProvider).setHideBalance(!hide),
-                  icon: Icon(
-                    hide
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
-                    // v1.24.2: glyph 18→20 (vision: hit-area 44 tapi
-                    // ikon masih kebaca kecil).
-                    size: 20,
-                    color: AppColors.mutedOf(context),
-                  ),
-                  tooltip: hide ? 'Tampilkan saldo' : 'Sembunyikan saldo',
-                ),
+              // v1.24.8: mata via AppIconButton polos (satu komponen,
+              // 48px token + haptic, bukan manual 44px).
+              AppIconButton(
+                icon: hide
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+                tooltip: hide ? 'Tampilkan saldo' : 'Sembunyikan saldo',
+                color: AppColors.mutedOf(context),
+                bordered: false,
+                onPressed: () => ref
+                    .read(settingsServiceProvider)
+                    .setHideBalance(!hide),
               ),
             ],
           ),

@@ -26,6 +26,21 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.24.8',
+    date: '11 Okt 2026',
+    user:
+        'Tombol header kini polos tanpa kotak, dan halaman Riwayat '
+        'menjawab: ada total hasil, tanggal dikelompokkan, tombol '
+        '"Semua" beneran menampilkan semua.',
+    tech:
+        'AppIconButton bordered:false (gear/chevron/mata, hit-area '
+        'tetap 48px); Riwayat: Semua reset kategori, strip hasil '
+        'count+masuk+keluar, grup tanggal DESC + showDate false, '
+        'picker kunci bulan berjalan + helpText jujur; 4 regression '
+        'test baru, golden diregenerasi.',
+    breaking: null,
+  ),
+  (
     version: 'v1.24.7',
     date: '11 Okt 2026',
     user:

@@ -56,6 +56,8 @@ class AppHeader extends StatelessWidget {
             icon: actionIcon!,
             onPressed: onAction,
             tooltip: actionTooltip,
+            // v1.24.8: tombol header polos (kotak hilang, hit-area tetap).
+            bordered: false,
           ),
       ],
     );

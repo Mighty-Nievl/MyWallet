@@ -32,6 +32,8 @@ class AppMonthNav extends StatelessWidget {
               icon: Icons.chevron_left,
               tooltip: 'Bulan sebelumnya',
               onPressed: () => onShift(-1),
+              // v1.24.8: chevron polos (kotak hilang, hit-area tetap).
+              bordered: false,
             ),
             const SizedBox(width: AppSpacing.s8),
             // Flexible: di font lebar (mis. fallback Linux di CI) chip
@@ -76,6 +78,8 @@ class AppMonthNav extends StatelessWidget {
               icon: Icons.chevron_right,
               tooltip: 'Bulan berikutnya',
               onPressed: () => onShift(1),
+              // v1.24.8: chevron polos (kotak hilang, hit-area tetap).
+              bordered: false,
             ),
           ],
         ),

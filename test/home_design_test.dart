@@ -20,7 +20,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mywallet/data/database.dart';
 import 'package:mywallet/data/providers.dart';
 import 'package:mywallet/ui/app_theme.dart';
+import 'package:mywallet/ui/components/app_feedback.dart';
 import 'package:mywallet/ui/components/app_month_nav.dart';
+import 'package:mywallet/ui/components/setting_row.dart';
 import 'package:mywallet/ui/design/app_colors.dart';
 import 'package:mywallet/ui/screens/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -678,6 +680,40 @@ void main() {
     expect(find.byTooltip('Pengaturan'), findsOneWidget);
 
     await _flushDriftCloseTimer(tester);
+  });
+
+  // v1.24.8: tombol header polos — gear + chevron + mata tanpa kotak,
+  // tombol kembali tetap berboder (butuh body navigasi).
+  testWidgets('tombol header polos, tombol kembali berboder (v1.24.8)', (
+    tester,
+  ) async {
+    // Gear (AppHeader via Beranda) = polos.
+    final gear = AppIconButton(
+      icon: Icons.settings_outlined,
+      onPressed: () {},
+      tooltip: 'Pengaturan',
+      bordered: false,
+    );
+    // Kembali (BackHeader) = default berboder.
+    const back = BackHeader(title: 'Kembali');
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        home: Scaffold(
+          body: Column(children: [gear, back]),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Polos: tidak ada Container berboder di atas IconButton gear.
+    final gearBtn = find.byTooltip('Pengaturan');
+    expect(gearBtn, findsOneWidget);
+    // Berboder: BackHeader masih pakai AppIconButton default (kotak ada).
+    expect(find.text('Kembali'), findsOneWidget);
+    // Default flag tetap true — pemakai lama tidak berubah visual.
+    expect(const AppIconButton(icon: Icons.add, onPressed: null).bordered,
+        isTrue);
   });
 }
 

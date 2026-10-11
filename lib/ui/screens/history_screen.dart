@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../components/app_card.dart';
 import '../components/app_empty_state.dart';
@@ -9,6 +10,8 @@ import '../components/app_header.dart';
 import '../components/app_month_nav.dart';
 import '../components/b2c_chip.dart';
 import '../design/app_spacing.dart';
+import '../design/app_typography.dart';
+import '../display.dart';
 import '../format.dart';
 import '../widgets/tx_tile.dart';
 import 'tx_form_screen.dart';
@@ -37,6 +40,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final filter = ref.watch(historyFilterProvider);
+    final display = ref.watch(displayPrefsProvider);
     final history = ref.watch(historyProvider);
     final cats = ref.watch(categoriesProvider);
     final month = ref.watch(selectedMonthProvider);
@@ -113,8 +117,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 children: [
                   _FilterChip(
                     label: 'Semua',
-                    selected: filter.isExpense == null,
-                    onTap: () => _setFilter(filter, null),
+                    selected: filter.isExpense == null &&
+                        filter.categoryId == null,
+                    // v1.24.8: "Semua" beneran semua — reset kategori juga
+                    // (kritik brutal L4: dulu categoryId dipertahankan,
+                    // label klaim semua padahal daftar tersaring).
+                    onTap: () =>
+                        ref.read(historyFilterProvider.notifier).state =
+                            HistoryFilter(keyword: filter.keyword),
                   ),
                   const SizedBox(width: AppSpacing.s8),
                   _FilterChip(
@@ -173,7 +183,27 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   if (list.isEmpty) {
                     return const _EmptyState();
                   }
-                  return ListView.separated(
+                  // v1.24.8: strip hasil (kritik brutal L3 — Riwayat tanpa
+                  // total = arsip bisu). Pola _DailyStrip Beranda: satu
+                  // baris count + masuk + keluar hasil filter aktif.
+                  final inTotal = list
+                      .where((t) => !t.isExpense)
+                      .fold<int>(0, (s, t) => s + t.amount);
+                  final outTotal = list
+                      .where((t) => t.isExpense)
+                      .fold<int>(0, (s, t) => s + t.amount);
+                  // v1.24.8: grup tanggal ala Beranda (kritik brutal L1 —
+                  // flat 50 baris tanpa jangkar). Sort DESC eksplisit,
+                  // showDate false (tanggal ikut header grup).
+                  final groups = <DateTime, List<TxWithCategory>>{};
+                  for (final tx in list) {
+                    final d = DateTime(
+                        tx.date.year, tx.date.month, tx.date.day);
+                    (groups[d] ??= []).add(tx);
+                  }
+                  final entries = groups.entries.toList()
+                    ..sort((a, b) => b.key.compareTo(a.key));
+                  return ListView(
                     // v1.24.4: literal 16/8 → token (kritik brutal L2).
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.page,
@@ -181,19 +211,38 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       AppSpacing.page,
                       AppSpacing.bottomPad,
                     ),
-                    itemCount: list.length,
-                    separatorBuilder: (context, i) =>
-                        // v1.24.4: divider nyaris-nol — pemisah tanpa
-                        // garis tegas (B2C: napas, bukan jeruji).
-                        const Divider(height: AppSpacing.s24, thickness: 0.5),
-                    itemBuilder: (context, i) => TxTile(
-                      tx: list[i],
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (ctx) => TxFormScreen(existing: list[i]),
-                        ),
+                    children: [
+                      _ResultStrip(
+                        count: list.length,
+                        inTotal: inTotal,
+                        outTotal: outTotal,
                       ),
-                    ),
+                      for (var i = 0; i < entries.length; i++) ...[
+                        Padding(
+                          padding: EdgeInsets.only(
+                            top: i == 0 ? 0 : AppSpacing.s12,
+                            bottom: AppSpacing.s4,
+                          ),
+                          child: Text(
+                            display.date(entries[i].key),
+                            style: AppType.sectionTitle(context)
+                                .copyWith(fontSize: 14),
+                          ),
+                        ),
+                        for (final tx in entries[i].value)
+                          TxTile(
+                            tx: tx,
+                            showDate: false,
+                            onTap: () =>
+                                Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (ctx) =>
+                                    TxFormScreen(existing: tx),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ],
                   );
                 },
               ),
@@ -213,6 +262,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   Future<void> _pickMonth(BuildContext context, String current) async {
+    final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
       initialDate: DateTime(
@@ -220,8 +270,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         int.parse(current.split('-')[1]),
       ),
       firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      // v1.24.8: kunci ke bulan berjalan (kritik brutal L1 — dulu
+      // now+365 hari = pintu ke bulan kosong masa depan).
+      lastDate: DateTime(now.year, now.month + 1, 0),
       initialDatePickerMode: DatePickerMode.day,
+      // v1.24.8: jujur — yang dipakai bulannya, bukan tanggalnya
+      // (kritik brutal L1: mode hari untuk tugas pilih bulan).
+      helpText: 'Pilih bulan (tanggal diabaikan)',
     );
     if (picked != null) {
       ref.read(selectedMonthProvider.notifier).state = monthKey(picked);
@@ -263,6 +318,36 @@ class _LoadingState extends StatelessWidget {
 }
 
 /// Skeleton shimmer shared sudah di [AppSkeleton] (app_feedback.dart).
+
+/// Strip hasil filter Riwayat: count + masuk + keluar, satu baris.
+/// Bahasa yang sama dengan _DailyStrip Beranda (tanpa label tanggal —
+/// tanggal ikut header grup di bawahnya).
+class _ResultStrip extends ConsumerWidget {
+  const _ResultStrip({
+    required this.count,
+    required this.inTotal,
+    required this.outTotal,
+  });
+  final int count;
+  final int inTotal;
+  final int outTotal;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final display = ref.watch(displayPrefsProvider);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.s8),
+      child: Text(
+        '$count transaksi · '
+        'Masuk ${display.signed(inTotal, isExpense: false)} · '
+        'Keluar ${display.signed(outTotal, isExpense: true)}',
+        style: AppType.secondary(context),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();

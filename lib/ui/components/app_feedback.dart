@@ -18,6 +18,7 @@ class AppIconButton extends StatelessWidget {
     this.tooltip,
     this.color,
     this.filled = false,
+    this.bordered = true,
   });
 
   final IconData icon;
@@ -27,6 +28,11 @@ class AppIconButton extends StatelessWidget {
 
   /// `true` = isi aksen (untuk aksi utama semacam "Catat").
   final bool filled;
+
+  /// `false` = ikon polos tanpa kotak (tombol header: gear, chevron,
+  /// mata). Tombol kembali + aksi form tetap berboder (butuh body
+  /// karena fungsinya navigasi/aksi, bukan ornamen header).
+  final bool bordered;
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +59,22 @@ class AppIconButton extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: AppRadius.mdAll,
           ),
+        ),
+      );
+    }
+    // v1.24.8: varian polos — hit-area 48px tetap, kotak hilang.
+    if (!bordered) {
+      return IconButton(
+        onPressed: tapped,
+        icon: Icon(icon, size: 20, color: color),
+        tooltip: tooltip,
+        constraints: const BoxConstraints.tightFor(
+          width: AppSpacing.touchMin,
+          height: AppSpacing.touchMin,
+        ),
+        padding: EdgeInsets.zero,
+        style: IconButton.styleFrom(
+          foregroundColor: color ?? scheme.onSurface,
         ),
       );
     }
