@@ -16,11 +16,18 @@ import '../display.dart';
 /// Public API TETAP (STEP 1B): [tx] + [onTap].
 /// Visual: glyph monochrome aksen, judul jelas, info sekunder
 /// kontras tinggi (mudah dibaca), nominal tegas.
+///
+/// [showDate]: tampilkan tanggal di subtitle. Beranda (v1.24.4) pakai
+/// false karena tanggal sudah ada di header grup ("Kemarin",
+/// "9 Okt 2026") — ngulang di tiap baris cuma bikin kepotong "Ke...".
+/// Riwayat (flat, tanpa grup) pakai true (default): tanggal per baris
+/// di sana itu informasi, bukan redundansi.
 class TxTile extends ConsumerWidget {
-  const TxTile({super.key, required this.tx, this.onTap});
+  const TxTile({super.key, required this.tx, this.onTap, this.showDate = true});
 
   final TxWithCategory tx;
   final VoidCallback? onTap;
+  final bool showDate;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,6 +38,17 @@ class TxTile extends ConsumerWidget {
     final amountColor = tx.isExpense
         ? AppColors.expenseOf(context)
         : AppColors.incomeOf(context);
+    // v1.24.4: subtitle cerdas — tanpa tanggal di grup Beranda (showDate
+    // false), tanpa duplikat kategori saat catatan kosong (judul sudah
+    // nama kategori → subtitle jadi tanggal saja / disembunyikan total
+    // kalau keduanya kosong, biar kolom lega dan nol "Ke...").
+    final catName = tx.catName ?? 'Tanpa kategori';
+    final hasNote = tx.note.isNotEmpty;
+    final title = hasNote ? tx.note : catName;
+    final datePart = showDate ? display.date(tx.date) : '';
+    final subtitle = hasNote
+        ? (showDate ? '$catName · $datePart' : catName)
+        : datePart;
     final tap = onTap;
     return InkWell(
       onTap: tap == null
@@ -54,23 +72,24 @@ class TxTile extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    tx.note.isNotEmpty
-                        ? tx.note
-                        : (tx.catName ?? 'Tanpa kategori'),
+                    title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w500),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${tx.catName ?? 'Tanpa kategori'} · ${display.date(tx.date)}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppType.secondaryStrong(context),
-                  ),
+                  // v1.24.4: subtitle cuma dirender kalau ada isinya
+                  // (Beranda tanpa-catatan = kosong total → judul saja).
+                  if (subtitle.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppType.secondaryStrong(context),
+                    ),
+                  ],
                 ],
               ),
             ),

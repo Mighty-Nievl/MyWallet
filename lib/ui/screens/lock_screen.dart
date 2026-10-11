@@ -101,7 +101,8 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(24),
                         child: Image.asset(
-                          'assets/images/app_logo.png',
+                          // v1.24.4: logo baru dari bg-white.jpg.
+                          'assets/images/bg-white.jpg',
                           width: 88,
                           height: 88,
                           errorBuilder: (_, _, _) => const Text(

@@ -482,12 +482,17 @@ class _RecentList extends ConsumerWidget {
                 ),
                 child: Text(
                   display.date(entries[i].key),
-                  style: AppType.secondaryStrong(context),
+                  // v1.24.4: header grup naik ke sectionTitle — tanggal
+                  // grup adalah judul, bukan teks sekunder.
+                  style: AppType.sectionTitle(context).copyWith(fontSize: 14),
                 ),
               ),
               for (final tx in entries[i].value)
                 TxTile(
                   tx: tx,
+                  // v1.24.4: tanggal sudah di header grup → sembunyikan
+                  // di tiap baris (rapikan "Ke..." kepotong).
+                  showDate: false,
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => TxFormScreen(existing: tx),

@@ -62,13 +62,16 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             const SizedBox(height: AppSpacing.s8),
             AppMonthNav(
               month: month,
-              onShift: (d) => ref
-                  .read(selectedMonthProvider.notifier)
-                  .state = shiftMonth(month, d),
+              onShift: (d) => ref.read(selectedMonthProvider.notifier).state =
+                  shiftMonth(month, d),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.page, AppSpacing.s8, AppSpacing.page, 0),
+                AppSpacing.page,
+                AppSpacing.s8,
+                AppSpacing.page,
+                0,
+              ),
               child: TextField(
                 controller: _searchCtrl,
                 decoration: InputDecoration(
@@ -80,9 +83,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           onPressed: () {
                             _searchCtrl.clear();
                             ref
-                                    .read(historyFilterProvider.notifier)
-                                    .state =
-                                HistoryFilter(
+                                .read(historyFilterProvider.notifier)
+                                .state = HistoryFilter(
                               categoryId: filter.categoryId,
                               isExpense: filter.isExpense,
                             );
@@ -92,18 +94,21 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   isDense: true,
                 ),
                 onChanged: (v) =>
-                    ref.read(historyFilterProvider.notifier).state =
-                        HistoryFilter(
-                  categoryId: filter.categoryId,
-                  isExpense: filter.isExpense,
-                  keyword: v,
-                ),
+                    ref
+                        .read(historyFilterProvider.notifier)
+                        .state = HistoryFilter(
+                      categoryId: filter.categoryId,
+                      isExpense: filter.isExpense,
+                      keyword: v,
+                    ),
               ),
             ),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.page, vertical: AppSpacing.s8),
+                horizontal: AppSpacing.page,
+                vertical: AppSpacing.s8,
+              ),
               child: Row(
                 children: [
                   _FilterChip(
@@ -135,14 +140,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                             label: '${c.icon} ${c.name}',
                             selected: filter.categoryId == c.id,
                             onTap: () {
-                              final cur =
-                                  ref.read(historyFilterProvider);
+                              final cur = ref.read(historyFilterProvider);
                               ref
-                                      .read(
-                                          historyFilterProvider.notifier)
-                                      .state = HistoryFilter(
-                                categoryId:
-                                    cur.categoryId == c.id ? null : c.id,
+                                  .read(historyFilterProvider.notifier)
+                                  .state = HistoryFilter(
+                                categoryId: cur.categoryId == c.id
+                                    ? null
+                                    : c.id,
                                 isExpense: cur.isExpense,
                                 keyword: cur.keyword,
                               );
@@ -160,27 +164,33 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               child: history.when(
                 loading: () => const _LoadingState(),
                 error: (e, s) => Center(
-                    child: AppErrorState(
-                  title: 'Riwayat gagal dimuat.',
-                  onRetry: () =>
-                      ref.invalidate(historyProvider),
-                )),
+                  child: AppErrorState(
+                    title: 'Riwayat gagal dimuat.',
+                    onRetry: () => ref.invalidate(historyProvider),
+                  ),
+                ),
                 data: (list) {
                   if (list.isEmpty) {
                     return const _EmptyState();
                   }
                   return ListView.separated(
+                    // v1.24.4: literal 16/8 → token (kritik brutal L2).
                     padding: const EdgeInsets.fromLTRB(
-                        16, 8, 16, AppSpacing.bottomPad),
+                      AppSpacing.page,
+                      AppSpacing.s8,
+                      AppSpacing.page,
+                      AppSpacing.bottomPad,
+                    ),
                     itemCount: list.length,
                     separatorBuilder: (context, i) =>
-                        const Divider(height: 1),
+                        // v1.24.4: divider nyaris-nol — pemisah tanpa
+                        // garis tegas (B2C: napas, bukan jeruji).
+                        const Divider(height: AppSpacing.s24, thickness: 0.5),
                     itemBuilder: (context, i) => TxTile(
                       tx: list[i],
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (ctx) =>
-                              TxFormScreen(existing: list[i]),
+                          builder: (ctx) => TxFormScreen(existing: list[i]),
                         ),
                       ),
                     ),
@@ -225,8 +235,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 /// Chip filter B2C (v1.20): lihat [B2CFilterChip] — pil semibold +
 /// haptic + scale-down. Radius pil penuh (bukan md 12).
 class _FilterChip extends StatelessWidget {
-  const _FilterChip(
-      {required this.label, required this.selected, required this.onTap});
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -243,13 +256,8 @@ class _LoadingState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
-          16, 8, 16, AppSpacing.bottomPad),
-      children: const [
-        AppCard(
-          child: AppSkeleton(lines: 3),
-        ),
-      ],
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, AppSpacing.bottomPad),
+      children: const [AppCard(child: AppSkeleton(lines: 3))],
     );
   }
 }

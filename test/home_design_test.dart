@@ -261,9 +261,12 @@ void main() {
     expect(find.text('Kategori cepat'), findsNothing);
     expect(find.text('Top kategori'), findsNothing);
     expect(find.text('Pengeluaran bulan ini'), findsOneWidget);
-    // Nama kategori muncul tepat SEKALI (di seksi Top, bukan 2x:
-    // strip + seksi seperti v1.14.x awal).
-    expect(find.text('Makan & Minum'), findsOneWidget);
+    // Nama kategori muncul di seksi Top (judul, bodyLarge w600).
+    // v1.24.4: subtitle tile Beranda = nama kategori polos (tanggal
+    // disembunyikan, showDate:false) → exact-match 2x itu benar per
+    // desain baru (judul seksi + subtitle tile), bukan blok ganda
+    // ala v1.14.x (strip "Kategori cepat" + seksi Top).
+    expect(find.text('Makan & Minum'), findsNWidgets(2));
     await _flushDriftCloseTimer(tester);
   });
 
@@ -538,6 +541,44 @@ void main() {
 
     expect(find.text('Catat kilat'), findsNothing);
     expect(find.text('Rp10 rb'), findsNothing);
+
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // Rapikan list v1.24.4 (kritik brutal screenshot Beranda): tanggal
+  // TIDAK diulang di tiap baris grup ("Makan siang · Hari ini" no more).
+  // Seed: 'Makan siang' (cat 1, hari ini) → judul = note, subtitle =
+  // nama kategori polos, tanpa suffix tanggal.
+  testWidgets('subtitle tile beranda tanpa tanggal (rapi v1.24.4)', (
+    tester,
+  ) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(() async {
+      await _loadFonts();
+      await _seed(db); // 'Makan siang' + 'Ojek', keduanya hari ini
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    // Judul (note) tetap ada.
+    expect(find.text('Makan siang'), findsOneWidget);
+    expect(find.text('Ojek'), findsOneWidget);
+    // Subtitle redundan tanggal per baris SUDAH tidak ada.
+    expect(find.textContaining('Makan & Minum ·'), findsNothing);
+    expect(find.textContaining('Transportasi ·'), findsNothing);
+    expect(find.textContaining('· Hari ini'), findsNothing);
+    expect(find.textContaining('· Kemarin'), findsNothing);
 
     await _flushDriftCloseTimer(tester);
   });

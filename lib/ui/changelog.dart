@@ -26,6 +26,18 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.24.4',
+    date: '11 Okt 2026',
+    user:
+        'Daftar transaksi makin rapi: tanggal tidak diulang di tiap '
+        'baris, plus logo baru aplikasi.',
+    tech:
+        'Tile: showDate per konteks, subtitle tanpa duplikat, header '
+        'grup naik gaya, Riwayat token rapi, logo bg-white (in-app + '
+        'launcher 5 densitas), golden diregenerasi.',
+    breaking: null,
+  ),
+  (
     version: 'v1.24.3',
     date: '11 Okt 2026',
     user:
