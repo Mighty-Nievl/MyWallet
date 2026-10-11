@@ -35,6 +35,7 @@ const appChangelog = <({
         'HomeScreen: header strip netral (cuma gear), hero kartu border (48px saldo + CTA solid), '
         'slot delta/kilat/debts dihapus, spacing 32px, stagger entrance dihapus (510 baris, dari 1517). '
         'Test: 11/11 hijau (kontras skip, hero/budget/kilat kontrak diupdate v1.24).',
+    breaking: null,
   ),
   (
     version: 'v1.23.0',
