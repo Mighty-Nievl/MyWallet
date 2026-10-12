@@ -156,6 +156,7 @@ Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi 
 - [x] **Dompet ganda + transfer (v1.25.0)**: skema v4 + backfill Utama; pemilih Beranda + Kelola + TransferSheet; filter Riwayat/Laporan/Utang/Budget per-dompet; PDF + sync akun. Full 215/215.
 - [x] **Fix keyboard sheet dompet (v1.25.1)**: tambah/ganti-nama/pindah dana keyboard-safe. 2 regression test. Full 217/217.
 - [x] **Menu fitur + nav baru + scan (v1.26.0)**: grid 4x2 Beranda, nav Beranda/Catat/Scan, alur kamera/galeri → pratinjau → simpan. 10 regression test. Full 227/227.
+- [x] **Profil + Keluarga mandiri (v1.27.0)**: pohon akun Beranda → Profil → Keluarga; header avatar+sapaan kondisional login; nickname lokal editable; hub Pengaturan 4 grup. 5 regression test.
 - [ ] Fase 3 — utang + budget ikut sync + uji 2 emulator bareng.
 - [ ] Fase 4 — hardening production-grade: RLS audit, hapus akun, kebijakan privasi (wajib Play Store), crash reporting.
 

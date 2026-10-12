@@ -26,6 +26,19 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.27.0',
+    date: '13 Okt 2026',
+    user:
+        'Beranda kini menyapa Anda setelah masuk Google — ketuk foto/nama '
+        'untuk buka halaman Profil (nama panggilan bisa diubah, Keluarga '
+        'pindah ke sana). Pengaturan jadi 4 grup.',
+    tech:
+        'Pohon akun Beranda → Profil → Keluarga; header kondisional login; '
+        'nickname lokal prefs; grup Keluarga hapus dari hub; '
+        '5 regression test.',
+    breaking: null,
+  ),
+  (
     version: 'v1.26.0',
     date: '12 Okt 2026',
     user:

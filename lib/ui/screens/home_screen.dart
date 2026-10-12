@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/auth_service.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../../data/settings.dart';
 import '../components/app_empty_state.dart';
 import '../components/app_feedback.dart';
-import '../components/app_header.dart';
 import '../components/app_month_nav.dart';
 import '../components/app_progress.dart';
 import '../components/app_section.dart';
@@ -18,11 +18,13 @@ import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../display.dart';
 import '../format.dart';
+import '../greeting.dart';
 import '../widgets/account_picker.dart';
 import '../widgets/home_feature_grid.dart';
 import '../widgets/tx_tile.dart';
 import 'accounts_screen.dart';
 import 'history_screen.dart';
+import 'profile_screen.dart';
 import 'reports_screen.dart';
 import 'settings_screen.dart';
 import 'tx_form_screen.dart';
@@ -69,9 +71,8 @@ class HomeScreen extends ConsumerWidget {
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header B2C: wordmark kiri + gear kanan via AppHeader shared
-            // (Opsi A: baris yatim 1 gear → app bar normal kayak
-            // Riwayat). Padding ikut pola history_screen.
+            // Header v1.27: belum login = wordmark MyWallet (tak berubah);
+            // sudah login = avatar + sapaan → Profil. Kanan = gear saja.
             Padding(
               key: const ValueKey('home:header'),
               padding: EdgeInsets.only(
@@ -80,12 +81,12 @@ class HomeScreen extends ConsumerWidget {
                 bottom: AppSpacing.s8,
                 right: AppSpacing.page,
               ),
-              child: AppHeader(
-                title: 'MyWallet',
-                actionIcon: Icons.settings_outlined,
-                actionTooltip: 'Pengaturan',
-                onAction: () => Navigator.of(context).push(
+              child: _HomeHeader(
+                onSettings: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                ),
+                onProfile: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
                 ),
               ),
             ),
@@ -453,6 +454,111 @@ class _DailyStrip extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Header Beranda v1.27: identitas kondisional login.
+///
+/// Belum login (`personal`/loading) = wordmark `MyWallet` (kontrak lama,
+/// nol berubah). Sudah login = avatar inisial 40px + sapaan 2 baris
+/// (kecil sapaan waktu + tebal nama) dalam satu InkWell → Profil.
+/// Kanan selalu gear → Pengaturan.
+class _HomeHeader extends ConsumerWidget {
+  const _HomeHeader({required this.onSettings, required this.onProfile});
+
+  final VoidCallback onSettings;
+  final VoidCallback onProfile;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(familySessionProvider);
+    final nickname = ref.watch(displayNameProvider);
+    final scheme = Theme.of(context).colorScheme;
+
+    final gear = AppIconButton(
+      icon: Icons.settings_outlined,
+      onPressed: onSettings,
+      tooltip: 'Pengaturan',
+      bordered: false,
+    );
+
+    // Riverpod 3.4.3: AsyncValue pakai `.value` (bukan valueOrNull).
+    final s = session.value;
+    final loggedIn = s != null && !s.isPersonal;
+    if (!loggedIn) {
+      // Personal/loading: wordmark persis seperti sebelum v1.27.
+      return Row(
+        children: [
+          Expanded(
+            child: Text(
+              'MyWallet',
+              style: AppType.screenTitle(context),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          gear,
+        ],
+      );
+    }
+
+    final name = resolveGreetingName(
+      manualName: nickname.value,
+      googleName: s.displayName,
+    );
+    final initial = ((name ?? 'M').characters.first).toUpperCase();
+    return Row(
+      children: [
+        Expanded(
+          child: InkWell(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              onProfile();
+            },
+            borderRadius: AppRadius.mdAll,
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: scheme.primaryContainer,
+                  child: Text(
+                    initial,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(color: scheme.onPrimaryContainer),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.s12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        greetingTitle(DateTime.now()),
+                        style: AppType.secondary(context),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        name ?? 'Akun saya',
+                        style: AppType.screenTitle(
+                          context,
+                        ).copyWith(fontSize: 20),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        gear,
+      ],
     );
   }
 }

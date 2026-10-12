@@ -3,6 +3,9 @@
 ## Kenapa GitHub Releases?
 Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, bukan Actions artifacts. Jadi tiap versi stabil diterbitkan sebagai Release berisi APK bertanda tangan → HP dapat notifikasi update otomatis.
 
+## Riwayat rilis
+- **v1.27.0** (13 Okt 2026): Profil + Keluarga mandiri — pohon akun Beranda → Profil → Keluarga; header avatar + sapaan setelah login (belum login = wordmark tetap); nama panggilan bisa diubah di Profil; Pengaturan jadi 4 grup. 5 regression test.
+
 ## Signing (sekali saja — sudah dilakukan 7 Okt 2026)
 - Keystore: `android/app/mywallet.keystore` (RSA 2048, berlaku s.d. 1 Okt 2051).
 - File ini **di-ignore git** dan hukumnya: **JANGAN sampai hilang**. Kalau keystore hilang/berganti, update aplikasi wajib uninstall dulu (tanda tangan beda = Android menolak update).

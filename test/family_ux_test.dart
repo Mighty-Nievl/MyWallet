@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mywallet/data/auth_service.dart';
-import 'package:mywallet/ui/screens/settings_family.dart';
+import 'package:mywallet/ui/screens/family_screen.dart';
 
 /// UX Keluarga status personal (tanpa Firebase init — provider jatuh ke
 /// personal/offline, persis kayak HP tanpa login).
+///
+/// v1.27: halaman mandiri (dulu sub-Pengaturan) + tanpa search bar.
 ///
 /// Anti-flaky: tanpa pumpAndSettle; poll manual sampai hero muncul.
 void main() {
@@ -14,7 +16,7 @@ void main() {
       (t) async {
     await t.pumpWidget(
       const ProviderScope(
-        child: MaterialApp(home: FamilySettingsPage()),
+        child: MaterialApp(home: FamilyScreen()),
       ),
     );
 
@@ -35,6 +37,8 @@ void main() {
     // Tombol CTA penuh-lebar.
     final cta = find.widgetWithText(FilledButton, 'Masuk dengan Google');
     expect(cta, findsOneWidget);
+    // v1.27: search bar dibuang — halaman 2 grup tak butuh cari.
+    expect(find.text('Cari di Keluarga…'), findsNothing);
   });
 
   test('bootTimeout 8 detik — boot nggak boleh hang selamanya', () {
