@@ -141,7 +141,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   // tiap dimensi punya baris sendiri yang jujur.
                   const SizedBox(width: AppSpacing.s8),
                   _FilterButton(
-                    activeCount: _filterCount(filter),
+                    activeCount: _filterCount(
+                      filter,
+                      ref.watch(selectedAccountProvider),
+                    ),
                     onTap: () => _openFilterSheet(context),
                   ),
                 ],
@@ -160,10 +163,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   if (list.isEmpty) {
                     // v1.24.9: empty bercabang (kritik L4 — dulu satu state
                     // menuduh veteran "catat transaksi pertamamu").
+                    // v1.25: dompet spesifik ikut dihitung sebagai filter.
                     final hasFilter =
                         filter.categoryId != null ||
                         filter.isExpense != null ||
-                        filter.keyword.trim().isNotEmpty;
+                        filter.keyword.trim().isNotEmpty ||
+                        ref.watch(selectedAccountProvider) != null;
                     return _EmptyState(
                       hasFilter: hasFilter,
                       monthLabel: monthLabel(month),
@@ -246,13 +251,18 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
-  /// Jumlah dimensi filter aktif (tipe + kategori). Keyword TIDAK
-  /// dihitung — ia punya tombol clear sendiri di search field.
-  int _filterCount(HistoryFilter f) =>
-      (f.isExpense != null ? 1 : 0) + (f.categoryId != null ? 1 : 0);
+  /// Jumlah dimensi filter aktif (tipe + kategori + dompet).
+  /// Keyword TIDAK dihitung — ia punya tombol clear sendiri di search.
+  /// [selectedAccount]: null = Semua (tak dihitung). Dioper dari build
+  /// (watch reaktif) — v1.25.
+  int _filterCount(HistoryFilter f, int? selectedAccount) =>
+      (f.isExpense != null ? 1 : 0) +
+      (f.categoryId != null ? 1 : 0) +
+      (selectedAccount != null ? 1 : 0);
 
   /// Opsi A (v1.24.10): buka bottom-sheet filter. Reset = nol-kan SEMUA
-  /// dimensi termasuk keyword (+ teks search ikut dibersihkan).
+  /// dimensi termasuk keyword (+ teks search ikut dibersihkan) dan
+  /// dompet (kembali ke Semua) — v1.25.
   Future<void> _openFilterSheet(BuildContext context) async {
     // Bahasa showModalBottomSheet form catat: drag-handle, tanpa
     // isScrollControlled (sheet secukupnya, CTA selalu terlihat).
@@ -264,6 +274,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     if (result?.resetAll == true && mounted) {
       _searchCtrl.clear();
       ref.read(historyFilterProvider.notifier).state = const HistoryFilter();
+      ref.read(selectedAccountProvider.notifier).state = null;
     }
   }
 
@@ -369,6 +380,8 @@ class _FilterSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = ref.watch(historyFilterProvider);
     final cats = ref.watch(categoriesProvider);
+    final accounts = ref.watch(accountsProvider);
+    final selectedAccount = ref.watch(selectedAccountProvider);
     return SafeArea(
       // v1.24.10: SingleChildScrollView + Column, BUKAN ListView —
       // ListView me-lazy-build anak di bawah lipatan sehingga CTA
@@ -442,6 +455,55 @@ class _FilterSheet extends ConsumerWidget {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: AppSpacing.s12),
+            Text('Dompet', style: AppType.secondaryStrong(context)),
+            const SizedBox(height: AppSpacing.s4),
+            accounts.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.s12),
+                child: _SheetLoading(),
+              ),
+              error: (e, s) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.s12),
+                child: Text(
+                  'Dompet gagal dimuat.',
+                  style: AppType.secondary(context),
+                ),
+              ),
+              data: (list) {
+                if (list.length < 2) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.s12,
+                    ),
+                    child: Text(
+                      'Satu dompet — tambah di Beranda › Kelola.',
+                      style: AppType.secondary(context),
+                    ),
+                  );
+                }
+                return Wrap(
+                  spacing: AppSpacing.s8,
+                  runSpacing: AppSpacing.s8,
+                  children: [
+                    B2CFilterChip(
+                      label: 'Semua',
+                      selected: selectedAccount == null,
+                      onTap: () => _setAccount(ref, null),
+                    ),
+                    for (final a in list)
+                      B2CFilterChip(
+                        label: a.name,
+                        selected: selectedAccount == a.id,
+                        onTap: () => _setAccount(
+                          ref,
+                          selectedAccount == a.id ? null : a.id,
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: AppSpacing.s12),
             Text('Kategori', style: AppType.secondaryStrong(context)),
@@ -529,6 +591,11 @@ class _FilterSheet extends ConsumerWidget {
       isExpense: base.isExpense,
       keyword: base.keyword,
     );
+  }
+
+  void _setAccount(WidgetRef ref, int? id) {
+    HapticFeedback.selectionClick();
+    ref.read(selectedAccountProvider.notifier).state = id;
   }
 }
 

@@ -547,4 +547,109 @@ void main() {
     });
     await _flushDb(tester);
   });
+
+  // v1.25: seksi Dompet di sheet — pilih dompet = list menyempit +
+  // badge tombol 1; Reset nol-kan dompet (kembali Semua).
+  testWidgets('sheet filter: dompet + badge + reset (v1.25)', (tester) async {
+    final db = await _newDb(tester);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final keluargaId = await tester.runAsync(() async {
+      final k = await db
+          .into(db.accounts)
+          .insert(AccountsCompanion.insert(name: 'Keluarga'));
+      final utama = await _utama(db);
+      await db
+          .into(db.transactions)
+          .insert(
+            TransactionsCompanion.insert(
+              amount: 45000,
+              isExpense: Value(true),
+              categoryId: Value(1),
+              date: today,
+              note: Value('Makan siang'),
+              accountId: Value(utama),
+            ),
+          );
+      await db
+          .into(db.transactions)
+          .insert(
+            TransactionsCompanion.insert(
+              amount: 20000,
+              isExpense: Value(true),
+              categoryId: Value(2),
+              date: today,
+              note: Value('Jajan anak'),
+              accountId: Value(k),
+            ),
+          );
+      return k;
+    });
+    expect(keluargaId, isNotNull);
+    try {
+      await _pumpHistory(tester, db);
+      expect(await _waitFor(tester, find.text('Makan siang')), isTrue);
+      expect(find.text('Jajan anak'), findsOneWidget);
+
+      // Buka sheet → seksi Dompet ada (2 dompet).
+      await tester.tap(find.bySemanticsLabel('Filter, ketuk untuk ubah'));
+      await _pump(tester);
+      expect(await _waitFor(tester, find.text('Filter riwayat')), isTrue);
+      expect(find.text('Dompet'), findsOneWidget);
+      expect(find.text('Keluarga'), findsOneWidget);
+
+      // Pilih Keluarga → Jajan anak saja, badge 1.
+      await tester.ensureVisible(find.text('Keluarga').last);
+      await tester.pump();
+      await tester.tap(find.text('Keluarga').last);
+      await _pump(tester);
+      await tester.ensureVisible(find.text('Terapkan filter'));
+      await tester.pump();
+      await tester.tap(find.text('Terapkan filter'));
+      await _pump(tester);
+      expect(find.text('Makan siang'), findsNothing);
+      expect(await _waitFor(tester, find.text('Jajan anak')), isTrue);
+      expect(
+        find.bySemanticsLabel('Filter aktif 1, ketuk untuk ubah'),
+        findsOneWidget,
+      );
+
+      // Buka lagi → Reset → dompet kembali Semua, badge hilang.
+      await tester.tap(
+        find.bySemanticsLabel('Filter aktif 1, ketuk untuk ubah'),
+      );
+      await _pump(tester);
+      expect(await _waitFor(tester, find.text('Filter riwayat')), isTrue);
+      await tester.ensureVisible(find.text('Reset'));
+      await tester.pump();
+      await tester.tap(find.text('Reset'));
+      await _pump(tester);
+      expect(await _waitFor(tester, find.text('Makan siang')), isTrue);
+      expect(find.text('Jajan anak'), findsOneWidget);
+      expect(find.bySemanticsLabel('Filter, ketuk untuk ubah'), findsOneWidget);
+    } finally {
+      await _flushDb(tester);
+    }
+  });
+
+  // v1.25: 1 dompet = seksi Dompet tampilkan teks info (bukan chip).
+  testWidgets('sheet filter: 1 dompet tanpa chip (v1.25)', (tester) async {
+    final db = await _newDb(tester);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    await tester.runAsync(() async {
+      await _tx(db, 45000, true, 1, today, note: 'Makan siang');
+    });
+    try {
+      await _pumpHistory(tester, db);
+      expect(await _waitFor(tester, find.text('Makan siang')), isTrue);
+      await tester.tap(find.bySemanticsLabel('Filter, ketuk untuk ubah'));
+      await _pump(tester);
+      expect(await _waitFor(tester, find.text('Filter riwayat')), isTrue);
+      expect(find.text('Dompet'), findsOneWidget);
+      expect(find.textContaining('Satu dompet'), findsOneWidget);
+    } finally {
+      await _flushDb(tester);
+    }
+  });
 }
