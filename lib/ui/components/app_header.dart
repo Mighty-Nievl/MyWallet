@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import 'app_feedback.dart';
 
@@ -15,6 +16,7 @@ class AppHeader extends StatelessWidget {
     this.actionIcon,
     this.actionTooltip,
     this.onAction,
+    this.onBack,
   });
 
   final String title;
@@ -25,10 +27,23 @@ class AppHeader extends StatelessWidget {
   final String? actionTooltip;
   final VoidCallback? onAction;
 
+  /// Tombol kembali di kiri judul (v1.26: layar Riwayat/Budget/Laporan/
+  /// Utang dibuka via push dari grid Beranda, bukan tab — butuh jalan
+  /// pulang. null = tanpa tombol, Beranda tak berubah).
+  final VoidCallback? onBack;
+
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
+        if (onBack != null)
+          AppIconButton(
+            icon: Icons.arrow_back,
+            onPressed: onBack,
+            tooltip: 'Kembali',
+            bordered: true,
+          ),
+        if (onBack != null) const SizedBox(width: AppSpacing.s8),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

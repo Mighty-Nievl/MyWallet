@@ -66,6 +66,8 @@ class BudgetScreen extends ConsumerWidget {
                 actionTooltip: 'Tambah budget',
                 onAction: () =>
                     _openBudgetDialog(context, ref, month, budgets.value ?? []),
+                // v1.26: dibuka via push dari grid Beranda (bukan tab).
+                onBack: Navigator.of(context).pop,
               ),
             ),
             const SizedBox(height: AppSpacing.s8),

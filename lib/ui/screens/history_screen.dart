@@ -73,6 +73,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 actionIcon: Icons.calendar_month_outlined,
                 actionTooltip: 'Pilih bulan',
                 onAction: () => _pickMonth(context, month),
+                // v1.26: dibuka via push dari grid Beranda (bukan tab).
+                onBack: Navigator.of(context).pop,
               ),
             ),
             const SizedBox(height: AppSpacing.s8),

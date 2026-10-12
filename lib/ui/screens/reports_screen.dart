@@ -51,6 +51,8 @@ class ReportsScreen extends ConsumerWidget {
               actionIcon: Icons.picture_as_pdf_outlined,
               actionTooltip: 'Export PDF bulan ini',
               onAction: () => _exportPdf(context, ref, month),
+              // v1.26: dibuka via push dari grid Beranda (bukan tab).
+              onBack: Navigator.of(context).pop,
             ),
             const SizedBox(height: AppSpacing.s8),
             AppMonthNav(

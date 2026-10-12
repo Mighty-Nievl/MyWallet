@@ -26,6 +26,18 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.26.0',
+    date: '12 Okt 2026',
+    user:
+        'Beranda kini punya menu cepat: catat masuk/keluar, pindah dana, '
+        'dan scan struk dalam satu layar; navigasi bawah ramping jadi '
+        'Beranda, Catat, dan Scan.',
+    tech:
+        'Grid menu 4x2 (aksi + lihat) + nav 3 tombol + alur scan '
+        'kamera/galeri → pratinjau → simpan; 10 regression test.',
+    breaking: null,
+  ),
+  (
     version: 'v1.25.1',
     date: '12 Okt 2026',
     user:

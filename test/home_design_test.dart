@@ -279,6 +279,12 @@ void main() {
     // disembunyikan, showDate:false) → exact-match 2x itu benar per
     // desain baru (judul seksi + subtitle tile), bukan blok ganda
     // ala v1.14.x (strip "Kategori cepat" + seksi Top).
+    // v1.26: grid menu menambah tinggi atas → tile kategori di bawah
+    // lipatan; gulir dulu sebelum hitung (CustomScrollView lazy).
+    await tester.ensureVisible(find.text('Pengeluaran bulan ini'));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
     expect(find.text('Makan & Minum'), findsNWidgets(2));
     await _flushDriftCloseTimer(tester);
   });
@@ -584,6 +590,16 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
 
+    // v1.26: grid menu mendorong seksi recent ke bawah lipatan
+    // (CustomScrollView lazy) → seret dulu sebelum assert.
+    for (var i = 0; i < 5; i++) {
+      await tester.drag(
+        find.byType(CustomScrollView),
+        const Offset(0, -400),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
     // Judul (note) tetap ada.
     expect(find.text('Makan siang'), findsOneWidget);
     expect(find.text('Ojek'), findsOneWidget);
@@ -621,6 +637,14 @@ void main() {
 
     // Ambil posisi kanan kedua nominal — Expanded + textAlign.end
     // menjamin sejajar (toleransi 1px render).
+    // v1.26: seret dulu (tile recent di bawah lipatan grid menu).
+    for (var i = 0; i < 5; i++) {
+      await tester.drag(
+        find.byType(CustomScrollView),
+        const Offset(0, -400),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+    }
     final r45 = tester.getRect(find.text('-Rp45.000'));
     final r18 = tester.getRect(find.text('-Rp18.000'));
     expect((r45.right - r18.right).abs(), lessThan(1.0));
@@ -654,6 +678,14 @@ void main() {
     }
 
     // Baris ringkasan baru: "Masuk ... · Keluar ..." (kapital, 1 baris).
+    // v1.26: seret dulu (strip recent di bawah lipatan grid menu).
+    for (var i = 0; i < 5; i++) {
+      await tester.drag(
+        find.byType(CustomScrollView),
+        const Offset(0, -400),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+    }
     expect(find.textContaining('Masuk +Rp'), findsOneWidget);
     expect(find.textContaining('Keluar -Rp'), findsOneWidget);
     // Label lama lowercase + dobel "Hari ini" depan SUDAH tidak ada.

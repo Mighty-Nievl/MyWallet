@@ -113,6 +113,8 @@ class DebtScreen extends ConsumerWidget {
                 actionIcon: Icons.add,
                 actionTooltip: 'Catat utang / piutang',
                 onAction: () => _openDebtDialog(context, ref),
+                // v1.26: dibuka via push dari grid Beranda (bukan tab).
+                onBack: Navigator.of(context).pop,
               ),
             ),
             // v1.25: filter dompet global (tanpa Kelola — milik Beranda).

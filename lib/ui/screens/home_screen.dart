@@ -19,16 +19,23 @@ import '../design/app_typography.dart';
 import '../display.dart';
 import '../format.dart';
 import '../widgets/account_picker.dart';
+import '../widgets/home_feature_grid.dart';
 import '../widgets/tx_tile.dart';
 import 'accounts_screen.dart';
+import 'history_screen.dart';
+import 'reports_screen.dart';
 import 'settings_screen.dart';
 import 'tx_form_screen.dart';
 
 /// Redesign v1.24 B2C minimalis: header netral ramping, hero kartu putih
 /// bersih (saldo 48px + 1 CTA), delta/kilat/debts dihapus, spacing 32px.
+/// v1.26: menu fitur 4x2 (home:features) di bawah strip dompet;
+/// Riwayat/Budget/Laporan/Utang dibuka via push dari grid (bukan tab).
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key, this.onGoTab});
 
+  /// Dipakai test sebagai pintu navigasi; shell v1.26 tak lagi pakai
+  /// (grid push langsung). Dipertahankan agar 17 call-site test tak pecah.
   final ValueChanged<int>? onGoTab;
 
   // SECTION: HomeScreen.build dengan header minimalis + slot redesign
@@ -106,6 +113,15 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  // v1.26: menu fitur 4x2 (aksi + lihat) di bawah dompet,
+                  // di atas nav bulan — Beranda jadi pintu masuk semua.
+                  SliverToBoxAdapter(
+                    key: const ValueKey('home:features'),
+                    child: _pad(
+                      const HomeFeatureGrid(),
+                      top: AppSpacing.sectionGapLarge,
+                    ),
+                  ),
                   // Nav bulan: chip bulan jadi penanda konteks + kontrol
                   // bulan aktif (shared selectedMonthProvider).
                   SliverToBoxAdapter(
@@ -127,14 +143,17 @@ class HomeScreen extends ConsumerWidget {
                       child: _pad(
                         AppSection(
                           title: 'Pengeluaran bulan ini',
-                          trailing: onGoTab == null
-                              ? null
-                              : TextButton(
-                                  // v1.24.3: label konteks, bukan generik
-                                  // "Lihat semua" (kritik brutal L5).
-                                  onPressed: () => onGoTab!(3),
-                                  child: const Text('Semua kategori'),
-                                ),
+                          trailing: TextButton(
+                            // v1.24.3: label konteks, bukan generik
+                            // "Lihat semua" (kritik brutal L5).
+                            // v1.26: push langsung (tab 3 sudah tak ada).
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const ReportsScreen(),
+                              ),
+                            ),
+                            child: const Text('Semua kategori'),
+                          ),
                           child: _CategoryList(byCat: byCat, display: display),
                         ),
                       ),
@@ -149,13 +168,16 @@ class HomeScreen extends ConsumerWidget {
                       child: _pad(
                         AppSection(
                           title: 'Terakhir dicatat',
-                          trailing: onGoTab == null
-                              ? null
-                              : TextButton(
-                                  // v1.24.3: label konteks (kritik brutal L5).
-                                  onPressed: () => onGoTab!(1),
-                                  child: const Text('Semua transaksi'),
-                                ),
+                          trailing: TextButton(
+                            // v1.24.3: label konteks (kritik brutal L5).
+                            // v1.26: push langsung (tab 1 sudah tak ada).
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const HistoryScreen(),
+                              ),
+                            ),
+                            child: const Text('Semua transaksi'),
+                          ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
