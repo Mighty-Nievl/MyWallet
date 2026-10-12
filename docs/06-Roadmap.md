@@ -153,6 +153,7 @@ Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi 
 - [x] **Riwayat jujur penuh (v1.24.9)**: search kategori+nominal, strip "Menampilkan X dari N", Semua sadar keyword, toggle tipe, debounce, empty bercabang, chip a11y+48px, tile dense. Full 178/178.
 - [x] **Tile dua-baris + filter sheet (v1.24.10)**: catatan atas + meta/nominal bawah; chip scroll → tombol + bottom-sheet (Tipe + Kategori + Reset). Full 182/182.
 - [x] **Laporan menjawab (v1.24.11)**: selisih hero + judul dinamis + strip wawasan vs bulan lalu; legenda bar+pie + Semantics; privacy rata-batang; footnote 6-terbesar. Full 190/190.
+- [x] **Dompet ganda + transfer (v1.25.0)**: skema v4 + backfill Utama; pemilih Beranda + Kelola + TransferSheet; filter Riwayat/Laporan/Utang/Budget per-dompet; PDF + sync akun. Full 215/215.
 - [ ] Fase 3 — utang + budget ikut sync + uji 2 emulator bareng.
 - [ ] Fase 4 — hardening production-grade: RLS audit, hapus akun, kebijakan privasi (wajib Play Store), crash reporting.
 

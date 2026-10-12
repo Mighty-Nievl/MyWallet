@@ -26,6 +26,23 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.25.0',
+    date: '12 Okt 2026',
+    user:
+        'Kini bisa punya banyak dompet (mis. Pribadi + Keluarga): pilih '
+        'di Beranda, pindah dana antar dompet, dan saring Riwayat, '
+        'Laporan, Utang, dan Budget per dompet. Data lama otomatis masuk '
+        'dompet "Utama" — saldo tidak berubah.',
+    tech:
+        'Skema v4: tabel Accounts + accountId/accountUuid/transferId; '
+        'backfill seed Utama; agregat + 8 provider sadar-dompet; '
+        'transfer 2 kaki netral (filter transfer_id); koleksi sync '
+        'accounts + rules; AccountPicker + Kelola + TransferSheet; '
+        'filter sheet Riwayat + PDF sadar-dompet; 25 test dompet; '
+        '215/215 hijau.',
+    breaking: null,
+  ),
+  (
     version: 'v1.24.11',
     date: '12 Okt 2026',
     user:
