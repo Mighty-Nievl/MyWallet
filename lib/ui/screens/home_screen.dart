@@ -18,7 +18,9 @@ import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../display.dart';
 import '../format.dart';
+import '../widgets/account_picker.dart';
 import '../widgets/tx_tile.dart';
+import 'accounts_screen.dart';
 import 'settings_screen.dart';
 import 'tx_form_screen.dart';
 
@@ -88,6 +90,21 @@ class HomeScreen extends ConsumerWidget {
                   SliverToBoxAdapter(
                     key: const ValueKey('home:hero-slot'),
                     child: _HeroCard(balance: balance),
+                  ),
+                  // v1.25: pemilih dompet (Semua + chip + Kelola).
+                  // Hilang bila 1 dompet (hemat vertikal).
+                  SliverToBoxAdapter(
+                    key: const ValueKey('home:accounts'),
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.s12),
+                      child: AccountPicker(
+                        onManage: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const AccountsScreen(),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                   // Nav bulan: chip bulan jadi penanda konteks + kontrol
                   // bulan aktif (shared selectedMonthProvider).
