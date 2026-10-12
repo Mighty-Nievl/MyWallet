@@ -48,11 +48,17 @@ Future<AppDatabase> _newDb(WidgetTester tester) async {
   final db = await tester.runAsync(() async {
     final d = AppDatabase(NativeDatabase.memory());
     await d.customSelect('SELECT 1').get();
+    await d.backfillAccounts(); // seed Utama (v1.25)
     return d;
   });
   addTearDown(db!.close);
   return db;
 }
+
+/// Id dompet Utama (di-seed _newDb) — v1.25: helper tx WAJIB isi ini.
+Future<int> _utama(AppDatabase db) async => (await db.select(db.accounts).get())
+    .firstWhere((a) => a.name == 'Utama')
+    .id;
 
 Future<void> _tx(
   AppDatabase db,
@@ -61,17 +67,21 @@ Future<void> _tx(
   int cat,
   DateTime date, {
   String note = '',
-}) => db
-    .into(db.transactions)
-    .insert(
-      TransactionsCompanion.insert(
-        amount: amount,
-        isExpense: Value(isExpense),
-        categoryId: Value(cat),
-        date: date,
-        note: Value(note),
-      ),
-    );
+}) async {
+  final utama = await _utama(db);
+  await db
+      .into(db.transactions)
+      .insert(
+        TransactionsCompanion.insert(
+          amount: amount,
+          isExpense: Value(isExpense),
+          categoryId: Value(cat),
+          date: date,
+          note: Value(note),
+          accountId: Value(utama),
+        ),
+      );
+}
 
 Future<void> _pumpHistory(WidgetTester tester, AppDatabase db) async {
   await tester.pumpWidget(

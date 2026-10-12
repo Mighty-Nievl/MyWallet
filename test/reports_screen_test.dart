@@ -40,12 +40,19 @@ Future<AppDatabase> _newDb(WidgetTester tester) async {
   tester.view.devicePixelRatio = 1.0;
   tester.view.physicalSize = const Size(390, 844);
   addTearDown(tester.view.reset);
-  final db = (await tester.runAsync(
-    () async => AppDatabase(NativeDatabase.memory()),
-  ))!;
+  final db = (await tester.runAsync(() async {
+    final d = AppDatabase(NativeDatabase.memory());
+    await d.backfillAccounts(); // seed Utama (v1.25)
+    return d;
+  }))!;
   addTearDown(db.close);
   return db;
 }
+
+/// Id dompet Utama (di-seed _newDb) — v1.25: helper tx WAJIB isi ini.
+Future<int> _utama(AppDatabase db) async => (await db.select(db.accounts).get())
+    .firstWhere((a) => a.name == 'Utama')
+    .id;
 
 Future<void> _tx(
   AppDatabase db,
@@ -54,17 +61,21 @@ Future<void> _tx(
   int cat,
   DateTime date, {
   String note = '',
-}) => db
-    .into(db.transactions)
-    .insert(
-      TransactionsCompanion.insert(
-        amount: amount,
-        isExpense: Value(isExpense),
-        categoryId: Value(cat),
-        date: date,
-        note: Value(note),
-      ),
-    );
+}) async {
+  final utama = await _utama(db);
+  await db
+      .into(db.transactions)
+      .insert(
+        TransactionsCompanion.insert(
+          amount: amount,
+          isExpense: Value(isExpense),
+          categoryId: Value(cat),
+          date: date,
+          note: Value(note),
+          accountId: Value(utama),
+        ),
+      );
+}
 
 Future<void> _pumpReports(
   WidgetTester tester,
@@ -94,6 +105,7 @@ void main() {
   test('fetchSixMonthFlow: 6 titik jangkar bulan lihat', () async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
+    await db.backfillAccounts(); // seed Utama (v1.25)
     await _tx(db, 1000000, false, 9, DateTime(2026, 1, 5, 8));
     await _tx(db, 200000, true, 1, DateTime(2026, 1, 6, 12));
     final rows = await fetchSixMonthFlow(db, '2026-03');
@@ -202,10 +214,7 @@ void main() {
       // Semantik tersamar ADA (chart label + node internal fl_chart
       // → findsWidgets, bukan One), dan nominal mentah TAK ADA
       // di widget teks manapun (bocor visual tertutup).
-      expect(
-        find.bySemanticsLabel(RegExp(r'Rp••••')),
-        findsWidgets,
-      );
+      expect(find.bySemanticsLabel(RegExp(r'Rp••••')), findsWidgets);
       expect(find.textContaining('5.000.000'), findsNothing);
     } finally {
       await tester.pumpWidget(const SizedBox());

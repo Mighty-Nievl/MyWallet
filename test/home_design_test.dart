@@ -60,12 +60,19 @@ Future<AppDatabase> _newDb(WidgetTester tester, {Size? size}) async {
   tester.view.devicePixelRatio = 1.0;
   tester.view.physicalSize = size ?? const Size(390, 844);
   addTearDown(tester.view.reset);
-  final db = (await tester.runAsync(
-    () async => AppDatabase(NativeDatabase.memory()),
-  ))!;
+  final db = (await tester.runAsync(() async {
+    final d = AppDatabase(NativeDatabase.memory());
+    await d.backfillAccounts(); // seed Utama (v1.25)
+    return d;
+  }))!;
   addTearDown(db.close);
   return db;
 }
+
+/// Id dompet Utama (di-seed _newDb) — v1.25: helper tx WAJIB isi ini.
+Future<int> _utama(AppDatabase db) async => (await db.select(db.accounts).get())
+    .firstWhere((a) => a.name == 'Utama')
+    .id;
 
 Future<void> _seed(AppDatabase db) async {
   Future<void> tx(
@@ -74,17 +81,21 @@ Future<void> _seed(AppDatabase db) async {
     int cat,
     DateTime date, {
     String note = '',
-  }) => db
-      .into(db.transactions)
-      .insert(
-        TransactionsCompanion.insert(
-          amount: amount,
-          isExpense: Value(isExpense),
-          categoryId: Value(cat),
-          date: date,
-          note: Value(note),
-        ),
-      );
+  }) async {
+    final utama = await _utama(db);
+    await db
+        .into(db.transactions)
+        .insert(
+          TransactionsCompanion.insert(
+            amount: amount,
+            isExpense: Value(isExpense),
+            categoryId: Value(cat),
+            date: date,
+            note: Value(note),
+            accountId: Value(utama),
+          ),
+        );
+  }
 
   final now = DateTime.now();
   final bulanIni = DateTime(now.year, now.month, now.day);
@@ -699,9 +710,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light(),
-        home: Scaffold(
-          body: Column(children: [gear, back]),
-        ),
+        home: Scaffold(body: Column(children: [gear, back])),
       ),
     );
     await tester.pump();
@@ -712,8 +721,10 @@ void main() {
     // Berboder: BackHeader masih pakai AppIconButton default (kotak ada).
     expect(find.text('Kembali'), findsOneWidget);
     // Default flag tetap true — pemakai lama tidak berubah visual.
-    expect(const AppIconButton(icon: Icons.add, onPressed: null).bordered,
-        isTrue);
+    expect(
+      const AppIconButton(icon: Icons.add, onPressed: null).bordered,
+      isTrue,
+    );
   });
 }
 
