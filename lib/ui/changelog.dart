@@ -26,6 +26,19 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.24.10',
+    date: '12 Okt 2026',
+    user:
+        'Baris Riwayat kini dua lapis (catatan di atas, kategori + '
+        'nominal di bawah) dan filter pindah ke panel bawah dengan '
+        'tombol + badge jumlah aktif.',
+    tech:
+        'TxTile Column 2-baris (nominal tetap Expanded rata kanan); '
+        'chip scroll → _FilterButton + _FilterSheet (Tipe + Kategori + '
+        'Reset + Terapkan); 6 test sheet; golden Beranda regen.',
+    breaking: null,
+  ),
+  (
     version: 'v1.24.9',
     date: '11 Okt 2026',
     user:

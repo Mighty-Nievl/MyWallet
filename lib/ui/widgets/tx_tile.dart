@@ -17,11 +17,17 @@ import '../display.dart';
 /// Visual: glyph monochrome aksen, judul jelas, info sekunder
 /// kontras tinggi (mudah dibaca), nominal tegas.
 ///
-/// [showDate]: tampilkan tanggal di subtitle. Beranda (v1.24.4) pakai
-/// false karena tanggal sudah ada di header grup ("Kemarin",
-/// "9 Okt 2026") — ngulang di tiap baris cuma bikin kepotong "Ke...".
-/// Riwayat (flat, tanpa grup) pakai true (default): tanggal per baris
-/// di sana itu informasi, bukan redundansi.
+/// Layout dua-baris (v1.24.10, request user): baris 1 = catatan
+/// full-width; baris 2 = kategori kiri + nominal kanan. Alasan L2 —
+/// layout lama (judul + nominal dua Expanded sejajar) bikin keduanya
+/// rebutan satu baris horizontal: catatan sedikit panjang langsung
+/// ellipsis padahal ruang vertikal masih lega.
+///
+/// [showDate]: tampilkan tanggal di baris 2 (belakang kategori).
+/// Beranda (v1.24.4) pakai false karena tanggal sudah ada di header
+/// grup ("Kemarin", "9 Okt 2026"). Riwayat grup (v1.24.8) juga false.
+/// Flat tanpa grup pakai true (default): tanggal per baris di sana
+/// itu informasi, bukan redundansi.
 ///
 /// [dense]: kepadatan arsip (v1.24.9) — padding vertikal s8, khusus
 /// Riwayat yang list-nya panjang. Beranda (teaser 5 item) tetap lega s12.
@@ -50,13 +56,16 @@ class TxTile extends ConsumerWidget {
         : AppColors.incomeOf(context);
     // v1.24.4: subtitle cerdas — tanpa tanggal di grup Beranda (showDate
     // false), tanpa duplikat kategori saat catatan kosong (judul sudah
-    // nama kategori → subtitle jadi tanggal saja / disembunyikan total
+    // nama kategori → baris 2 jadi tanggal saja / disembunyikan total
     // kalau keduanya kosong, biar kolom lega dan nol "Ke...").
     final catName = tx.catName ?? 'Tanpa kategori';
     final hasNote = tx.note.isNotEmpty;
     final title = hasNote ? tx.note : catName;
     final datePart = showDate ? display.date(tx.date) : '';
-    final subtitle = hasNote
+    // v1.24.10: baris 2 = kategori (+ tanggal bila showDate). Tanpa
+    // catatan = judul sudah nama kategori → baris 2 tinggal tanggal
+    // (atau kosong total bila tanggal juga off — judul saja).
+    final meta = hasNote
         ? (showDate ? '$catName · $datePart' : catName)
         : datePart;
     final tap = onTap;
@@ -77,11 +86,14 @@ class TxTile extends ConsumerWidget {
           vertical: dense ? AppSpacing.s8 : AppSpacing.s12,
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             if (display.showIcons) ...[
               CategoryGlyph(emoji: tx.catIcon ?? '📦'),
               const SizedBox(width: AppSpacing.s12),
             ],
+            // v1.24.10: kolom teks full-width — baris 1 catatan, baris 2
+            // meta kiri + nominal kanan (rebutan horizontal dihapus).
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,32 +106,55 @@ class TxTile extends ConsumerWidget {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  // v1.24.4: subtitle cuma dirender kalau ada isinya
+                  // v1.24.4: baris 2 cuma dirender kalau ada isinya
                   // (Beranda tanpa-catatan = kosong total → judul saja).
-                  if (subtitle.isNotEmpty) ...[
+                  if (meta.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.micro),
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppType.secondaryStrong(context),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            meta,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppType.secondaryStrong(context),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.s8),
+                        // v1.24.5: nominal TETAP Expanded + rata kanan —
+                        // dua slot 1:1 → tepi kanan sejajar vertikal
+                        // (kritik screenshot: -Rp8.000 mundur vs
+                        // -Rp300.000). Yang menyusut saat sempit = meta
+                        // (ellipsis), bukan nominal. Anti-overflow 300px.
+                        Expanded(
+                          child: Text(
+                            display.signed(tx.amount, isExpense: tx.isExpense),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.end,
+                            style: AppType.amount(
+                              context,
+                            ).copyWith(color: amountColor),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    const SizedBox(height: AppSpacing.micro),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        display.signed(tx.amount, isExpense: tx.isExpense),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.end,
+                        style: AppType.amount(
+                          context,
+                        ).copyWith(color: amountColor),
+                      ),
                     ),
                   ],
                 ],
-              ),
-            ),
-            const SizedBox(width: AppSpacing.s8),
-            // v1.24.5: Expanded (bukan Flexible) — kolom nominal SELALU
-            // selebar sisa ruang + teks rata kanan → tepi kanan SEMUA
-            // nominal sejajar vertikal (kritik screenshot: -Rp8.000
-            // mundur vs -Rp300.000). Ellipsis tetap (anti-overflow 300px).
-            Expanded(
-              child: Text(
-                display.signed(tx.amount, isExpense: tx.isExpense),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.end,
-                style: AppType.amount(context).copyWith(color: amountColor),
               ),
             ),
             // Seluruh baris tap → edit: chevron sebagai affordance.

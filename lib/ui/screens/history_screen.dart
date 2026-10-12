@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
@@ -11,6 +12,9 @@ import '../components/app_feedback.dart';
 import '../components/app_header.dart';
 import '../components/app_month_nav.dart';
 import '../components/b2c_chip.dart';
+import '../components/category_glyph.dart';
+import '../design/app_motion.dart';
+import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../display.dart';
@@ -51,7 +55,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final history = ref.watch(historyProvider);
     // v1.24.9: total jujur tanpa limit (strip "Menampilkan 100 dari N").
     final totalAsync = ref.watch(historyCountProvider);
-    final cats = ref.watch(categoriesProvider);
     final month = ref.watch(selectedMonthProvider);
 
     return Scaffold(
@@ -85,127 +88,61 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 AppSpacing.page,
                 0,
               ),
-              child: TextField(
-                controller: _searchCtrl,
-                decoration: InputDecoration(
-                  // v1.24.9: hint jujur scope (kritik L4 — dulu
-                  // "Cari transaksi..." padahal cuma bulan aktif).
-                  hintText: 'Cari di ${monthLabel(month)}...',
-                  prefixIcon: const Icon(Icons.search, size: 20),
-                  suffixIcon: filter.keyword.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, size: 20),
-                          onPressed: () {
-                            _searchCtrl.clear();
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _searchCtrl,
+                      decoration: InputDecoration(
+                        // v1.24.9: hint jujur scope (kritik L4 — dulu
+                        // "Cari transaksi..." padahal cuma bulan aktif).
+                        hintText: 'Cari di ${monthLabel(month)}...',
+                        prefixIcon: const Icon(Icons.search, size: 20),
+                        suffixIcon: filter.keyword.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 20),
+                                onPressed: () {
+                                  _searchCtrl.clear();
+                                  ref
+                                      .read(historyFilterProvider.notifier)
+                                      .state = HistoryFilter(
+                                    categoryId: filter.categoryId,
+                                    isExpense: filter.isExpense,
+                                  );
+                                },
+                              )
+                            : null,
+                        isDense: true,
+                      ),
+                      onChanged: (v) {
+                        // v1.24.9: debounce 300ms — query + regroup +
+                        // resort jalan setelah user berhenti mengetik,
+                        // bukan per huruf.
+                        _searchTimer?.cancel();
+                        _searchTimer = Timer(
+                          const Duration(milliseconds: 300),
+                          () {
+                            if (!mounted) return;
+                            final f = ref.read(historyFilterProvider);
                             ref
                                 .read(historyFilterProvider.notifier)
                                 .state = HistoryFilter(
-                              categoryId: filter.categoryId,
-                              isExpense: filter.isExpense,
+                              categoryId: f.categoryId,
+                              isExpense: f.isExpense,
+                              keyword: v,
                             );
                           },
-                        )
-                      : null,
-                  isDense: true,
-                ),
-                onChanged: (v) {
-                  // v1.24.9: debounce 300ms — query + regroup + resort
-                  // jalan setelah user berhenti mengetik, bukan per huruf.
-                  _searchTimer?.cancel();
-                  _searchTimer = Timer(const Duration(milliseconds: 300), () {
-                    if (!mounted) return;
-                    final f = ref.read(historyFilterProvider);
-                    ref
-                        .read(historyFilterProvider.notifier)
-                        .state = HistoryFilter(
-                      categoryId: f.categoryId,
-                      isExpense: f.isExpense,
-                      keyword: v,
-                    );
-                  });
-                },
-              ),
-            ),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.page,
-                vertical: AppSpacing.s8,
-              ),
-              child: Row(
-                children: [
-                  _FilterChip(
-                    label: 'Semua',
-                    // v1.24.9: selected buta keyword ditutup (kritik L4 —
-                    // dulu keyword aktif tapi Semua tetap menyala).
-                    selected:
-                        filter.isExpense == null &&
-                        filter.categoryId == null &&
-                        filter.keyword.trim().isEmpty,
-                    // v1.24.8: "Semua" beneran semua — reset kategori juga
-                    // (kritik brutal L4: dulu categoryId dipertahankan,
-                    // label klaim semua padahal daftar tersaring).
-                    onTap: () =>
-                        ref.read(historyFilterProvider.notifier).state =
-                            HistoryFilter(keyword: filter.keyword),
+                        );
+                      },
+                    ),
                   ),
+                  // v1.24.10 Opsi A: chip scroll → tombol filter +
+                  // bottom-sheet (request user). Tanpa scroll horizontal,
+                  // tiap dimensi punya baris sendiri yang jujur.
                   const SizedBox(width: AppSpacing.s8),
-                  _FilterChip(
-                    label: 'Pemasukan',
-                    selected: filter.isExpense == false,
-                    // v1.24.9: toggle-off konsisten dgn chip kategori
-                    // (kritik L1 — dulu tipe terkunci, kategori bisa lepas).
-                    onTap: () => _setFilter(
-                      filter,
-                      filter.isExpense == false ? null : false,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.s8),
-                  _FilterChip(
-                    label: 'Pengeluaran',
-                    selected: filter.isExpense == true,
-                    onTap: () => _setFilter(
-                      filter,
-                      filter.isExpense == true ? null : true,
-                    ),
-                  ),
-                  cats.when(
-                    // v1.24.9: skeleton selebar chip, bukan shrink
-                    // (kritik L1 — dulu baris melebar 1 frame saat datang).
-                    loading: () => const Row(
-                      children: [
-                        SizedBox(width: AppSpacing.s8),
-                        _ChipSkeleton(),
-                        SizedBox(width: AppSpacing.s8),
-                        _ChipSkeleton(),
-                      ],
-                    ),
-                    error: (e, s) => const SizedBox.shrink(),
-                    data: (list) => Row(
-                      children: [
-                        if (list.isNotEmpty)
-                          const SizedBox(width: AppSpacing.s8),
-                        for (final c in list) ...[
-                          _FilterChip(
-                            label: '${c.icon} ${c.name}',
-                            selected: filter.categoryId == c.id,
-                            onTap: () {
-                              final cur = ref.read(historyFilterProvider);
-                              ref
-                                  .read(historyFilterProvider.notifier)
-                                  .state = HistoryFilter(
-                                categoryId: cur.categoryId == c.id
-                                    ? null
-                                    : c.id,
-                                isExpense: cur.isExpense,
-                                keyword: cur.keyword,
-                              );
-                            },
-                          ),
-                          const SizedBox(width: AppSpacing.s8),
-                        ],
-                      ],
-                    ),
+                  _FilterButton(
+                    activeCount: _filterCount(filter),
+                    onTap: () => _openFilterSheet(context),
                   ),
                 ],
               ),
@@ -309,12 +246,25 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
-  void _setFilter(HistoryFilter base, bool? type) {
-    ref.read(historyFilterProvider.notifier).state = HistoryFilter(
-      categoryId: base.categoryId,
-      isExpense: type,
-      keyword: base.keyword,
+  /// Jumlah dimensi filter aktif (tipe + kategori). Keyword TIDAK
+  /// dihitung — ia punya tombol clear sendiri di search field.
+  int _filterCount(HistoryFilter f) =>
+      (f.isExpense != null ? 1 : 0) + (f.categoryId != null ? 1 : 0);
+
+  /// Opsi A (v1.24.10): buka bottom-sheet filter. Reset = nol-kan SEMUA
+  /// dimensi termasuk keyword (+ teks search ikut dibersihkan).
+  Future<void> _openFilterSheet(BuildContext context) async {
+    // Bahasa showModalBottomSheet form catat: drag-handle, tanpa
+    // isScrollControlled (sheet secukupnya, CTA selalu terlihat).
+    final result = await showModalBottomSheet<_SheetResult>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => const _FilterSheet(),
     );
+    if (result?.resetAll == true && mounted) {
+      _searchCtrl.clear();
+      ref.read(historyFilterProvider.notifier).state = const HistoryFilter();
+    }
   }
 
   Future<void> _pickMonth(BuildContext context, String current) async {
@@ -343,39 +293,301 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 /// Judul layar Riwayat sudah via [AppHeader] shared.
 /// Kalender aksi langsung jadi bagian header (tanpa _Header lokal).
 
-/// Chip filter B2C (v1.20): lihat [B2CFilterChip] — pil semibold +
-/// haptic + scale-down. Radius pil penuh (bukan md 12).
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.label,
+/// Tombol filter Opsi A (v1.24.10, request user): ganti chip scroll
+/// horizontal. Badge angka = jumlah dimensi filter aktif (tipe +
+/// kategori; keyword TIDAK dihitung — ia punya tombol clear sendiri
+/// di search field). Nol aktif = ikon polos tanpa badge.
+class _FilterButton extends StatelessWidget {
+  const _FilterButton({required this.activeCount, required this.onTap});
+  final int activeCount;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final active = activeCount > 0;
+    return Semantics(
+      button: true,
+      label: active
+          ? 'Filter aktif $activeCount, ketuk untuk ubah'
+          : 'Filter, ketuk untuk ubah',
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: AnimatedContainer(
+          duration: AppMotion.fast,
+          curve: AppMotion.easeOut,
+          constraints: const BoxConstraints(
+            minHeight: AppSpacing.touchMin,
+            minWidth: AppSpacing.touchMin,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s12),
+          decoration: BoxDecoration(
+            color: active ? scheme.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: active ? scheme.primary : scheme.outlineVariant,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                active ? Icons.filter_alt : Icons.filter_alt_outlined,
+                size: 20,
+                color: active ? scheme.onPrimary : scheme.onSurfaceVariant,
+              ),
+              if (active) ...[
+                const SizedBox(width: AppSpacing.s4),
+                Text(
+                  '$activeCount',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: scheme.onPrimary,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Bottom-sheet filter Riwayat (Opsi A): dua seksi jujur — Tipe +
+/// Kategori — plus Reset. Bahasa _SheetRow form catat (glyph + nama +
+/// check), bukan chip scroll. Keyword TIDAK di sini (milik search).
+class _FilterSheet extends ConsumerWidget {
+  const _FilterSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final filter = ref.watch(historyFilterProvider);
+    final cats = ref.watch(categoriesProvider);
+    return SafeArea(
+      // v1.24.10: SingleChildScrollView + Column, BUKAN ListView —
+      // ListView me-lazy-build anak di bawah lipatan sehingga CTA
+      // "Terapkan filter" tak ada di tree sebelum scroll (test merah
+      // "Found 0 widgets"). Column = semua eager + tetap scroll.
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.page,
+          AppSpacing.s8,
+          AppSpacing.page,
+          AppSpacing.sectionGap,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Filter riwayat',
+                    style: AppType.sectionTitle(context),
+                  ),
+                ),
+                // Reset jujur: nol-kan SEMUA dimensi termasuk keyword
+                // (sekaligus bersihkan teks search via pop-result).
+                TextButton(
+                  onPressed: () {
+                    HapticFeedback.selectionClick();
+                    Navigator.pop(context, const _SheetResult(resetAll: true));
+                  },
+                  child: const Text('Reset'),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.s4),
+            Text('Tipe', style: AppType.secondaryStrong(context)),
+            const SizedBox(height: AppSpacing.s4),
+            Row(
+              children: [
+                Expanded(
+                  child: B2CFilterChip(
+                    label: 'Semua',
+                    selected: filter.isExpense == null,
+                    onTap: () => _setType(ref, filter, null),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.s8),
+                Expanded(
+                  child: B2CFilterChip(
+                    label: 'Masuk',
+                    selected: filter.isExpense == false,
+                    // Toggle-off konsisten chip lama (kritik L1 v1.24.9).
+                    onTap: () => _setType(
+                      ref,
+                      filter,
+                      filter.isExpense == false ? null : false,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.s8),
+                Expanded(
+                  child: B2CFilterChip(
+                    label: 'Keluar',
+                    selected: filter.isExpense == true,
+                    onTap: () => _setType(
+                      ref,
+                      filter,
+                      filter.isExpense == true ? null : true,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.s12),
+            Text('Kategori', style: AppType.secondaryStrong(context)),
+            const SizedBox(height: AppSpacing.s4),
+            cats.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.s12),
+                child: _SheetLoading(),
+              ),
+              error: (e, s) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.s12),
+                child: Text(
+                  'Kategori gagal dimuat.',
+                  style: AppType.secondary(context),
+                ),
+              ),
+              data: (list) {
+                if (list.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.s12,
+                    ),
+                    child: Text(
+                      'Belum ada kategori.',
+                      style: AppType.secondary(context),
+                    ),
+                  );
+                }
+                return Column(
+                  children: [
+                    _SheetCatRow(
+                      icon: '📦',
+                      name: 'Semua kategori',
+                      selected: filter.categoryId == null,
+                      onTap: () => _setCat(ref, filter, null),
+                    ),
+                    for (final c in list)
+                      _SheetCatRow(
+                        icon: c.icon,
+                        name: c.name,
+                        selected: filter.categoryId == c.id,
+                        // Toggle-off konsisten chip lama.
+                        onTap: () => _setCat(
+                          ref,
+                          filter,
+                          filter.categoryId == c.id ? null : c.id,
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: AppSpacing.s12),
+            // CTA jujur: kriteria siap, user tinggal tutup (bukan angka
+            // klaim — count ikut bulan+keyword, bukan milik sheet).
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  Navigator.pop(context, const _SheetResult(resetAll: false));
+                },
+                child: const Text('Terapkan filter'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _setType(WidgetRef ref, HistoryFilter base, bool? type) {
+    HapticFeedback.selectionClick();
+    ref.read(historyFilterProvider.notifier).state = HistoryFilter(
+      categoryId: base.categoryId,
+      isExpense: type,
+      keyword: base.keyword,
+    );
+  }
+
+  void _setCat(WidgetRef ref, HistoryFilter base, int? id) {
+    HapticFeedback.selectionClick();
+    ref.read(historyFilterProvider.notifier).state = HistoryFilter(
+      categoryId: id,
+      isExpense: base.isExpense,
+      keyword: base.keyword,
+    );
+  }
+}
+
+/// Hasil pop sheet: resetAll = nol-kan keyword juga (+ search text).
+class _SheetResult {
+  const _SheetResult({required this.resetAll});
+  final bool resetAll;
+}
+
+/// Baris kategori sheet — bahasa _SheetRow form catat.
+class _SheetCatRow extends StatelessWidget {
+  const _SheetCatRow({
+    required this.icon,
+    required this.name,
     required this.selected,
     required this.onTap,
   });
-  final String label;
+  final String icon;
+  final String name;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return B2CFilterChip(label: label, selected: selected, onTap: onTap);
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppRadius.mdAll,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.s8),
+        child: Row(
+          children: [
+            CategoryGlyph(emoji: icon, size: 36, iconSize: 18),
+            const SizedBox(width: AppSpacing.s12),
+            Expanded(
+              child: Text(
+                name,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (selected) Icon(Icons.check, size: 20, color: scheme.primary),
+          ],
+        ),
+      ),
+    );
   }
 }
 
-/// Skeleton selebar chip (reserve space selagi kategori loading).
-class _ChipSkeleton extends StatelessWidget {
-  const _ChipSkeleton();
+/// Loading sheet: skeleton garis ganda (bukan shrink — anti shift).
+class _SheetLoading extends StatelessWidget {
+  const _SheetLoading();
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      width: 96,
-      height: 48,
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(999),
-      ),
-    );
+    return const AppCard(child: AppSkeleton(lines: 3));
   }
 }
 

@@ -11,12 +11,13 @@ import 'package:mywallet/ui/screens/history_screen.dart';
 import 'package:mywallet/ui/widgets/tx_tile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Widget test Riwayat (v1.24.8 + v1.24.9) — nutup kritik brutal L1/L3/L4.
+/// Widget test Riwayat (v1.24.8 + v1.24.9 + v1.24.10).
 ///
-/// v1.24.8: Semua-reset, strip hasil, grup tanggal.
-/// v1.24.9: search kategori+nominal, strip jujur limit, Semua sadar
-/// keyword, toggle tipe, debounce, empty bercabang, chip a11y+48px,
-/// tile dense arsip.
+/// v1.24.8: reset filter, strip hasil, grup tanggal.
+/// v1.24.9: search kategori+nominal, strip jujur limit, toggle tipe,
+/// debounce, empty bercabang, chip a11y+48px, tile dense arsip.
+/// v1.24.10: tile dua-baris (catatan atas, meta+nominal bawah);
+/// filter Opsi A — tombol + bottom-sheet ganti chip scroll.
 ///
 /// Harness ikut pola debt_widget_test: pump manual + _waitFor +
 /// try/finally, tanpa pumpAndSettle.
@@ -88,6 +89,162 @@ Future<void> _flushDb(WidgetTester tester) async {
 }
 
 void main() {
+  // v1.24.10 Opsi A: chip scroll horizontal SUDAH tidak ada —
+  // filter hidup di tombol + bottom-sheet. Absence-test ini kunci
+  // kontraknya (keberadaan satu chip scroll = regresi desain).
+  testWidgets('tanpa chip scroll: filter via tombol + sheet (v1.24.10)', (
+    tester,
+  ) async {
+    final db = await _newDb(tester);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    await tester.runAsync(() async {
+      await _tx(db, 45000, true, 1, today, note: 'Makan siang');
+    });
+    try {
+      await _pumpHistory(tester, db);
+      expect(await _waitFor(tester, find.text('Makan siang')), isTrue);
+      expect(find.widgetWithText(B2CFilterChip, 'Semua'), findsNothing);
+      expect(find.widgetWithText(B2CFilterChip, 'Pengeluaran'), findsNothing);
+      expect(find.widgetWithText(B2CFilterChip, 'Pemasukan'), findsNothing);
+      // Tombol filter ada (semantik, tanpa badge saat nol aktif).
+      expect(find.byTooltip('Filter, ketuk untuk ubah'), findsNothing);
+      expect(
+        find.text('Filter, ketuk untuk ubah', findRichText: true),
+        findsNothing,
+      );
+    } finally {
+      await _flushDb(tester);
+    }
+  });
+
+  testWidgets('sheet filter: kategori + reset (v1.24.10)', (tester) async {
+    final db = await _newDb(tester);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    await tester.runAsync(() async {
+      await _tx(db, 45000, true, 1, today, note: 'Makan siang');
+      await _tx(db, 18000, true, 2, today, note: 'Ojek');
+    });
+    try {
+      await _pumpHistory(tester, db);
+      expect(await _waitFor(tester, find.text('Makan siang')), isTrue);
+
+      // Buka sheet via tombol filter (semantik eksplisit).
+      final btn = find.bySemanticsLabel('Filter, ketuk untuk ubah');
+      expect(btn, findsOneWidget);
+      await tester.tap(btn);
+      await _pump(tester);
+      expect(await _waitFor(tester, find.text('Filter riwayat')), isTrue);
+      expect(find.text('Tipe'), findsOneWidget);
+      expect(find.text('Kategori'), findsOneWidget);
+
+      // Pilih kategori Makan & Minum → Ojek hilang, badge tombol = 1.
+      // .last di ensureVisible juga (teks ganda: tile + sheet row).
+      await tester.ensureVisible(find.text('Makan & Minum').last);
+      await tester.pump();
+      await tester.tap(find.text('Makan & Minum').last);
+      await _pump(tester);
+      await tester.ensureVisible(find.text('Terapkan filter'));
+      await tester.pump();
+      await tester.tap(find.text('Terapkan filter'));
+      await _pump(tester);
+      expect(find.text('Ojek'), findsNothing);
+      expect(await _waitFor(tester, find.text('Makan siang')), isTrue);
+      expect(
+        find.bySemanticsLabel('Filter aktif 1, ketuk untuk ubah'),
+        findsOneWidget,
+      );
+
+      // Buka lagi → Reset → Ojek muncul kembali.
+      await tester.tap(
+        find.bySemanticsLabel('Filter aktif 1, ketuk untuk ubah'),
+      );
+      await _pump(tester);
+      expect(await _waitFor(tester, find.text('Filter riwayat')), isTrue);
+      await tester.ensureVisible(find.text('Reset'));
+      await tester.pump();
+      await tester.tap(find.text('Reset'));
+      await _pump(tester);
+      expect(await _waitFor(tester, find.text('Ojek')), isTrue);
+    } finally {
+      await _flushDb(tester);
+    }
+  });
+
+  testWidgets('sheet filter: toggle tipe Keluar (v1.24.10)', (tester) async {
+    final db = await _newDb(tester);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    await tester.runAsync(() async {
+      await _tx(db, 45000, true, 1, today, note: 'Makan siang');
+      await _tx(db, 100000, false, 9, today, note: 'Gaji');
+    });
+    try {
+      await _pumpHistory(tester, db);
+      expect(await _waitFor(tester, find.text('Makan siang')), isTrue);
+      await tester.tap(find.bySemanticsLabel('Filter, ketuk untuk ubah'));
+      await _pump(tester);
+      expect(await _waitFor(tester, find.text('Filter riwayat')), isTrue);
+      // Chip Keluar di sheet (scope sheet, bukan layar).
+      final keluar = find.widgetWithText(B2CFilterChip, 'Keluar');
+      expect(keluar, findsOneWidget);
+      await tester.tap(keluar);
+      await _pump(tester);
+      await tester.ensureVisible(find.text('Terapkan filter'));
+      await tester.pump();
+      await tester.tap(find.text('Terapkan filter'));
+      await _pump(tester);
+      expect(find.text('Gaji'), findsNothing);
+      // Toggle-off lagi → Gaji kembali.
+      await tester.tap(
+        find.bySemanticsLabel('Filter aktif 1, ketuk untuk ubah'),
+      );
+      await _pump(tester);
+      expect(await _waitFor(tester, find.text('Filter riwayat')), isTrue);
+      await tester.ensureVisible(find.widgetWithText(B2CFilterChip, 'Keluar'));
+      await tester.pump();
+      await tester.tap(find.widgetWithText(B2CFilterChip, 'Keluar'));
+      await _pump(tester);
+      await tester.ensureVisible(find.text('Terapkan filter'));
+      await tester.pump();
+      await tester.tap(find.text('Terapkan filter'));
+      await _pump(tester);
+      expect(await _waitFor(tester, find.text('Gaji')), isTrue);
+    } finally {
+      await _flushDb(tester);
+    }
+  });
+
+  testWidgets('tile dua-baris: nominal sejajar + meta ellipsis (v1.24.10)', (
+    tester,
+  ) async {
+    // Layout request user: catatan full-width atas; meta kiri +
+    // nominal kanan bawah. Tepi kanan nominal tetap sejajar (v1.24.5).
+    final db = await _newDb(tester);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    await tester.runAsync(() async {
+      await _tx(db, 45000, true, 1, today, note: 'Makan siang enak sekali');
+      await _tx(db, 18000, true, 2, today, note: 'Ojek');
+    });
+    try {
+      await _pumpHistory(tester, db);
+      expect(await _waitFor(tester, find.text('Ojek')), isTrue);
+      final r45 = tester.getRect(find.text('-Rp45.000'));
+      final r18 = tester.getRect(find.text('-Rp18.000'));
+      expect((r45.right - r18.right).abs(), lessThan(1.0));
+      // Meta (kategori) di bawah judul, bukan di baris judul.
+      final titleRect = tester.getRect(find.text('Makan siang enak sekali'));
+      final metaRect = tester.getRect(find.text('Makan & Minum').first);
+      expect(metaRect.top, greaterThan(titleRect.bottom));
+    } finally {
+      await _flushDb(tester);
+    }
+  });
+
+  // v1.24.10: chip layar → sheet. Alur: tombol → sheet → pilih
+  // kategori → Terapkan → Reset via sheet.
   testWidgets('chip Semua reset kategori juga (v1.24.8)', (tester) async {
     final db = await _newDb(tester);
     final now = DateTime.now();
@@ -100,21 +257,31 @@ void main() {
       await _pumpHistory(tester, db);
       expect(await _waitFor(tester, find.text('Makan siang')), isTrue);
 
-      // Aktifkan filter kategori: scroll ke chip lalu ketuk
-      // (chip kategori off-screen di horizontal scroll).
-      final chip = find.textContaining('Makan & Minum').first;
-      await tester.ensureVisible(chip);
+      // v1.24.10: filter kategori via sheet (chip layar sudah tiada).
+      await tester.tap(find.bySemanticsLabel('Filter, ketuk untuk ubah'));
+      await _pump(tester);
+      expect(await _waitFor(tester, find.text('Filter riwayat')), isTrue);
+      // .last juga (teks ganda: tile + sheet row).
+      await tester.ensureVisible(find.text('Makan & Minum').last);
       await tester.pump();
-      await tester.tap(chip);
+      await tester.tap(find.text('Makan & Minum').last);
+      await _pump(tester);
+      await tester.ensureVisible(find.text('Terapkan filter'));
+      await tester.pump();
+      await tester.tap(find.text('Terapkan filter'));
       await _pump(tester);
       // Ojek (Transportasi) ikut hilang karena filter kategori.
       expect(find.text('Ojek'), findsNothing);
 
-      // Ketuk "Semua" → kategori ikut reset, Ojek muncul lagi.
-      final semua = find.text('Semua');
-      await tester.ensureVisible(semua);
+      // Reset via sheet → kategori ikut reset, Ojek muncul lagi.
+      await tester.tap(
+        find.bySemanticsLabel('Filter aktif 1, ketuk untuk ubah'),
+      );
+      await _pump(tester);
+      expect(await _waitFor(tester, find.text('Filter riwayat')), isTrue);
+      await tester.ensureVisible(find.text('Reset'));
       await tester.pump();
-      await tester.tap(semua);
+      await tester.tap(find.text('Reset'));
       await _pump(tester);
       expect(await _waitFor(tester, find.text('Ojek')), isTrue);
     } finally {
@@ -213,6 +380,10 @@ void main() {
     }
   });
 
+  // v1.24.10: "Semua" kini baris sheet seksi Tipe. Keyword aktif
+  // TIDAK mengubah selected-nya (keyword bukan dimensi sheet —
+  // badge tombol juga tidak menghitungnya): yang diassert = sheet
+  // tetap tawarkan Semua-sebagai-tipe + keyword tetap menyaring.
   testWidgets('Semua padam saat keyword aktif (v1.24.9)', (tester) async {
     // Kritik L4: dulu Semua tetap menyala walau daftar tersaring keyword.
     final db = await _newDb(tester);
@@ -228,16 +399,17 @@ void main() {
       await tester.enterText(find.byType(TextField), 'Makan');
       await tester.pump(const Duration(milliseconds: 500));
       await _pump(tester);
-      // Chip Semua TIDAK selected selagi keyword menyaring.
-      final semuaChip = tester.widget<B2CFilterChip>(
-        find.widgetWithText(B2CFilterChip, 'Semua'),
-      );
-      expect(semuaChip.selected, isFalse);
+      // Keyword tetap menyaring daftar (Ojek hilang).
+      expect(find.text('Ojek'), findsNothing);
+      expect(await _waitFor(tester, find.text('Makan siang')), isTrue);
+      // Badge tombol TIDAK menghitung keyword (nol dimensi aktif).
+      expect(find.bySemanticsLabel('Filter, ketuk untuk ubah'), findsOneWidget);
     } finally {
       await _flushDb(tester);
     }
   });
 
+  // v1.24.10: toggle tipe via sheet (chip layar sudah tiada).
   testWidgets('chip tipe bisa toggle-off (v1.24.9)', (tester) async {
     // Kritik L1: dulu tipe terkunci aktif, kategori bisa toggle-off.
     final db = await _newDb(tester);
@@ -250,16 +422,31 @@ void main() {
     try {
       await _pumpHistory(tester, db);
       expect(await _waitFor(tester, find.text('Makan siang')), isTrue);
-      final chip = find.widgetWithText(B2CFilterChip, 'Pengeluaran');
-      await tester.ensureVisible(chip);
+      await tester.tap(find.bySemanticsLabel('Filter, ketuk untuk ubah'));
+      await _pump(tester);
+      expect(await _waitFor(tester, find.text('Filter riwayat')), isTrue);
+      await tester.ensureVisible(find.widgetWithText(B2CFilterChip, 'Keluar'));
       await tester.pump();
-      await tester.tap(chip);
+      await tester.tap(find.widgetWithText(B2CFilterChip, 'Keluar'));
+      await _pump(tester);
+      await tester.ensureVisible(find.text('Terapkan filter'));
+      await tester.pump();
+      await tester.tap(find.text('Terapkan filter'));
       await _pump(tester);
       expect(find.text('Gaji'), findsNothing);
       // Ketuk lagi → lepas, Gaji muncul kembali.
-      await tester.ensureVisible(chip);
+      await tester.tap(
+        find.bySemanticsLabel('Filter aktif 1, ketuk untuk ubah'),
+      );
+      await _pump(tester);
+      expect(await _waitFor(tester, find.text('Filter riwayat')), isTrue);
+      await tester.ensureVisible(find.widgetWithText(B2CFilterChip, 'Keluar'));
       await tester.pump();
-      await tester.tap(chip);
+      await tester.tap(find.widgetWithText(B2CFilterChip, 'Keluar'));
+      await _pump(tester);
+      await tester.ensureVisible(find.text('Terapkan filter'));
+      await tester.pump();
+      await tester.tap(find.text('Terapkan filter'));
       await _pump(tester);
       expect(await _waitFor(tester, find.text('Gaji')), isTrue);
     } finally {
@@ -285,14 +472,18 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
       await _pump(tester);
       expect(await _waitFor(tester, find.text('Tidak ada yang cocok')), isTrue);
-      expect(find.textContaining('Coba longgarkan', findRichText: true),
-          findsOneWidget);
+      expect(
+        find.textContaining('Coba longgarkan', findRichText: true),
+        findsOneWidget,
+      );
       expect(find.textContaining('pertama'), findsNothing);
     } finally {
       await _flushDb(tester);
     }
   });
 
+  // v1.24.10: tombol filter + badge (chip layar sudah tiada —
+  // yang diassert semantik tombol + tile tetap dense).
   testWidgets('chip a11y + 48px + tile dense (v1.24.9)', (tester) async {
     // Kritik L1/L2: GestureDetector mentah ~40px → Semantics + 48px;
     // arsip rapat (dense) vs teaser lega.
@@ -305,18 +496,17 @@ void main() {
     try {
       await _pumpHistory(tester, db);
       expect(await _waitFor(tester, find.text('Makan siang')), isTrue);
-      // Semantik tombol ada di tiap chip (Semantics button + label).
-      final sem = tester.getSemantics(
-        find
-            .ancestor(
-              of: find.text('Semua'),
-              matching: find.byWidgetPredicate((w) => w is Semantics),
-            )
-            .first,
+      // Tombol filter bersemantik eksplisit (nol aktif).
+      expect(find.bySemanticsLabel('Filter, ketuk untuk ubah'), findsOneWidget);
+      // Tinggi tombol ≥ touchMin 48.
+      final btnBox = tester.getSize(
+        find.bySemanticsLabel('Filter, ketuk untuk ubah').first,
       );
-      expect(sem.label, 'Semua');
-      // Tinggi chip ≥ touchMin 48 (constraint minHeight; font test
-      // Ahem lebih tinggi dari font asli, jadi assert batas bawah).
+      expect(btnBox.height, greaterThanOrEqualTo(48));
+      // Chip sheet tetap a11y (Semantics + 48px) — buka sheet dulu.
+      await tester.tap(find.bySemanticsLabel('Filter, ketuk untuk ubah'));
+      await _pump(tester);
+      expect(await _waitFor(tester, find.text('Filter riwayat')), isTrue);
       final chipBox = tester.getSize(
         find.widgetWithText(B2CFilterChip, 'Semua').first,
       );
