@@ -126,6 +126,19 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
           note: _noteCtrl.text,
         );
       } else {
+        // v1.25: transaksi baru masuk dompet aktif (bila "Semua" =
+        // dompet pertama). Tanpa dompet = mustahil pasca-migrasi v4.
+        final acct = await defaultAccountId(
+          ref.read(dbProvider),
+          ref.read(selectedAccountProvider),
+        );
+        if (acct == null) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Belum ada dompet.')),
+          );
+          return;
+        }
         await addTransaction(
           ref,
           amount: amount,
@@ -133,6 +146,7 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
           categoryId: _categoryId,
           date: _date,
           note: _noteCtrl.text,
+          accountId: acct,
         );
       }
     } finally {

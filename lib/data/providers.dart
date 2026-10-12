@@ -44,6 +44,10 @@ final incomeCategoriesProvider = StreamProvider<List<Category>>((ref) {
 
 /// Saldo saat ini (reaktif: ikut berubah tiap ada transaksi baru).
 /// = saldo awal (pengaturan) + total transaksi.
+///
+/// v1.25 (dompet ganda): saldo awal (Settings) dianggap milik GABUNGAN
+/// — ditambah SEKALI di sini, bukan per dompet (agar tak dobel-hitung).
+/// Lihat [accountBalanceProvider] untuk saldo satu dompet.
 final balanceProvider = StreamProvider<int>((ref) {
   final db = ref.watch(dbProvider);
   final start = ref.watch(startingBalanceProvider).value ?? 0;
@@ -52,6 +56,60 @@ final balanceProvider = StreamProvider<int>((ref) {
       .watch()
       .asyncMap((_) async => start + await db.getBalance());
 });
+
+// ---------- Dompet ganda (v1.25) ----------
+
+/// Dompet aktif: null = Semua (gabungan, perilaku lama = default).
+/// Diubah dari pemilih dompet (Beranda, Fase 3 UI); dibaca SEMUA
+/// provider ringkasan + riwayat di bawah.
+final selectedAccountProvider = StateProvider<int?>((ref) => null);
+
+/// Semua dompet non-arsip, urutan stabil sortOrder lalu nama.
+/// Arsip disembunyikan (bukan dihapus — riwayatnya tetap di gabungan).
+final accountsProvider = StreamProvider<List<Account>>((ref) {
+  final db = ref.watch(dbProvider);
+  return (db.select(db.accounts)
+        ..where((a) => a.isArchived.equals(false) & a.deletedAt.isNull())
+        ..orderBy([
+          (a) => OrderingTerm.asc(a.sortOrder),
+          (a) => OrderingTerm.asc(a.name),
+        ]))
+      .watch();
+});
+
+/// Saldo SATU dompet = openingBalance + SUM transaksinya.
+/// BUKAN saldo awal Settings (itu milik gabungan, lihat [balanceProvider]).
+final accountBalanceProvider = StreamProvider.family<int, int>((
+  ref,
+  accountId,
+) {
+  final db = ref.watch(dbProvider);
+  return db.select(db.transactions).watch().asyncMap((_) async {
+    final acc = await (db.select(
+      db.accounts,
+    )..where((a) => a.id.equals(accountId))).getSingleOrNull();
+    return (acc?.openingBalance ?? 0) +
+        await db.getBalance(accountId: accountId);
+  });
+});
+
+/// Dompet default untuk insert baru: akun aktif bila dipilih, bila
+/// "Semua" (null) = dompet non-arsip pertama (biasanya "Utama").
+/// Fungsi murni (testable) — insert tanpa dompet eksplisit JANGAN
+/// pernah NULL (baris NULL hilang dari filter dompet).
+Future<int?> defaultAccountId(AppDatabase db, int? selected) async {
+  if (selected != null) return selected;
+  final first =
+      await (db.select(db.accounts)
+            ..where((a) => a.isArchived.equals(false) & a.deletedAt.isNull())
+            ..orderBy([
+              (a) => OrderingTerm.asc(a.sortOrder),
+              (a) => OrderingTerm.asc(a.name),
+            ])
+            ..limit(1))
+          .getSingleOrNull();
+  return first?.id;
+}
 
 /// Bulan yang sedang dilihat (format "yyyy-MM"). Bisa diubah dari UI.
 final selectedMonthProvider = StateProvider<String>((ref) {
@@ -79,24 +137,26 @@ final monthRangeProvider = Provider<(DateTime, DateTime)>((ref) {
 /// Batas: 00:00:00 hari ini s/d 23:59:59 hari ini (waktu lokal HP).
 final dayTotalsProvider = StreamProvider<(int, int)>((ref) {
   final db = ref.watch(dbProvider);
+  final acct = ref.watch(selectedAccountProvider);
   final now = DateTime.now();
   final from = DateTime(now.year, now.month, now.day);
   final to = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
   return db
       .select(db.transactions)
       .watch()
-      .asyncMap((_) => db.getTotals(from, to));
+      .asyncMap((_) => db.getTotals(from, to, accountId: acct));
 });
 
 /// Total (pemasukan, pengeluaran) bulan yang dipilih. Auto-refresh tiap ada perubahan.
 final monthTotalsProvider = StreamProvider<(int, int)>((ref) {
   final db = ref.watch(dbProvider);
+  final acct = ref.watch(selectedAccountProvider);
   // Dengarkan tabel transaksi + bulan aktif; hitung ulang tiap ada perubahan.
   final (from, to) = ref.watch(monthRangeProvider);
   return db
       .select(db.transactions)
       .watch()
-      .asyncMap((_) => db.getTotals(from, to));
+      .asyncMap((_) => db.getTotals(from, to, accountId: acct));
 });
 
 /// Ringkasan pengeluaran per kategori bulan yang dipilih.
@@ -104,11 +164,12 @@ final monthExpenseByCategoryProvider = StreamProvider<List<CategoryTotal>>((
   ref,
 ) {
   final db = ref.watch(dbProvider);
+  final acct = ref.watch(selectedAccountProvider);
   final (from, to) = ref.watch(monthRangeProvider);
   return db
       .select(db.transactions)
       .watch()
-      .asyncMap((_) => db.totalsByCategory(from, to, true));
+      .asyncMap((_) => db.totalsByCategory(from, to, true, accountId: acct));
 });
 
 /// Satu titik arus kas bulanan: kunci "yyyy-MM" + (masuk, keluar).
@@ -118,7 +179,13 @@ typedef MonthFlow = ({String key, int masuk, int keluar});
 /// 6 titik arus (5 bulan mundur + bulan dipilih), TANPA DateTime.now()
 /// (v1.24.11: testable + ikut bulan yang user lihat, bukan bulan HP).
 /// Fungsi murni (tanpa ref) agar bisa di-test langsung dengan db in-memory.
-Future<List<MonthFlow>> fetchSixMonthFlow(AppDatabase db, String anchorKey) {
+///
+/// v1.25: [accountId] null = gabungan.
+Future<List<MonthFlow>> fetchSixMonthFlow(
+  AppDatabase db,
+  String anchorKey, {
+  int? accountId,
+}) {
   final parts = anchorKey.split('-');
   final y = int.tryParse(parts[0]) ?? DateTime.now().year;
   final m = parts.length > 1
@@ -134,7 +201,11 @@ Future<List<MonthFlow>> fetchSixMonthFlow(AppDatabase db, String anchorKey) {
         d.month + 1,
         1,
       ).subtract(const Duration(milliseconds: 1));
-      final (masuk, keluar) = await db.getTotals(from, to);
+      final (masuk, keluar) = await db.getTotals(
+        from,
+        to,
+        accountId: accountId,
+      );
       out.add((
         key: '${d.year}-${d.month.toString().padLeft(2, '0')}',
         masuk: masuk,
@@ -152,10 +223,11 @@ Future<List<MonthFlow>> fetchSixMonthFlow(AppDatabase db, String anchorKey) {
 final sixMonthFlowProvider = StreamProvider<List<MonthFlow>>((ref) {
   final db = ref.watch(dbProvider);
   final anchor = ref.watch(selectedMonthProvider);
+  final acct = ref.watch(selectedAccountProvider);
   return db
       .select(db.transactions)
       .watch()
-      .asyncMap((_) => fetchSixMonthFlow(db, anchor));
+      .asyncMap((_) => fetchSixMonthFlow(db, anchor, accountId: acct));
 });
 
 /// Total (masuk, keluar) bulan SEBELUM bulan dipilih — bahan strip
@@ -164,6 +236,7 @@ final sixMonthFlowProvider = StreamProvider<List<MonthFlow>>((ref) {
 final prevMonthTotalsProvider = StreamProvider<(int, int)>((ref) {
   final db = ref.watch(dbProvider);
   final anchor = ref.watch(selectedMonthProvider);
+  final acct = ref.watch(selectedAccountProvider);
   final parts = anchor.split('-');
   final y = int.tryParse(parts[0]) ?? DateTime.now().year;
   final m = parts.length > 1
@@ -176,7 +249,7 @@ final prevMonthTotalsProvider = StreamProvider<(int, int)>((ref) {
   return db
       .select(db.transactions)
       .watch()
-      .asyncMap((_) => db.getTotals(from, to));
+      .asyncMap((_) => db.getTotals(from, to, accountId: acct));
 });
 
 /// Filter riwayat (diubah dari layar Riwayat).
@@ -195,6 +268,7 @@ final historyFilterProvider = StateProvider<HistoryFilter>(
 final historyProvider = StreamProvider<List<TxWithCategory>>((ref) {
   final db = ref.watch(dbProvider);
   final f = ref.watch(historyFilterProvider);
+  final acct = ref.watch(selectedAccountProvider);
   final (from, to) = ref.watch(monthRangeProvider);
   return db.watchHistory(
     categoryId: f.categoryId,
@@ -202,6 +276,7 @@ final historyProvider = StreamProvider<List<TxWithCategory>>((ref) {
     keyword: f.keyword,
     from: from,
     to: to,
+    accountId: acct,
   );
 });
 
@@ -210,6 +285,7 @@ final historyProvider = StreamProvider<List<TxWithCategory>>((ref) {
 final historyCountProvider = StreamProvider<int>((ref) {
   final db = ref.watch(dbProvider);
   final f = ref.watch(historyFilterProvider);
+  final acct = ref.watch(selectedAccountProvider);
   final (from, to) = ref.watch(monthRangeProvider);
   return db.watchHistoryCount(
     categoryId: f.categoryId,
@@ -217,6 +293,7 @@ final historyCountProvider = StreamProvider<int>((ref) {
     keyword: f.keyword,
     from: from,
     to: to,
+    accountId: acct,
   );
 });
 
@@ -229,11 +306,20 @@ final budgetsProvider =
     >((ref) {
       final db = ref.watch(dbProvider);
       final month = ref.watch(selectedMonthProvider);
+      final acct = ref.watch(selectedAccountProvider);
       final (from, to) = ref.watch(monthRangeProvider);
       final result = db
           .customSelect('SELECT 1', readsFrom: {db.budgets, db.transactions})
           .watch()
-          .asyncMap((_) => fetchBudgets(db, month: month, from: from, to: to));
+          .asyncMap(
+            (_) => fetchBudgets(
+              db,
+              month: month,
+              from: from,
+              to: to,
+              accountId: acct,
+            ),
+          );
       return result;
     });
 
@@ -245,6 +331,10 @@ fetchBudgets(
   required String month,
   required DateTime from,
   required DateTime to,
+  // v1.25 (dompet ganda): null = gabungan (perilaku lama); terisi =
+  // spent hanya dari dompet itu. Budget sendiri tetap global (tanpa
+  // kolom baru) — keputusan plan: global + filter spent.
+  int? accountId,
 }) async {
   final rows = await (db.select(
     db.budgets,
@@ -262,8 +352,11 @@ fetchBudgets(
     final spentRows = await db
         .customSelect(
           'SELECT COALESCE(SUM(amount),0) AS s FROM transactions '
-          'WHERE is_expense = 1 AND deleted_at IS NULL AND category_id = ? AND date BETWEEN ? AND ?',
+          'WHERE is_expense = 1 AND deleted_at IS NULL AND transfer_id IS NULL'
+          '${accountId == null ? '' : ' AND account_id = ?'}'
+          ' AND category_id = ? AND date BETWEEN ? AND ?',
           variables: [
+            if (accountId != null) Variable.withInt(accountId),
             Variable.withInt(b.categoryId),
             Variable.withDateTime(from),
             Variable.withDateTime(to),
@@ -294,10 +387,19 @@ int _debtRemain(int total, int paid) => total - paid;
 /// Semua utang + progress, urutan stabil: belum lunas dulu (jatuh tempo
 /// terdekat), lalu lunas abjad. Fungsi murni (testable in-memory).
 /// Baris terhapus-lembut disembunyikan (Fase 2 baru mengisinya).
-Future<List<DebtEntry>> fetchDebts(AppDatabase db) async {
+///
+/// v1.25 (dompet ganda): [accountId] null = semua (perilaku lama);
+/// terisi = hanya utang milik dompet itu.
+Future<List<DebtEntry>> fetchDebts(AppDatabase db, {int? accountId}) async {
+  // accountId null = SEMUA (tanpa klausa akun; baris gaya-lama NULL
+  // ikut). equalsNullable(null) → IS NULL itu SALAH di sini.
   final debts =
       await (db.select(db.debts)
-            ..where((d) => d.deletedAt.isNull())
+            ..where(
+              (d) => accountId == null
+                  ? d.deletedAt.isNull()
+                  : d.deletedAt.isNull() & d.accountId.equals(accountId),
+            )
             ..orderBy([(d) => OrderingTerm.asc(d.name)]))
           .get();
   final out = <DebtEntry>[];
@@ -342,19 +444,21 @@ Future<List<DebtEntry>> fetchDebts(AppDatabase db) async {
 /// transactions (cermin ikut berubah tiap aksi).
 final debtsProvider = StreamProvider<List<DebtEntry>>((ref) {
   final db = ref.watch(dbProvider);
+  final acct = ref.watch(selectedAccountProvider);
   return db
       .customSelect(
         'SELECT 1',
         readsFrom: {db.debts, db.debtPayments, db.transactions},
       )
       .watch()
-      .asyncMap((_) => fetchDebts(db));
+      .asyncMap((_) => fetchDebts(db, accountId: acct));
 });
 
 /// Total sisa AKTIF: (utang belum dibayar) vs (piutang belum diterima).
 /// Dipakai kartu ringkas Beranda. (sisaUtang, sisaPiutang).
 final debtSummaryProvider = StreamProvider<(int, int)>((ref) {
   final db = ref.watch(dbProvider);
+  final acct = ref.watch(selectedAccountProvider);
   return db
       .customSelect(
         'SELECT 1',
@@ -362,7 +466,7 @@ final debtSummaryProvider = StreamProvider<(int, int)>((ref) {
       )
       .watch()
       .asyncMap((_) async {
-        final list = await fetchDebts(db);
+        final list = await fetchDebts(db, accountId: acct);
         var utang = 0;
         var piutang = 0;
         for (final e in list) {

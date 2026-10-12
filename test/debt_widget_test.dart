@@ -55,8 +55,7 @@ Future<void> _pump(WidgetTester tester, {int ticks = 40}) async {
 /// test BIASA (event loop nyata, 9–130ms), tapi di testWidgets
 /// (FakeAsync) 200 fake ticks <1 dtk wall tetap tidak emit saat file
 /// jalan bareng. Tiap putaran = pump + cek + jeda nyata 250ms.
-Future<bool> _waitFor(WidgetTester tester, Finder f,
-    {int rounds = 40}) async {
+Future<bool> _waitFor(WidgetTester tester, Finder f, {int rounds = 40}) async {
   for (var i = 0; i < rounds; i++) {
     if (f.evaluate().isNotEmpty) return true;
     await tester.pump(const Duration(milliseconds: 50));
@@ -71,9 +70,7 @@ Future<bool> _waitFor(WidgetTester tester, Finder f,
 
 /// Napas wall-clock murni (tanpa fake pump) — untuk stabilisasi isolate.
 Future<void> _nap(WidgetTester tester, {int ms = 300}) async {
-  await tester.runAsync(
-    () => Future<void>.delayed(Duration(milliseconds: ms)),
-  );
+  await tester.runAsync(() => Future<void>.delayed(Duration(milliseconds: ms)));
   await tester.pump(const Duration(milliseconds: 50));
 }
 
@@ -86,19 +83,23 @@ Future<AppDatabase> _newDb(WidgetTester tester) async {
     final d = AppDatabase(NativeDatabase.memory());
     // Warm-up: paksa spawn + open isolate SEBELUM UI subscribe.
     await d.customSelect('SELECT 1').get();
+    await d.backfillAccounts(); // seed Utama (v1.25)
     return d;
   });
   return db!;
 }
 
+/// Id dompet Utama (di-seed _newDb). Helper agar insertDebt v1.25
+/// (wajib accountId) tetap ringkas di tiap test.
+Future<int> _utama(AppDatabase db) async => (await db.select(db.accounts).get())
+    .firstWhere((a) => a.name == 'Utama')
+    .id;
+
 Future<void> _pumpDebt(WidgetTester tester, AppDatabase db) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [dbProvider.overrideWithValue(db)],
-      child: MaterialApp(
-        theme: AppTheme.light(),
-        home: const DebtScreen(),
-      ),
+      child: MaterialApp(theme: AppTheme.light(), home: const DebtScreen()),
     ),
   );
   await _pump(tester, ticks: 10);
@@ -144,10 +145,13 @@ void main() {
 
       // Gate emisi pertama (DB kosong → empty state).
       expect(
-          await _waitFor(tester,
-              find.text('Belum ada utang / piutang'),
-              rounds: 40),
-          isTrue);
+        await _waitFor(
+          tester,
+          find.text('Belum ada utang / piutang'),
+          rounds: 40,
+        ),
+        isTrue,
+      );
       expect(find.text('Catat utang'), findsOneWidget);
     } finally {
       await _cleanup(tester, db);
@@ -158,24 +162,29 @@ void main() {
     final db = await _newDb(tester);
     try {
       await tester.runAsync(() async {
-        final id = await insertDebt(db,
-            name: 'Budi',
-            isDebt: true,
-            total: 1000000,
-            date: DateTime(2026, 10, 1),
-            dueDate: DateTime(2026, 11, 1),
-            note: '');
-        await insertDebtPayment(db,
-            debtId: id,
-            amount: 250000,
-            date: DateTime(2026, 10, 5),
-            note: '');
+        final utama = await _utama(db);
+        final id = await insertDebt(
+          db,
+          accountId: utama,
+          name: 'Budi',
+          isDebt: true,
+          total: 1000000,
+          date: DateTime(2026, 10, 1),
+          dueDate: DateTime(2026, 11, 1),
+          note: '',
+        );
+        await insertDebtPayment(
+          db,
+          debtId: id,
+          amount: 250000,
+          date: DateTime(2026, 10, 5),
+          note: '',
+        );
       });
       await _pumpDebt(tester, db);
 
       // Gate emisi pertama (pre-seed → nama + sisa muncul).
-      expect(await _waitFor(tester, find.text('Budi'), rounds: 40),
-          isTrue);
+      expect(await _waitFor(tester, find.text('Budi'), rounds: 40), isTrue);
       expect(find.text('Ringkasan utang-piutang'), findsOneWidget);
       // Sisa 750rb tampil di item (format display default: Rp750.000).
       expect(find.textContaining('750.000'), findsWidgets);
@@ -184,27 +193,31 @@ void main() {
     }
   });
 
-  testWidgets('dialog tambah end-to-end → muncul di list + saldo',
-      (tester) async {
+  testWidgets('dialog tambah end-to-end → muncul di list + saldo', (
+    tester,
+  ) async {
     final db = await _newDb(tester);
     try {
       await _pumpDebt(tester, db);
 
       // Gate emisi pertama DULU (stream hangat) baru interaksi.
       expect(
-          await _waitFor(tester,
-              find.text('Belum ada utang / piutang'),
-              rounds: 40),
-          isTrue,
-          reason: 'stream awal harus emit sebelum dialog dibuka');
+        await _waitFor(
+          tester,
+          find.text('Belum ada utang / piutang'),
+          rounds: 40,
+        ),
+        isTrue,
+        reason: 'stream awal harus emit sebelum dialog dibuka',
+      );
 
       // Buka dialog via tombol + header.
       await tester.tap(find.byTooltip('Catat utang / piutang').first);
       expect(
-          await _waitFor(tester, find.text('Catat utang / piutang'),
-              rounds: 12),
-          isTrue,
-          reason: 'dialog catat harus terbuka');
+        await _waitFor(tester, find.text('Catat utang / piutang'), rounds: 12),
+        isTrue,
+        reason: 'dialog catat harus terbuka',
+      );
       // Urutan TextField dialog: 0=nama, 1=total, 2=catatan.
       final fields = find.byType(TextField);
       expect(fields, findsNWidgets(3));
@@ -217,14 +230,18 @@ void main() {
 
       // Lapis 1 — DB: submit/addDebt harus masuk walau stream lambat.
       // runAsync return nullable (T?) — fallback [] bila null.
-      final inDb =
-          await tester.runAsync(() => fetchDebts(db)) ?? const [];
-      expect(inDb.any((e) => e.debt.name == 'Siti'), isTrue,
-          reason: 'save dialog harus masuk DB (submit/addDebt gagal?)');
+      final inDb = await tester.runAsync(() => fetchDebts(db)) ?? const [];
+      expect(
+        inDb.any((e) => e.debt.name == 'Siti'),
+        isTrue,
+        reason: 'save dialog harus masuk DB (submit/addDebt gagal?)',
+      );
       // Lapis 2 — UI: stream debtsProvider harus emit ke list.
-      expect(await _waitFor(tester, find.text('Siti'), rounds: 120),
-          isTrue,
-          reason: 'stream debtsProvider harus emit ke list');
+      expect(
+        await _waitFor(tester, find.text('Siti'), rounds: 120),
+        isTrue,
+        reason: 'stream debtsProvider harus emit ke list',
+      );
       expect(find.textContaining('tercatat'), findsOneWidget);
       // Segmen default = Utang → saldo +500rb. Verifikasi via DB langsung.
       final saldo = await tester.runAsync(() => db.getBalance());
@@ -234,34 +251,37 @@ void main() {
     }
   });
 
-  testWidgets('validasi dialog: kosong → error inline, tidak tersimpan',
-      (tester) async {
+  testWidgets('validasi dialog: kosong → error inline, tidak tersimpan', (
+    tester,
+  ) async {
     final db = await _newDb(tester);
     try {
       await _pumpDebt(tester, db);
 
       // Gate emisi pertama dulu (stream hangat).
       expect(
-          await _waitFor(tester,
-              find.text('Belum ada utang / piutang'),
-              rounds: 40),
-          isTrue);
+        await _waitFor(
+          tester,
+          find.text('Belum ada utang / piutang'),
+          rounds: 40,
+        ),
+        isTrue,
+      );
 
       await tester.tap(find.byTooltip('Catat utang / piutang').first);
       expect(
-          await _waitFor(tester, find.text('Catat utang / piutang'),
-              rounds: 12),
-          isTrue,
-          reason: 'dialog catat harus terbuka');
+        await _waitFor(tester, find.text('Catat utang / piutang'), rounds: 12),
+        isTrue,
+        reason: 'dialog catat harus terbuka',
+      );
       await tester.tap(find.widgetWithText(FilledButton, 'Simpan'));
 
       expect(
-          await _waitFor(tester, find.text('Isi nama dulu.'),
-              rounds: 12),
-          isTrue);
+        await _waitFor(tester, find.text('Isi nama dulu.'), rounds: 12),
+        isTrue,
+      );
       expect(find.text('Isi total lebih dari 0.'), findsOneWidget);
-      final debts =
-          await tester.runAsync(() => fetchDebts(db)) ?? const [];
+      final debts = await tester.runAsync(() => fetchDebts(db)) ?? const [];
       expect(debts, isEmpty);
       // Dialog SENGAJA dibiarkan terbuka (assert error) — _cleanup
       // di finally yang menutup via Batal.
@@ -270,41 +290,46 @@ void main() {
     }
   });
 
-  testWidgets('kartu Beranda tetap tersembunyi meski ada utang (redesign v1.24)',
-      (tester) async {
-    final db = await _newDb(tester);
-    try {
-      await tester.runAsync(() async {
-        await insertDebt(db,
+  testWidgets(
+    'kartu Beranda tetap tersembunyi meski ada utang (redesign v1.24)',
+    (tester) async {
+      final db = await _newDb(tester);
+      try {
+        await tester.runAsync(() async {
+          final utama = await _utama(db);
+          await insertDebt(
+            db,
+            accountId: utama,
             name: 'Budi',
             isDebt: true,
             total: 1000000,
             date: DateTime(2026, 10, 1),
             dueDate: null,
-            note: '');
-      });
+            note: '',
+          );
+        });
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [dbProvider.overrideWithValue(db)],
-          child: MaterialApp(
-            theme: AppTheme.light(),
-            home: HomeScreen(onGoTab: (_) {}),
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [dbProvider.overrideWithValue(db)],
+            child: MaterialApp(
+              theme: AppTheme.light(),
+              home: HomeScreen(onGoTab: (_) {}),
+            ),
           ),
-        ),
-      );
+        );
 
-      await _pump(tester, ticks: 30);
-      await _nap(tester, ms: 300);
-      await _pump(tester, ticks: 30);
-      expect(find.text('Utang & piutang'), findsNothing);
-    } finally {
-      await _cleanup(tester, db);
-    }
-  });
+        await _pump(tester, ticks: 30);
+        await _nap(tester, ms: 300);
+        await _pump(tester, ticks: 30);
+        expect(find.text('Utang & piutang'), findsNothing);
+      } finally {
+        await _cleanup(tester, db);
+      }
+    },
+  );
 
-  testWidgets('kartu Beranda sembunyi bila tidak ada utang',
-      (tester) async {
+  testWidgets('kartu Beranda sembunyi bila tidak ada utang', (tester) async {
     final db = await _newDb(tester);
     try {
       await tester.pumpWidget(

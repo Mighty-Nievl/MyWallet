@@ -34,6 +34,29 @@ const defaultCategories = <Map<String, Object>>[
   {'name': 'Lainnya (Masuk)', 'icon': '📥', 'isExpense': false},
 ];
 
+/// Dompet/kantong uang (v1.25, skema v4).
+/// Saldo per dompet TIDAK disimpan — dihitung (openingBalance + SUM
+/// transaksi ber-accountId itu). Dompet bawaan "Utama" di-seed saat
+/// migrasi v3→v4; semua baris lama jatuh ke sana (nol data hilang).
+class Accounts extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  TextColumn get icon => text().withDefault(const Constant('💼'))();
+  // Saldo awal dompet (rupiah). Dompet baru default 0; saldo awal lama
+  // (Settings starting_balance) dianggap milik gabungan saat runtime
+  // (lihat balanceProvider) — migrasi SQLite tak bisa baca prefs.
+  IntColumn get openingBalance => integer().withDefault(const Constant(0))();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  BoolColumn get isArchived => boolean().withDefault(const Constant(false))();
+  // --- Sync-ready (lihat catatan file) ---
+  TextColumn get uuid =>
+      text().clientDefault(() => newSyncUuid()).nullable()();
+  DateTimeColumn get updatedAt =>
+      dateTime().clientDefault(() => syncNow()).nullable()();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  TextColumn get householdId => text().nullable()();
+}
+
 /// Tabel kategori transaksi.
 class Categories extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -73,6 +96,19 @@ class Transactions extends Table {
   // punya id int beda per HP, uuid sama. Dibackfill dari kategori saat
   // migrasi v2→v3; ditulis tiap insert transaksi berkategori.
   TextColumn get categoryUuid => text().nullable()();
+  // Dompet pemilik (v1.25, skema v4). null = gaya-lama (pra-migrasi).
+  // SENGAJA tanpa references (int polos, pola debtId): query lama
+  // (saldo/laporan/riwayat) tidak berubah — filter opt-in per query.
+  IntColumn get accountId => integer().nullable()();
+  // Pendamping accountId untuk sync antar-HP: id int beda per HP,
+  // uuid akun sama. Ditulis tiap insert ber-dompet; diresolve ke id
+  // lokal saat pull (cermin pola categoryUuid).
+  TextColumn get accountUuid => text().nullable()();
+  // Penanda kaki transfer antar-dompet (v1.25): grup uuid, SAMA di
+  // kedua kaki (keluar A + masuk B). Kaki transfer DIKECUALIKAN dari
+  // agregat pemasukan/pengeluaran (bukan income/expense) tapi MASUK
+  // saldo per dompet. Aman di-sync mentah (uuid global-unik).
+  TextColumn get transferId => text().nullable()();
   // --- Sync-ready (lihat catatan file) ---
   TextColumn get uuid =>
       text().clientDefault(() => newSyncUuid()).nullable()();
@@ -121,6 +157,9 @@ class Debts extends Table {
   DateTimeColumn get dueDate => dateTime().nullable()();
   TextColumn get note => text().withDefault(const Constant(''))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  // Dompet pemilik utang (v1.25, skema v4): cicilan ikut dompet ini
+  // saat insert. Nullable demi migrasi aman (baris lama → Utama).
+  IntColumn get accountId => integer().nullable()();
   // --- Sync-ready (lihat catatan file) ---
   TextColumn get uuid =>
       text().clientDefault(() => newSyncUuid()).nullable()();
@@ -140,6 +179,10 @@ class DebtPayments extends Table {
   DateTimeColumn get date => dateTime()();
   TextColumn get note => text().withDefault(const Constant(''))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  // Dompet pemilik cicilan (v1.25, skema v4): ikut dompet induk utang
+  // saat insert (ditulis eksplisit, bukan join) agar agregat per dompet
+  // murah. Nullable demi migrasi aman (baris lama → dompet Utama).
+  IntColumn get accountId => integer().nullable()();
   // --- Sync-ready (lihat catatan file) ---
   TextColumn get uuid =>
       text().clientDefault(() => newSyncUuid()).nullable()();

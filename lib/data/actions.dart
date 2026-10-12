@@ -10,9 +10,9 @@ import 'sync_meta.dart';
 /// Cari uuid kategori (pendamping categoryId untuk sync Fase 2).
 Future<String?> _categoryUuidOf(AppDatabase db, int? categoryId) async {
   if (categoryId == null) return null;
-  final cat = await (db.select(db.categories)
-        ..where((c) => c.id.equals(categoryId)))
-      .getSingleOrNull();
+  final cat = await (db.select(
+    db.categories,
+  )..where((c) => c.id.equals(categoryId))).getSingleOrNull();
   return cat?.uuid;
 }
 
@@ -23,15 +23,25 @@ Future<void> addTransaction(
   required int? categoryId,
   required DateTime date,
   required String note,
+  // v1.25: dompet pemilik. WAJIB diisi pemanggil (form baca dompet
+  // aktif, lihat tx_form_screen) — insert NULL dilarang agar baris
+  // tak hilang dari filter dompet.
+  required int accountId,
 }) async {
   final db = ref.read(dbProvider);
-  await db.into(db.transactions).insert(
+  final acc = await (db.select(
+    db.accounts,
+  )..where((a) => a.id.equals(accountId))).getSingleOrNull();
+  await db
+      .into(db.transactions)
+      .insert(
         TransactionsCompanion.insert(
           amount: amount,
           isExpense: drift.Value(isExpense),
           categoryId: drift.Value(categoryId),
-          categoryUuid:
-              drift.Value(await _categoryUuidOf(db, categoryId)),
+          categoryUuid: drift.Value(await _categoryUuidOf(db, categoryId)),
+          accountId: drift.Value(accountId),
+          accountUuid: drift.Value(acc?.uuid),
           date: date,
           note: drift.Value(note.trim()),
         ),
@@ -83,7 +93,9 @@ Future<int> addCategory(
   required bool isExpense,
 }) async {
   final db = ref.read(dbProvider);
-  return db.into(db.categories).insert(
+  return db
+      .into(db.categories)
+      .insert(
         CategoriesCompanion.insert(
           name: name.trim(),
           icon: drift.Value(icon.trim().isEmpty ? '📦' : icon.trim()),
@@ -113,12 +125,15 @@ Future<void> upsertBudget(
   required String month,
 }) async {
   final db = ref.read(dbProvider);
-  final existing = await (db.select(db.budgets)
-        ..where((b) =>
-            b.categoryId.equals(categoryId) & b.month.equals(month)))
-      .getSingleOrNull();
+  final existing =
+      await (db.select(db.budgets)..where(
+            (b) => b.categoryId.equals(categoryId) & b.month.equals(month),
+          ))
+          .getSingleOrNull();
   if (existing == null) {
-    await db.into(db.budgets).insert(
+    await db
+        .into(db.budgets)
+        .insert(
           BudgetsCompanion.insert(
             categoryId: categoryId,
             limit: limit,
@@ -126,12 +141,13 @@ Future<void> upsertBudget(
           ),
         );
   } else {
-    await (db.update(db.budgets)..where((b) => b.id.equals(existing.id)))
-        .write(BudgetsCompanion(
-      limit: drift.Value(limit),
-      // Jejak tulis sync (Fase 0).
-      updatedAt: drift.Value(syncNow()),
-    ));
+    await (db.update(db.budgets)..where((b) => b.id.equals(existing.id))).write(
+      BudgetsCompanion(
+        limit: drift.Value(limit),
+        // Jejak tulis sync (Fase 0).
+        updatedAt: drift.Value(syncNow()),
+      ),
+    );
   }
 }
 

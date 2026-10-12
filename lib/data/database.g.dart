@@ -626,6 +626,39 @@ class $TransactionsTable extends Transactions
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<int> accountId = GeneratedColumn<int>(
+    'account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _accountUuidMeta = const VerificationMeta(
+    'accountUuid',
+  );
+  @override
+  late final GeneratedColumn<String> accountUuid = GeneratedColumn<String>(
+    'account_uuid',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _transferIdMeta = const VerificationMeta(
+    'transferId',
+  );
+  @override
+  late final GeneratedColumn<String> transferId = GeneratedColumn<String>(
+    'transfer_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _uuidMeta = const VerificationMeta('uuid');
   @override
   late final GeneratedColumn<String> uuid = GeneratedColumn<String>(
@@ -682,6 +715,9 @@ class $TransactionsTable extends Transactions
     debtId,
     debtPaymentId,
     categoryUuid,
+    accountId,
+    accountUuid,
+    transferId,
     uuid,
     updatedAt,
     deletedAt,
@@ -766,6 +802,27 @@ class $TransactionsTable extends Transactions
         ),
       );
     }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    }
+    if (data.containsKey('account_uuid')) {
+      context.handle(
+        _accountUuidMeta,
+        accountUuid.isAcceptableOrUnknown(
+          data['account_uuid']!,
+          _accountUuidMeta,
+        ),
+      );
+    }
+    if (data.containsKey('transfer_id')) {
+      context.handle(
+        _transferIdMeta,
+        transferId.isAcceptableOrUnknown(data['transfer_id']!, _transferIdMeta),
+      );
+    }
     if (data.containsKey('uuid')) {
       context.handle(
         _uuidMeta,
@@ -842,6 +899,18 @@ class $TransactionsTable extends Transactions
         DriftSqlType.string,
         data['${effectivePrefix}category_uuid'],
       ),
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}account_id'],
+      ),
+      accountUuid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_uuid'],
+      ),
+      transferId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}transfer_id'],
+      ),
       uuid: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}uuid'],
@@ -878,6 +947,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final int? debtId;
   final int? debtPaymentId;
   final String? categoryUuid;
+  final int? accountId;
+  final String? accountUuid;
+  final String? transferId;
   final String? uuid;
   final DateTime? updatedAt;
   final DateTime? deletedAt;
@@ -893,6 +965,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     this.debtId,
     this.debtPaymentId,
     this.categoryUuid,
+    this.accountId,
+    this.accountUuid,
+    this.transferId,
     this.uuid,
     this.updatedAt,
     this.deletedAt,
@@ -918,6 +993,15 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     }
     if (!nullToAbsent || categoryUuid != null) {
       map['category_uuid'] = Variable<String>(categoryUuid);
+    }
+    if (!nullToAbsent || accountId != null) {
+      map['account_id'] = Variable<int>(accountId);
+    }
+    if (!nullToAbsent || accountUuid != null) {
+      map['account_uuid'] = Variable<String>(accountUuid);
+    }
+    if (!nullToAbsent || transferId != null) {
+      map['transfer_id'] = Variable<String>(transferId);
     }
     if (!nullToAbsent || uuid != null) {
       map['uuid'] = Variable<String>(uuid);
@@ -954,6 +1038,15 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       categoryUuid: categoryUuid == null && nullToAbsent
           ? const Value.absent()
           : Value(categoryUuid),
+      accountId: accountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accountId),
+      accountUuid: accountUuid == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accountUuid),
+      transferId: transferId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(transferId),
       uuid: uuid == null && nullToAbsent ? const Value.absent() : Value(uuid),
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
@@ -983,6 +1076,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       debtId: serializer.fromJson<int?>(json['debtId']),
       debtPaymentId: serializer.fromJson<int?>(json['debtPaymentId']),
       categoryUuid: serializer.fromJson<String?>(json['categoryUuid']),
+      accountId: serializer.fromJson<int?>(json['accountId']),
+      accountUuid: serializer.fromJson<String?>(json['accountUuid']),
+      transferId: serializer.fromJson<String?>(json['transferId']),
       uuid: serializer.fromJson<String?>(json['uuid']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
@@ -1003,6 +1099,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'debtId': serializer.toJson<int?>(debtId),
       'debtPaymentId': serializer.toJson<int?>(debtPaymentId),
       'categoryUuid': serializer.toJson<String?>(categoryUuid),
+      'accountId': serializer.toJson<int?>(accountId),
+      'accountUuid': serializer.toJson<String?>(accountUuid),
+      'transferId': serializer.toJson<String?>(transferId),
       'uuid': serializer.toJson<String?>(uuid),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
@@ -1021,6 +1120,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     Value<int?> debtId = const Value.absent(),
     Value<int?> debtPaymentId = const Value.absent(),
     Value<String?> categoryUuid = const Value.absent(),
+    Value<int?> accountId = const Value.absent(),
+    Value<String?> accountUuid = const Value.absent(),
+    Value<String?> transferId = const Value.absent(),
     Value<String?> uuid = const Value.absent(),
     Value<DateTime?> updatedAt = const Value.absent(),
     Value<DateTime?> deletedAt = const Value.absent(),
@@ -1038,6 +1140,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
         ? debtPaymentId.value
         : this.debtPaymentId,
     categoryUuid: categoryUuid.present ? categoryUuid.value : this.categoryUuid,
+    accountId: accountId.present ? accountId.value : this.accountId,
+    accountUuid: accountUuid.present ? accountUuid.value : this.accountUuid,
+    transferId: transferId.present ? transferId.value : this.transferId,
     uuid: uuid.present ? uuid.value : this.uuid,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
@@ -1061,6 +1166,13 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       categoryUuid: data.categoryUuid.present
           ? data.categoryUuid.value
           : this.categoryUuid,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      accountUuid: data.accountUuid.present
+          ? data.accountUuid.value
+          : this.accountUuid,
+      transferId: data.transferId.present
+          ? data.transferId.value
+          : this.transferId,
       uuid: data.uuid.present ? data.uuid.value : this.uuid,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -1083,6 +1195,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('debtId: $debtId, ')
           ..write('debtPaymentId: $debtPaymentId, ')
           ..write('categoryUuid: $categoryUuid, ')
+          ..write('accountId: $accountId, ')
+          ..write('accountUuid: $accountUuid, ')
+          ..write('transferId: $transferId, ')
           ..write('uuid: $uuid, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -1103,6 +1218,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     debtId,
     debtPaymentId,
     categoryUuid,
+    accountId,
+    accountUuid,
+    transferId,
     uuid,
     updatedAt,
     deletedAt,
@@ -1122,6 +1240,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.debtId == this.debtId &&
           other.debtPaymentId == this.debtPaymentId &&
           other.categoryUuid == this.categoryUuid &&
+          other.accountId == this.accountId &&
+          other.accountUuid == this.accountUuid &&
+          other.transferId == this.transferId &&
           other.uuid == this.uuid &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt &&
@@ -1139,6 +1260,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<int?> debtId;
   final Value<int?> debtPaymentId;
   final Value<String?> categoryUuid;
+  final Value<int?> accountId;
+  final Value<String?> accountUuid;
+  final Value<String?> transferId;
   final Value<String?> uuid;
   final Value<DateTime?> updatedAt;
   final Value<DateTime?> deletedAt;
@@ -1154,6 +1278,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.debtId = const Value.absent(),
     this.debtPaymentId = const Value.absent(),
     this.categoryUuid = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.accountUuid = const Value.absent(),
+    this.transferId = const Value.absent(),
     this.uuid = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -1170,6 +1297,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.debtId = const Value.absent(),
     this.debtPaymentId = const Value.absent(),
     this.categoryUuid = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.accountUuid = const Value.absent(),
+    this.transferId = const Value.absent(),
     this.uuid = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -1187,6 +1317,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<int>? debtId,
     Expression<int>? debtPaymentId,
     Expression<String>? categoryUuid,
+    Expression<int>? accountId,
+    Expression<String>? accountUuid,
+    Expression<String>? transferId,
     Expression<String>? uuid,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
@@ -1203,6 +1336,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (debtId != null) 'debt_id': debtId,
       if (debtPaymentId != null) 'debt_payment_id': debtPaymentId,
       if (categoryUuid != null) 'category_uuid': categoryUuid,
+      if (accountId != null) 'account_id': accountId,
+      if (accountUuid != null) 'account_uuid': accountUuid,
+      if (transferId != null) 'transfer_id': transferId,
       if (uuid != null) 'uuid': uuid,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -1221,6 +1357,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Value<int?>? debtId,
     Value<int?>? debtPaymentId,
     Value<String?>? categoryUuid,
+    Value<int?>? accountId,
+    Value<String?>? accountUuid,
+    Value<String?>? transferId,
     Value<String?>? uuid,
     Value<DateTime?>? updatedAt,
     Value<DateTime?>? deletedAt,
@@ -1237,6 +1376,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       debtId: debtId ?? this.debtId,
       debtPaymentId: debtPaymentId ?? this.debtPaymentId,
       categoryUuid: categoryUuid ?? this.categoryUuid,
+      accountId: accountId ?? this.accountId,
+      accountUuid: accountUuid ?? this.accountUuid,
+      transferId: transferId ?? this.transferId,
       uuid: uuid ?? this.uuid,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -1277,6 +1419,15 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (categoryUuid.present) {
       map['category_uuid'] = Variable<String>(categoryUuid.value);
     }
+    if (accountId.present) {
+      map['account_id'] = Variable<int>(accountId.value);
+    }
+    if (accountUuid.present) {
+      map['account_uuid'] = Variable<String>(accountUuid.value);
+    }
+    if (transferId.present) {
+      map['transfer_id'] = Variable<String>(transferId.value);
+    }
     if (uuid.present) {
       map['uuid'] = Variable<String>(uuid.value);
     }
@@ -1305,6 +1456,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('debtId: $debtId, ')
           ..write('debtPaymentId: $debtPaymentId, ')
           ..write('categoryUuid: $categoryUuid, ')
+          ..write('accountId: $accountId, ')
+          ..write('accountUuid: $accountUuid, ')
+          ..write('transferId: $transferId, ')
           ..write('uuid: $uuid, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -1914,6 +2068,17 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<int> accountId = GeneratedColumn<int>(
+    'account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _uuidMeta = const VerificationMeta('uuid');
   @override
   late final GeneratedColumn<String> uuid = GeneratedColumn<String>(
@@ -1968,6 +2133,7 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
     dueDate,
     note,
     createdAt,
+    accountId,
     uuid,
     updatedAt,
     deletedAt,
@@ -2034,6 +2200,12 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
       context.handle(
         _createdAtMeta,
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
       );
     }
     if (data.containsKey('uuid')) {
@@ -2104,6 +2276,10 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}account_id'],
+      ),
       uuid: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}uuid'],
@@ -2138,6 +2314,7 @@ class Debt extends DataClass implements Insertable<Debt> {
   final DateTime? dueDate;
   final String note;
   final DateTime createdAt;
+  final int? accountId;
   final String? uuid;
   final DateTime? updatedAt;
   final DateTime? deletedAt;
@@ -2151,6 +2328,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     this.dueDate,
     required this.note,
     required this.createdAt,
+    this.accountId,
     this.uuid,
     this.updatedAt,
     this.deletedAt,
@@ -2169,6 +2347,9 @@ class Debt extends DataClass implements Insertable<Debt> {
     }
     map['note'] = Variable<String>(note);
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || accountId != null) {
+      map['account_id'] = Variable<int>(accountId);
+    }
     if (!nullToAbsent || uuid != null) {
       map['uuid'] = Variable<String>(uuid);
     }
@@ -2196,6 +2377,9 @@ class Debt extends DataClass implements Insertable<Debt> {
           : Value(dueDate),
       note: Value(note),
       createdAt: Value(createdAt),
+      accountId: accountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accountId),
       uuid: uuid == null && nullToAbsent ? const Value.absent() : Value(uuid),
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
@@ -2223,6 +2407,7 @@ class Debt extends DataClass implements Insertable<Debt> {
       dueDate: serializer.fromJson<DateTime?>(json['dueDate']),
       note: serializer.fromJson<String>(json['note']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      accountId: serializer.fromJson<int?>(json['accountId']),
       uuid: serializer.fromJson<String?>(json['uuid']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
@@ -2241,6 +2426,7 @@ class Debt extends DataClass implements Insertable<Debt> {
       'dueDate': serializer.toJson<DateTime?>(dueDate),
       'note': serializer.toJson<String>(note),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'accountId': serializer.toJson<int?>(accountId),
       'uuid': serializer.toJson<String?>(uuid),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
@@ -2257,6 +2443,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     Value<DateTime?> dueDate = const Value.absent(),
     String? note,
     DateTime? createdAt,
+    Value<int?> accountId = const Value.absent(),
     Value<String?> uuid = const Value.absent(),
     Value<DateTime?> updatedAt = const Value.absent(),
     Value<DateTime?> deletedAt = const Value.absent(),
@@ -2270,6 +2457,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     dueDate: dueDate.present ? dueDate.value : this.dueDate,
     note: note ?? this.note,
     createdAt: createdAt ?? this.createdAt,
+    accountId: accountId.present ? accountId.value : this.accountId,
     uuid: uuid.present ? uuid.value : this.uuid,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
@@ -2285,6 +2473,7 @@ class Debt extends DataClass implements Insertable<Debt> {
       dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
       note: data.note.present ? data.note.value : this.note,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
       uuid: data.uuid.present ? data.uuid.value : this.uuid,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -2305,6 +2494,7 @@ class Debt extends DataClass implements Insertable<Debt> {
           ..write('dueDate: $dueDate, ')
           ..write('note: $note, ')
           ..write('createdAt: $createdAt, ')
+          ..write('accountId: $accountId, ')
           ..write('uuid: $uuid, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -2323,6 +2513,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     dueDate,
     note,
     createdAt,
+    accountId,
     uuid,
     updatedAt,
     deletedAt,
@@ -2340,6 +2531,7 @@ class Debt extends DataClass implements Insertable<Debt> {
           other.dueDate == this.dueDate &&
           other.note == this.note &&
           other.createdAt == this.createdAt &&
+          other.accountId == this.accountId &&
           other.uuid == this.uuid &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt &&
@@ -2355,6 +2547,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
   final Value<DateTime?> dueDate;
   final Value<String> note;
   final Value<DateTime> createdAt;
+  final Value<int?> accountId;
   final Value<String?> uuid;
   final Value<DateTime?> updatedAt;
   final Value<DateTime?> deletedAt;
@@ -2368,6 +2561,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     this.dueDate = const Value.absent(),
     this.note = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.accountId = const Value.absent(),
     this.uuid = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -2382,6 +2576,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     this.dueDate = const Value.absent(),
     this.note = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.accountId = const Value.absent(),
     this.uuid = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -2398,6 +2593,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     Expression<DateTime>? dueDate,
     Expression<String>? note,
     Expression<DateTime>? createdAt,
+    Expression<int>? accountId,
     Expression<String>? uuid,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
@@ -2412,6 +2608,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
       if (dueDate != null) 'due_date': dueDate,
       if (note != null) 'note': note,
       if (createdAt != null) 'created_at': createdAt,
+      if (accountId != null) 'account_id': accountId,
       if (uuid != null) 'uuid': uuid,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -2428,6 +2625,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     Value<DateTime?>? dueDate,
     Value<String>? note,
     Value<DateTime>? createdAt,
+    Value<int?>? accountId,
     Value<String?>? uuid,
     Value<DateTime?>? updatedAt,
     Value<DateTime?>? deletedAt,
@@ -2442,6 +2640,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
       dueDate: dueDate ?? this.dueDate,
       note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,
+      accountId: accountId ?? this.accountId,
       uuid: uuid ?? this.uuid,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -2476,6 +2675,9 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (accountId.present) {
+      map['account_id'] = Variable<int>(accountId.value);
+    }
     if (uuid.present) {
       map['uuid'] = Variable<String>(uuid.value);
     }
@@ -2502,6 +2704,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
           ..write('dueDate: $dueDate, ')
           ..write('note: $note, ')
           ..write('createdAt: $createdAt, ')
+          ..write('accountId: $accountId, ')
           ..write('uuid: $uuid, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -2582,6 +2785,17 @@ class $DebtPaymentsTable extends DebtPayments
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<int> accountId = GeneratedColumn<int>(
+    'account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _uuidMeta = const VerificationMeta('uuid');
   @override
   late final GeneratedColumn<String> uuid = GeneratedColumn<String>(
@@ -2634,6 +2848,7 @@ class $DebtPaymentsTable extends DebtPayments
     date,
     note,
     createdAt,
+    accountId,
     uuid,
     updatedAt,
     deletedAt,
@@ -2688,6 +2903,12 @@ class $DebtPaymentsTable extends DebtPayments
       context.handle(
         _createdAtMeta,
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
       );
     }
     if (data.containsKey('uuid')) {
@@ -2750,6 +2971,10 @@ class $DebtPaymentsTable extends DebtPayments
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}account_id'],
+      ),
       uuid: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}uuid'],
@@ -2782,6 +3007,7 @@ class DebtPayment extends DataClass implements Insertable<DebtPayment> {
   final DateTime date;
   final String note;
   final DateTime createdAt;
+  final int? accountId;
   final String? uuid;
   final DateTime? updatedAt;
   final DateTime? deletedAt;
@@ -2793,6 +3019,7 @@ class DebtPayment extends DataClass implements Insertable<DebtPayment> {
     required this.date,
     required this.note,
     required this.createdAt,
+    this.accountId,
     this.uuid,
     this.updatedAt,
     this.deletedAt,
@@ -2807,6 +3034,9 @@ class DebtPayment extends DataClass implements Insertable<DebtPayment> {
     map['date'] = Variable<DateTime>(date);
     map['note'] = Variable<String>(note);
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || accountId != null) {
+      map['account_id'] = Variable<int>(accountId);
+    }
     if (!nullToAbsent || uuid != null) {
       map['uuid'] = Variable<String>(uuid);
     }
@@ -2830,6 +3060,9 @@ class DebtPayment extends DataClass implements Insertable<DebtPayment> {
       date: Value(date),
       note: Value(note),
       createdAt: Value(createdAt),
+      accountId: accountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accountId),
       uuid: uuid == null && nullToAbsent ? const Value.absent() : Value(uuid),
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
@@ -2855,6 +3088,7 @@ class DebtPayment extends DataClass implements Insertable<DebtPayment> {
       date: serializer.fromJson<DateTime>(json['date']),
       note: serializer.fromJson<String>(json['note']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      accountId: serializer.fromJson<int?>(json['accountId']),
       uuid: serializer.fromJson<String?>(json['uuid']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
@@ -2871,6 +3105,7 @@ class DebtPayment extends DataClass implements Insertable<DebtPayment> {
       'date': serializer.toJson<DateTime>(date),
       'note': serializer.toJson<String>(note),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'accountId': serializer.toJson<int?>(accountId),
       'uuid': serializer.toJson<String?>(uuid),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
@@ -2885,6 +3120,7 @@ class DebtPayment extends DataClass implements Insertable<DebtPayment> {
     DateTime? date,
     String? note,
     DateTime? createdAt,
+    Value<int?> accountId = const Value.absent(),
     Value<String?> uuid = const Value.absent(),
     Value<DateTime?> updatedAt = const Value.absent(),
     Value<DateTime?> deletedAt = const Value.absent(),
@@ -2896,6 +3132,7 @@ class DebtPayment extends DataClass implements Insertable<DebtPayment> {
     date: date ?? this.date,
     note: note ?? this.note,
     createdAt: createdAt ?? this.createdAt,
+    accountId: accountId.present ? accountId.value : this.accountId,
     uuid: uuid.present ? uuid.value : this.uuid,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
@@ -2909,6 +3146,7 @@ class DebtPayment extends DataClass implements Insertable<DebtPayment> {
       date: data.date.present ? data.date.value : this.date,
       note: data.note.present ? data.note.value : this.note,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
       uuid: data.uuid.present ? data.uuid.value : this.uuid,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -2927,6 +3165,7 @@ class DebtPayment extends DataClass implements Insertable<DebtPayment> {
           ..write('date: $date, ')
           ..write('note: $note, ')
           ..write('createdAt: $createdAt, ')
+          ..write('accountId: $accountId, ')
           ..write('uuid: $uuid, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -2943,6 +3182,7 @@ class DebtPayment extends DataClass implements Insertable<DebtPayment> {
     date,
     note,
     createdAt,
+    accountId,
     uuid,
     updatedAt,
     deletedAt,
@@ -2958,6 +3198,7 @@ class DebtPayment extends DataClass implements Insertable<DebtPayment> {
           other.date == this.date &&
           other.note == this.note &&
           other.createdAt == this.createdAt &&
+          other.accountId == this.accountId &&
           other.uuid == this.uuid &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt &&
@@ -2971,6 +3212,7 @@ class DebtPaymentsCompanion extends UpdateCompanion<DebtPayment> {
   final Value<DateTime> date;
   final Value<String> note;
   final Value<DateTime> createdAt;
+  final Value<int?> accountId;
   final Value<String?> uuid;
   final Value<DateTime?> updatedAt;
   final Value<DateTime?> deletedAt;
@@ -2982,6 +3224,7 @@ class DebtPaymentsCompanion extends UpdateCompanion<DebtPayment> {
     this.date = const Value.absent(),
     this.note = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.accountId = const Value.absent(),
     this.uuid = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -2994,6 +3237,7 @@ class DebtPaymentsCompanion extends UpdateCompanion<DebtPayment> {
     required DateTime date,
     this.note = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.accountId = const Value.absent(),
     this.uuid = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -3008,6 +3252,7 @@ class DebtPaymentsCompanion extends UpdateCompanion<DebtPayment> {
     Expression<DateTime>? date,
     Expression<String>? note,
     Expression<DateTime>? createdAt,
+    Expression<int>? accountId,
     Expression<String>? uuid,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
@@ -3020,6 +3265,7 @@ class DebtPaymentsCompanion extends UpdateCompanion<DebtPayment> {
       if (date != null) 'date': date,
       if (note != null) 'note': note,
       if (createdAt != null) 'created_at': createdAt,
+      if (accountId != null) 'account_id': accountId,
       if (uuid != null) 'uuid': uuid,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -3034,6 +3280,7 @@ class DebtPaymentsCompanion extends UpdateCompanion<DebtPayment> {
     Value<DateTime>? date,
     Value<String>? note,
     Value<DateTime>? createdAt,
+    Value<int?>? accountId,
     Value<String?>? uuid,
     Value<DateTime?>? updatedAt,
     Value<DateTime?>? deletedAt,
@@ -3046,6 +3293,7 @@ class DebtPaymentsCompanion extends UpdateCompanion<DebtPayment> {
       date: date ?? this.date,
       note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,
+      accountId: accountId ?? this.accountId,
       uuid: uuid ?? this.uuid,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -3074,6 +3322,9 @@ class DebtPaymentsCompanion extends UpdateCompanion<DebtPayment> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (accountId.present) {
+      map['account_id'] = Variable<int>(accountId.value);
+    }
     if (uuid.present) {
       map['uuid'] = Variable<String>(uuid.value);
     }
@@ -3098,6 +3349,609 @@ class DebtPaymentsCompanion extends UpdateCompanion<DebtPayment> {
           ..write('date: $date, ')
           ..write('note: $note, ')
           ..write('createdAt: $createdAt, ')
+          ..write('accountId: $accountId, ')
+          ..write('uuid: $uuid, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('householdId: $householdId')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AccountsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _iconMeta = const VerificationMeta('icon');
+  @override
+  late final GeneratedColumn<String> icon = GeneratedColumn<String>(
+    'icon',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('💼'),
+  );
+  static const VerificationMeta _openingBalanceMeta = const VerificationMeta(
+    'openingBalance',
+  );
+  @override
+  late final GeneratedColumn<int> openingBalance = GeneratedColumn<int>(
+    'opening_balance',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _isArchivedMeta = const VerificationMeta(
+    'isArchived',
+  );
+  @override
+  late final GeneratedColumn<bool> isArchived = GeneratedColumn<bool>(
+    'is_archived',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_archived" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _uuidMeta = const VerificationMeta('uuid');
+  @override
+  late final GeneratedColumn<String> uuid = GeneratedColumn<String>(
+    'uuid',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => newSyncUuid(),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    clientDefault: () => syncNow(),
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _householdIdMeta = const VerificationMeta(
+    'householdId',
+  );
+  @override
+  late final GeneratedColumn<String> householdId = GeneratedColumn<String>(
+    'household_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    icon,
+    openingBalance,
+    sortOrder,
+    isArchived,
+    uuid,
+    updatedAt,
+    deletedAt,
+    householdId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'accounts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Account> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('icon')) {
+      context.handle(
+        _iconMeta,
+        icon.isAcceptableOrUnknown(data['icon']!, _iconMeta),
+      );
+    }
+    if (data.containsKey('opening_balance')) {
+      context.handle(
+        _openingBalanceMeta,
+        openingBalance.isAcceptableOrUnknown(
+          data['opening_balance']!,
+          _openingBalanceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('is_archived')) {
+      context.handle(
+        _isArchivedMeta,
+        isArchived.isAcceptableOrUnknown(data['is_archived']!, _isArchivedMeta),
+      );
+    }
+    if (data.containsKey('uuid')) {
+      context.handle(
+        _uuidMeta,
+        uuid.isAcceptableOrUnknown(data['uuid']!, _uuidMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('household_id')) {
+      context.handle(
+        _householdIdMeta,
+        householdId.isAcceptableOrUnknown(
+          data['household_id']!,
+          _householdIdMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Account map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Account(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      icon: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}icon'],
+      )!,
+      openingBalance: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}opening_balance'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      isArchived: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_archived'],
+      )!,
+      uuid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}uuid'],
+      ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      ),
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      householdId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}household_id'],
+      ),
+    );
+  }
+
+  @override
+  $AccountsTable createAlias(String alias) {
+    return $AccountsTable(attachedDatabase, alias);
+  }
+}
+
+class Account extends DataClass implements Insertable<Account> {
+  final int id;
+  final String name;
+  final String icon;
+  final int openingBalance;
+  final int sortOrder;
+  final bool isArchived;
+  final String? uuid;
+  final DateTime? updatedAt;
+  final DateTime? deletedAt;
+  final String? householdId;
+  const Account({
+    required this.id,
+    required this.name,
+    required this.icon,
+    required this.openingBalance,
+    required this.sortOrder,
+    required this.isArchived,
+    this.uuid,
+    this.updatedAt,
+    this.deletedAt,
+    this.householdId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['icon'] = Variable<String>(icon);
+    map['opening_balance'] = Variable<int>(openingBalance);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['is_archived'] = Variable<bool>(isArchived);
+    if (!nullToAbsent || uuid != null) {
+      map['uuid'] = Variable<String>(uuid);
+    }
+    if (!nullToAbsent || updatedAt != null) {
+      map['updated_at'] = Variable<DateTime>(updatedAt);
+    }
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || householdId != null) {
+      map['household_id'] = Variable<String>(householdId);
+    }
+    return map;
+  }
+
+  AccountsCompanion toCompanion(bool nullToAbsent) {
+    return AccountsCompanion(
+      id: Value(id),
+      name: Value(name),
+      icon: Value(icon),
+      openingBalance: Value(openingBalance),
+      sortOrder: Value(sortOrder),
+      isArchived: Value(isArchived),
+      uuid: uuid == null && nullToAbsent ? const Value.absent() : Value(uuid),
+      updatedAt: updatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      householdId: householdId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(householdId),
+    );
+  }
+
+  factory Account.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Account(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      icon: serializer.fromJson<String>(json['icon']),
+      openingBalance: serializer.fromJson<int>(json['openingBalance']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      isArchived: serializer.fromJson<bool>(json['isArchived']),
+      uuid: serializer.fromJson<String?>(json['uuid']),
+      updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      householdId: serializer.fromJson<String?>(json['householdId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'icon': serializer.toJson<String>(icon),
+      'openingBalance': serializer.toJson<int>(openingBalance),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'isArchived': serializer.toJson<bool>(isArchived),
+      'uuid': serializer.toJson<String?>(uuid),
+      'updatedAt': serializer.toJson<DateTime?>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'householdId': serializer.toJson<String?>(householdId),
+    };
+  }
+
+  Account copyWith({
+    int? id,
+    String? name,
+    String? icon,
+    int? openingBalance,
+    int? sortOrder,
+    bool? isArchived,
+    Value<String?> uuid = const Value.absent(),
+    Value<DateTime?> updatedAt = const Value.absent(),
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<String?> householdId = const Value.absent(),
+  }) => Account(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    icon: icon ?? this.icon,
+    openingBalance: openingBalance ?? this.openingBalance,
+    sortOrder: sortOrder ?? this.sortOrder,
+    isArchived: isArchived ?? this.isArchived,
+    uuid: uuid.present ? uuid.value : this.uuid,
+    updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    householdId: householdId.present ? householdId.value : this.householdId,
+  );
+  Account copyWithCompanion(AccountsCompanion data) {
+    return Account(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      icon: data.icon.present ? data.icon.value : this.icon,
+      openingBalance: data.openingBalance.present
+          ? data.openingBalance.value
+          : this.openingBalance,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      isArchived: data.isArchived.present
+          ? data.isArchived.value
+          : this.isArchived,
+      uuid: data.uuid.present ? data.uuid.value : this.uuid,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      householdId: data.householdId.present
+          ? data.householdId.value
+          : this.householdId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Account(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('icon: $icon, ')
+          ..write('openingBalance: $openingBalance, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('isArchived: $isArchived, ')
+          ..write('uuid: $uuid, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('householdId: $householdId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    icon,
+    openingBalance,
+    sortOrder,
+    isArchived,
+    uuid,
+    updatedAt,
+    deletedAt,
+    householdId,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Account &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.icon == this.icon &&
+          other.openingBalance == this.openingBalance &&
+          other.sortOrder == this.sortOrder &&
+          other.isArchived == this.isArchived &&
+          other.uuid == this.uuid &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.householdId == this.householdId);
+}
+
+class AccountsCompanion extends UpdateCompanion<Account> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<String> icon;
+  final Value<int> openingBalance;
+  final Value<int> sortOrder;
+  final Value<bool> isArchived;
+  final Value<String?> uuid;
+  final Value<DateTime?> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> householdId;
+  const AccountsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.icon = const Value.absent(),
+    this.openingBalance = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.isArchived = const Value.absent(),
+    this.uuid = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.householdId = const Value.absent(),
+  });
+  AccountsCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    this.icon = const Value.absent(),
+    this.openingBalance = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.isArchived = const Value.absent(),
+    this.uuid = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.householdId = const Value.absent(),
+  }) : name = Value(name);
+  static Insertable<Account> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? icon,
+    Expression<int>? openingBalance,
+    Expression<int>? sortOrder,
+    Expression<bool>? isArchived,
+    Expression<String>? uuid,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? householdId,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (icon != null) 'icon': icon,
+      if (openingBalance != null) 'opening_balance': openingBalance,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (isArchived != null) 'is_archived': isArchived,
+      if (uuid != null) 'uuid': uuid,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (householdId != null) 'household_id': householdId,
+    });
+  }
+
+  AccountsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<String>? icon,
+    Value<int>? openingBalance,
+    Value<int>? sortOrder,
+    Value<bool>? isArchived,
+    Value<String?>? uuid,
+    Value<DateTime?>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<String?>? householdId,
+  }) {
+    return AccountsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      icon: icon ?? this.icon,
+      openingBalance: openingBalance ?? this.openingBalance,
+      sortOrder: sortOrder ?? this.sortOrder,
+      isArchived: isArchived ?? this.isArchived,
+      uuid: uuid ?? this.uuid,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      householdId: householdId ?? this.householdId,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (icon.present) {
+      map['icon'] = Variable<String>(icon.value);
+    }
+    if (openingBalance.present) {
+      map['opening_balance'] = Variable<int>(openingBalance.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (isArchived.present) {
+      map['is_archived'] = Variable<bool>(isArchived.value);
+    }
+    if (uuid.present) {
+      map['uuid'] = Variable<String>(uuid.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (householdId.present) {
+      map['household_id'] = Variable<String>(householdId.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AccountsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('icon: $icon, ')
+          ..write('openingBalance: $openingBalance, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('isArchived: $isArchived, ')
           ..write('uuid: $uuid, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -3115,6 +3969,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $BudgetsTable budgets = $BudgetsTable(this);
   late final $DebtsTable debts = $DebtsTable(this);
   late final $DebtPaymentsTable debtPayments = $DebtPaymentsTable(this);
+  late final $AccountsTable accounts = $AccountsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3125,6 +3980,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     budgets,
     debts,
     debtPayments,
+    accounts,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -3614,6 +4470,9 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       Value<int?> debtId,
       Value<int?> debtPaymentId,
       Value<String?> categoryUuid,
+      Value<int?> accountId,
+      Value<String?> accountUuid,
+      Value<String?> transferId,
       Value<String?> uuid,
       Value<DateTime?> updatedAt,
       Value<DateTime?> deletedAt,
@@ -3631,6 +4490,9 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<int?> debtId,
       Value<int?> debtPaymentId,
       Value<String?> categoryUuid,
+      Value<int?> accountId,
+      Value<String?> accountUuid,
+      Value<String?> transferId,
       Value<String?> uuid,
       Value<DateTime?> updatedAt,
       Value<DateTime?> deletedAt,
@@ -3710,6 +4572,21 @@ class $$TransactionsTableFilterComposer
 
   ColumnFilters<String> get categoryUuid => $composableBuilder(
     column: $table.categoryUuid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get accountId => $composableBuilder(
+    column: $table.accountId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get accountUuid => $composableBuilder(
+    column: $table.accountUuid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get transferId => $composableBuilder(
+    column: $table.transferId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3811,6 +4688,21 @@ class $$TransactionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get accountId => $composableBuilder(
+    column: $table.accountId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get accountUuid => $composableBuilder(
+    column: $table.accountUuid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get transferId => $composableBuilder(
+    column: $table.transferId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get uuid => $composableBuilder(
     column: $table.uuid,
     builder: (column) => ColumnOrderings(column),
@@ -3895,6 +4787,19 @@ class $$TransactionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get accountId =>
+      $composableBuilder(column: $table.accountId, builder: (column) => column);
+
+  GeneratedColumn<String> get accountUuid => $composableBuilder(
+    column: $table.accountUuid,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get transferId => $composableBuilder(
+    column: $table.transferId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get uuid =>
       $composableBuilder(column: $table.uuid, builder: (column) => column);
 
@@ -3971,6 +4876,9 @@ class $$TransactionsTableTableManager
                 Value<int?> debtId = const Value.absent(),
                 Value<int?> debtPaymentId = const Value.absent(),
                 Value<String?> categoryUuid = const Value.absent(),
+                Value<int?> accountId = const Value.absent(),
+                Value<String?> accountUuid = const Value.absent(),
+                Value<String?> transferId = const Value.absent(),
                 Value<String?> uuid = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -3986,6 +4894,9 @@ class $$TransactionsTableTableManager
                 debtId: debtId,
                 debtPaymentId: debtPaymentId,
                 categoryUuid: categoryUuid,
+                accountId: accountId,
+                accountUuid: accountUuid,
+                transferId: transferId,
                 uuid: uuid,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -4003,6 +4914,9 @@ class $$TransactionsTableTableManager
                 Value<int?> debtId = const Value.absent(),
                 Value<int?> debtPaymentId = const Value.absent(),
                 Value<String?> categoryUuid = const Value.absent(),
+                Value<int?> accountId = const Value.absent(),
+                Value<String?> accountUuid = const Value.absent(),
+                Value<String?> transferId = const Value.absent(),
                 Value<String?> uuid = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -4018,6 +4932,9 @@ class $$TransactionsTableTableManager
                 debtId: debtId,
                 debtPaymentId: debtPaymentId,
                 categoryUuid: categoryUuid,
+                accountId: accountId,
+                accountUuid: accountUuid,
+                transferId: transferId,
                 uuid: uuid,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -4470,6 +5387,7 @@ typedef $$DebtsTableCreateCompanionBuilder =
       Value<DateTime?> dueDate,
       Value<String> note,
       Value<DateTime> createdAt,
+      Value<int?> accountId,
       Value<String?> uuid,
       Value<DateTime?> updatedAt,
       Value<DateTime?> deletedAt,
@@ -4485,6 +5403,7 @@ typedef $$DebtsTableUpdateCompanionBuilder =
       Value<DateTime?> dueDate,
       Value<String> note,
       Value<DateTime> createdAt,
+      Value<int?> accountId,
       Value<String?> uuid,
       Value<DateTime?> updatedAt,
       Value<DateTime?> deletedAt,
@@ -4559,6 +5478,11 @@ class $$DebtsTableFilterComposer extends Composer<_$AppDatabase, $DebtsTable> {
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get accountId => $composableBuilder(
+    column: $table.accountId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4657,6 +5581,11 @@ class $$DebtsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get accountId => $composableBuilder(
+    column: $table.accountId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get uuid => $composableBuilder(
     column: $table.uuid,
     builder: (column) => ColumnOrderings(column),
@@ -4710,6 +5639,9 @@ class $$DebtsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get accountId =>
+      $composableBuilder(column: $table.accountId, builder: (column) => column);
 
   GeneratedColumn<String> get uuid =>
       $composableBuilder(column: $table.uuid, builder: (column) => column);
@@ -4787,6 +5719,7 @@ class $$DebtsTableTableManager
                 Value<DateTime?> dueDate = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<int?> accountId = const Value.absent(),
                 Value<String?> uuid = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -4800,6 +5733,7 @@ class $$DebtsTableTableManager
                 dueDate: dueDate,
                 note: note,
                 createdAt: createdAt,
+                accountId: accountId,
                 uuid: uuid,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -4815,6 +5749,7 @@ class $$DebtsTableTableManager
                 Value<DateTime?> dueDate = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<int?> accountId = const Value.absent(),
                 Value<String?> uuid = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -4828,6 +5763,7 @@ class $$DebtsTableTableManager
                 dueDate: dueDate,
                 note: note,
                 createdAt: createdAt,
+                accountId: accountId,
                 uuid: uuid,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -4892,6 +5828,7 @@ typedef $$DebtPaymentsTableCreateCompanionBuilder =
       required DateTime date,
       Value<String> note,
       Value<DateTime> createdAt,
+      Value<int?> accountId,
       Value<String?> uuid,
       Value<DateTime?> updatedAt,
       Value<DateTime?> deletedAt,
@@ -4905,6 +5842,7 @@ typedef $$DebtPaymentsTableUpdateCompanionBuilder =
       Value<DateTime> date,
       Value<String> note,
       Value<DateTime> createdAt,
+      Value<int?> accountId,
       Value<String?> uuid,
       Value<DateTime?> updatedAt,
       Value<DateTime?> deletedAt,
@@ -4964,6 +5902,11 @@ class $$DebtPaymentsTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get accountId => $composableBuilder(
+    column: $table.accountId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5045,6 +5988,11 @@ class $$DebtPaymentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get accountId => $composableBuilder(
+    column: $table.accountId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get uuid => $composableBuilder(
     column: $table.uuid,
     builder: (column) => ColumnOrderings(column),
@@ -5112,6 +6060,9 @@ class $$DebtPaymentsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get accountId =>
+      $composableBuilder(column: $table.accountId, builder: (column) => column);
 
   GeneratedColumn<String> get uuid =>
       $composableBuilder(column: $table.uuid, builder: (column) => column);
@@ -5185,6 +6136,7 @@ class $$DebtPaymentsTableTableManager
                 Value<DateTime> date = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<int?> accountId = const Value.absent(),
                 Value<String?> uuid = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -5196,6 +6148,7 @@ class $$DebtPaymentsTableTableManager
                 date: date,
                 note: note,
                 createdAt: createdAt,
+                accountId: accountId,
                 uuid: uuid,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -5209,6 +6162,7 @@ class $$DebtPaymentsTableTableManager
                 required DateTime date,
                 Value<String> note = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<int?> accountId = const Value.absent(),
                 Value<String?> uuid = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -5220,6 +6174,7 @@ class $$DebtPaymentsTableTableManager
                 date: date,
                 note: note,
                 createdAt: createdAt,
+                accountId: accountId,
                 uuid: uuid,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -5292,6 +6247,304 @@ typedef $$DebtPaymentsTableProcessedTableManager =
       DebtPayment,
       PrefetchHooks Function({bool debtId})
     >;
+typedef $$AccountsTableCreateCompanionBuilder =
+    AccountsCompanion Function({
+      Value<int> id,
+      required String name,
+      Value<String> icon,
+      Value<int> openingBalance,
+      Value<int> sortOrder,
+      Value<bool> isArchived,
+      Value<String?> uuid,
+      Value<DateTime?> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> householdId,
+    });
+typedef $$AccountsTableUpdateCompanionBuilder =
+    AccountsCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<String> icon,
+      Value<int> openingBalance,
+      Value<int> sortOrder,
+      Value<bool> isArchived,
+      Value<String?> uuid,
+      Value<DateTime?> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<String?> householdId,
+    });
+
+class $$AccountsTableFilterComposer
+    extends Composer<_$AppDatabase, $AccountsTable> {
+  $$AccountsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get icon => $composableBuilder(
+    column: $table.icon,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get openingBalance => $composableBuilder(
+    column: $table.openingBalance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get uuid => $composableBuilder(
+    column: $table.uuid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get householdId => $composableBuilder(
+    column: $table.householdId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AccountsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AccountsTable> {
+  $$AccountsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get icon => $composableBuilder(
+    column: $table.icon,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get openingBalance => $composableBuilder(
+    column: $table.openingBalance,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get uuid => $composableBuilder(
+    column: $table.uuid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get householdId => $composableBuilder(
+    column: $table.householdId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AccountsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AccountsTable> {
+  $$AccountsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get icon =>
+      $composableBuilder(column: $table.icon, builder: (column) => column);
+
+  GeneratedColumn<int> get openingBalance => $composableBuilder(
+    column: $table.openingBalance,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get uuid =>
+      $composableBuilder(column: $table.uuid, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get householdId => $composableBuilder(
+    column: $table.householdId,
+    builder: (column) => column,
+  );
+}
+
+class $$AccountsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AccountsTable,
+          Account,
+          $$AccountsTableFilterComposer,
+          $$AccountsTableOrderingComposer,
+          $$AccountsTableAnnotationComposer,
+          $$AccountsTableCreateCompanionBuilder,
+          $$AccountsTableUpdateCompanionBuilder,
+          (Account, BaseReferences<_$AppDatabase, $AccountsTable, Account>),
+          Account,
+          PrefetchHooks Function()
+        > {
+  $$AccountsTableTableManager(_$AppDatabase db, $AccountsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AccountsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AccountsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AccountsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> icon = const Value.absent(),
+                Value<int> openingBalance = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<bool> isArchived = const Value.absent(),
+                Value<String?> uuid = const Value.absent(),
+                Value<DateTime?> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> householdId = const Value.absent(),
+              }) => AccountsCompanion(
+                id: id,
+                name: name,
+                icon: icon,
+                openingBalance: openingBalance,
+                sortOrder: sortOrder,
+                isArchived: isArchived,
+                uuid: uuid,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                householdId: householdId,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                Value<String> icon = const Value.absent(),
+                Value<int> openingBalance = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<bool> isArchived = const Value.absent(),
+                Value<String?> uuid = const Value.absent(),
+                Value<DateTime?> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<String?> householdId = const Value.absent(),
+              }) => AccountsCompanion.insert(
+                id: id,
+                name: name,
+                icon: icon,
+                openingBalance: openingBalance,
+                sortOrder: sortOrder,
+                isArchived: isArchived,
+                uuid: uuid,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                householdId: householdId,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$AccountsTable, Account>(table),
+                  BaseReferences<_$AppDatabase, $AccountsTable, Account>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AccountsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AccountsTable,
+      Account,
+      $$AccountsTableFilterComposer,
+      $$AccountsTableOrderingComposer,
+      $$AccountsTableAnnotationComposer,
+      $$AccountsTableCreateCompanionBuilder,
+      $$AccountsTableUpdateCompanionBuilder,
+      (Account, BaseReferences<_$AppDatabase, $AccountsTable, Account>),
+      Account,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5306,4 +6559,6 @@ class $AppDatabaseManager {
       $$DebtsTableTableManager(_db, _db.debts);
   $$DebtPaymentsTableTableManager get debtPayments =>
       $$DebtPaymentsTableTableManager(_db, _db.debtPayments);
+  $$AccountsTableTableManager get accounts =>
+      $$AccountsTableTableManager(_db, _db.accounts);
 }

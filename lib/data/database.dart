@@ -20,14 +20,16 @@ LazyDatabase _openConnection() {
   });
 }
 
-@DriftDatabase(tables: [Categories, Transactions, Budgets, Debts, DebtPayments])
+@DriftDatabase(
+  tables: [Categories, Transactions, Budgets, Debts, DebtPayments, Accounts],
+)
 class AppDatabase extends _$AppDatabase {
   /// [executor] opsional agar bisa di-test in-memory
   /// (`NativeDatabase.memory()`) — default tetap file HP.
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -80,6 +82,23 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(debtPayments, debtPayments.deletedAt);
         await m.addColumn(debtPayments, debtPayments.householdId);
         await backfillSyncMeta();
+      }
+      // v3 → v4 (dompet ganda v1.25): tabel accounts + kolom
+      // accountId/accountUuid/transferId di transactions, accountId di
+      // debts + debtPayments. Semua nullable → data lama utuh; baris
+      // lama jatuh ke dompet "Utama" via backfill di bawah.
+      // CATATAN saldo awal: Settings starting_balance tinggal di
+      // SharedPreferences (bukan SQLite) — migrasi tak bisa membacanya.
+      // Ia dianggap milik gabungan saat runtime (balanceProvider),
+      // BUKAN dipindah ke Utama.openingBalance di sini.
+      if (from < 4) {
+        await m.createTable(accounts);
+        await m.addColumn(transactions, transactions.accountId);
+        await m.addColumn(transactions, transactions.accountUuid);
+        await m.addColumn(transactions, transactions.transferId);
+        await m.addColumn(debts, debts.accountId);
+        await m.addColumn(debtPayments, debtPayments.accountId);
+        await backfillAccounts();
       }
     },
   );
@@ -180,35 +199,99 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  /// Backfill dompet untuk baris lama (migrasi v3→v4).
+  ///
+  /// - Seed dompet "Utama" (id dinamis — JANGAN asumsikan 1).
+  /// - SEMUA baris lama (account_id NULL) → Utama, di 3 tabel.
+  /// - accountUuid ← uuid akun induk (cermin pola categoryUuid v2→v3).
+  /// - uuid/updatedAt akun baru terisi via clientDefault saat seed;
+  ///   backfillSyncMeta di bawah menutup bila ada yang null.
+  ///
+  /// Public (bukan private) agar bisa di-test langsung seperti
+  /// `backfillSyncMeta` (lihat `test/sync_ready_test.dart`).
+  Future<void> backfillAccounts() async {
+    final existing = await (select(
+      accounts,
+    )..where((a) => a.name.equals('Utama'))).getSingleOrNull();
+    final uid =
+        existing?.id ??
+        await into(accounts).insert(AccountsCompanion.insert(name: 'Utama'));
+    await customStatement(
+      'UPDATE transactions SET account_id = $uid WHERE account_id IS NULL',
+    );
+    await customStatement(
+      'UPDATE debts SET account_id = $uid WHERE account_id IS NULL',
+    );
+    await customStatement(
+      'UPDATE debt_payments SET account_id = $uid WHERE account_id IS NULL',
+    );
+    await customStatement(
+      'UPDATE transactions SET account_uuid = '
+      '(SELECT uuid FROM accounts WHERE accounts.id = '
+      'transactions.account_id) '
+      'WHERE account_id IS NOT NULL AND account_uuid IS NULL',
+    );
+    await backfillSyncMeta();
+  }
+
   // ---------- Query ringkas ----------
 
   /// Saldo = total pemasukan − total pengeluaran.
   /// Baris terhapus-lembut (deletedAt, Fase 2) tidak dihitung — Fase 0
   /// belum ada yang mengisinya, jadi hasil identik dengan sebelumnya.
-  Future<int> getBalance() async {
+  ///
+  /// v1.25 (dompet ganda): [accountId] null = gabungan (perilaku lama,
+  /// nol drift); terisi = hanya dompet itu. Kaki transfer IKUT saldo
+  /// (pergerakan dompet yang sah) — yang dikecualikan hanya agregat
+  /// pemasukan/pengeluaran ([getTotals]/[totalsByCategory]).
+  /// Baris account_id NULL (gaya-lama pra-backfill) hanya terlihat
+  /// di gabungan — semua insert baru WAJIB isi accountId.
+  Future<int> getBalance({int? accountId}) async {
+    // Bound variable bila filter dompet aktif; int dari DB (bukan input
+    // user) tapi tetap pakai binding — nol risiko injeksi + konsisten.
+    final acctClause = accountId == null ? '' : ' AND account_id = ?';
+    final acctVars = accountId == null
+        ? const <Variable>[]
+        : <Variable>[Variable.withInt(accountId)];
     final inRow = await customSelect(
-      'SELECT COALESCE(SUM(amount),0) AS s FROM transactions WHERE is_expense = 0 AND deleted_at IS NULL',
+      'SELECT COALESCE(SUM(amount),0) AS s FROM transactions WHERE is_expense = 0 AND deleted_at IS NULL$acctClause',
+      variables: acctVars,
       readsFrom: {transactions},
     ).getSingle();
     final outRow = await customSelect(
-      'SELECT COALESCE(SUM(amount),0) AS s FROM transactions WHERE is_expense = 1 AND deleted_at IS NULL',
+      'SELECT COALESCE(SUM(amount),0) AS s FROM transactions WHERE is_expense = 1 AND deleted_at IS NULL$acctClause',
+      variables: acctVars,
       readsFrom: {transactions},
     ).getSingle();
     return (inRow.read<int>('s')) - (outRow.read<int>('s'));
   }
 
   /// Total pemasukan & pengeluaran dalam rentang tanggal.
-  Future<(int, int)> getTotals(DateTime from, DateTime to) async {
+  ///
+  /// v1.25: kaki transfer SELALU dikecualikan (`transfer_id IS NULL`) —
+  /// pindah dompet bukan pemasukan/pengeluaran. Nol drift untuk data
+  /// lama (kolom baru, semua NULL). [accountId] null = gabungan.
+  Future<(int, int)> getTotals(
+    DateTime from,
+    DateTime to, {
+    int? accountId,
+  }) async {
+    final acctClause = accountId == null ? '' : ' AND account_id = ?';
+    final inVars = <Variable>[
+      if (accountId != null) Variable.withInt(accountId),
+      Variable.withDateTime(from),
+      Variable.withDateTime(to),
+    ];
     final inRow = await customSelect(
       'SELECT COALESCE(SUM(amount),0) AS s FROM transactions '
-      'WHERE is_expense = 0 AND deleted_at IS NULL AND date BETWEEN ? AND ?',
-      variables: [Variable.withDateTime(from), Variable.withDateTime(to)],
+      'WHERE is_expense = 0 AND deleted_at IS NULL AND transfer_id IS NULL$acctClause AND date BETWEEN ? AND ?',
+      variables: inVars,
       readsFrom: {transactions},
     ).getSingle();
     final outRow = await customSelect(
       'SELECT COALESCE(SUM(amount),0) AS s FROM transactions '
-      'WHERE is_expense = 1 AND deleted_at IS NULL AND date BETWEEN ? AND ?',
-      variables: [Variable.withDateTime(from), Variable.withDateTime(to)],
+      'WHERE is_expense = 1 AND deleted_at IS NULL AND transfer_id IS NULL$acctClause AND date BETWEEN ? AND ?',
+      variables: inVars,
       readsFrom: {transactions},
     ).getSingle();
     return (inRow.read<int>('s'), outRow.read<int>('s'));
@@ -222,12 +305,19 @@ class AppDatabase extends _$AppDatabase {
     String? keyword,
     DateTime? from,
     DateTime? to,
+    int? accountId,
   }) {
     final where = <String>['t.deleted_at IS NULL'];
     final vars = <Variable>[];
     if (categoryId != null) {
       where.add('t.category_id = ?');
       vars.add(Variable.withInt(categoryId));
+    }
+    // v1.25 (dompet ganda): SATU sumber untuk list + count (aturan
+    // v1.24.9) — filter dompet di sini agar keduanya tak bisa drift.
+    if (accountId != null) {
+      where.add('t.account_id = ?');
+      vars.add(Variable.withInt(accountId));
     }
     if (isExpense != null) {
       where.add('t.is_expense = ?');
@@ -268,6 +358,7 @@ class AppDatabase extends _$AppDatabase {
     String? keyword,
     DateTime? from,
     DateTime? to,
+    int? accountId,
     int limit = 100,
     int offset = 0,
   }) {
@@ -277,6 +368,7 @@ class AppDatabase extends _$AppDatabase {
       keyword: keyword,
       from: from,
       to: to,
+      accountId: accountId,
     );
     final query = customSelect(
       'SELECT t.*, c.name AS cat_name, c.icon AS cat_icon '
@@ -299,6 +391,7 @@ class AppDatabase extends _$AppDatabase {
     String? keyword,
     DateTime? from,
     DateTime? to,
+    int? accountId,
   }) {
     final parts = _historyFilterParts(
       categoryId: categoryId,
@@ -306,6 +399,7 @@ class AppDatabase extends _$AppDatabase {
       keyword: keyword,
       from: from,
       to: to,
+      accountId: accountId,
     );
     final query = customSelect(
       'SELECT COUNT(*) AS c '
@@ -318,22 +412,29 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Ringkasan pengeluaran per kategori dalam rentang tanggal.
+  ///
+  /// v1.25: kaki transfer dikecualikan (bukan pengeluaran kategori);
+  /// [accountId] null = gabungan.
   Future<List<CategoryTotal>> totalsByCategory(
     DateTime from,
     DateTime to,
-    bool expense,
-  ) async {
+    bool expense, {
+    int? accountId,
+  }) async {
+    final acctClause = accountId == null ? '' : ' AND t.account_id = ?';
+    final vars = <Variable>[
+      Variable.withBool(expense),
+      if (accountId != null) Variable.withInt(accountId),
+      Variable.withDateTime(from),
+      Variable.withDateTime(to),
+    ];
     final rows = await customSelect(
       'SELECT c.id AS cid, c.name AS cname, c.icon AS cicon, '
       'COALESCE(SUM(t.amount),0) AS total '
       'FROM transactions t LEFT JOIN categories c ON c.id = t.category_id '
-      'WHERE t.is_expense = ? AND t.deleted_at IS NULL AND t.date BETWEEN ? AND ? '
+      'WHERE t.is_expense = ? AND t.deleted_at IS NULL AND t.transfer_id IS NULL$acctClause AND t.date BETWEEN ? AND ? '
       'GROUP BY c.id, c.name, c.icon ORDER BY total DESC',
-      variables: [
-        Variable.withBool(expense),
-        Variable.withDateTime(from),
-        Variable.withDateTime(to),
-      ],
+      variables: vars,
       readsFrom: {transactions, categories},
     ).get();
     return rows.map(CategoryTotal.fromRow).toList();
