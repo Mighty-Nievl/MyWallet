@@ -30,6 +30,7 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 | **Release MyWallet** (`release.yml`) | push tag `v*` / manual | GitHub Release berisi `mywallet-vX.Y.Z.apk` + `.aab` → Obtainium |
 
 ## Riwayat rilis
+- **v1.25.1** (12 Okt 2026): Fix keyboard — input dompet tak lagi hilang saat keyboard muncul. Full 217/217.
 - **v1.25.0** (12 Okt 2026): Dompet ganda + transfer — pemilih Beranda, Kelola, filter per-dompet, PDF ikut filter, sync akun. Full 215/215.
 - **v1.24.11** (12 Okt 2026): Laporan menjawab — selisih hero, wawasan vs bulan lalu, legenda + pie bernama. Full 190/190.
 - **v1.24.10** (12 Okt 2026): Tile dua-baris + filter bottom-sheet — catatan lega, filter tanpa scroll. Full 182/182.

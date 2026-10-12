@@ -89,10 +89,19 @@ class AccountsScreen extends ConsumerWidget {
   }
 
   Future<void> _addSheet(BuildContext context, WidgetRef ref) async {
+    // Keyboard-safe: isScrollControlled + padding viewInsets. Tanpa ini
+    // sheet standar (max 50% layar) kehabisan ruang saat keyboard naik
+    // → input terdorong keluar layar (bug laporan: input hilang).
     final name = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
-      builder: (_) => const _NameSheet(title: 'Dompet baru'),
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+        ),
+        child: const _NameSheet(title: 'Dompet baru'),
+      ),
     );
     if (name == null || name.trim().isEmpty) return;
     final db = ref.read(dbProvider);
@@ -189,9 +198,15 @@ class _AccountCard extends ConsumerWidget {
         final name = await showModalBottomSheet<String>(
           context: context,
           showDragHandle: true,
-          builder: (_) => _NameSheet(
-            title: 'Ganti nama',
-            initial: account.name,
+          isScrollControlled: true,
+          builder: (ctx) => Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            child: _NameSheet(
+              title: 'Ganti nama',
+              initial: account.name,
+            ),
           ),
         );
         if (name == null || name.trim().isEmpty) return;
@@ -326,11 +341,18 @@ class TransferSheet extends ConsumerStatefulWidget {
   final int? fromId;
 
   /// Helper satu baris untuk tombol ⇄ (tanpa import State).
+  /// Keyboard-safe ikut _addSheet (isScrollControlled + viewInsets).
   static Future<void> show(BuildContext context, {int? fromId}) {
     return showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      builder: (_) => TransferSheet(fromId: fromId),
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+        ),
+        child: TransferSheet(fromId: fromId),
+      ),
     );
   }
 

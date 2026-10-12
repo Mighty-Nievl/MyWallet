@@ -26,6 +26,18 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.25.1',
+    date: '12 Okt 2026',
+    user:
+        'Perbaiki: kolom nama dompet tidak lagi hilang saat keyboard '
+        'muncul — panel tambah, ganti-nama, dan pindah dana kini ikut '
+        'naik di atas keyboard.',
+    tech:
+        '3 sheet dompet keyboard-safe (isScrollControlled + viewInsets); '
+        '2 regression test keyboard.',
+    breaking: null,
+  ),
+  (
     version: 'v1.25.0',
     date: '12 Okt 2026',
     user:
