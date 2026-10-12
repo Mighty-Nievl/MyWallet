@@ -26,6 +26,18 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.27.1',
+    date: '13 Okt 2026',
+    user:
+        'Perbaiki: tombol Masuk kini tampil di Beranda sebelum login — '
+        'ketuk untuk buka halaman Profil lalu masuk Google. Sebelumnya '
+        'jalan login tidak terlihat sama sekali saat belum masuk.',
+    tech:
+        'Tombol teks Masuk di header personal → Profil (opsi B); '
+        '2 assertion regression test.',
+    breaking: null,
+  ),
+  (
     version: 'v1.27.0',
     date: '13 Okt 2026',
     user:

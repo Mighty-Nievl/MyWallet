@@ -697,6 +697,8 @@ void main() {
 
   // Opsi A v1.24.6: header bukan baris yatim 1 gear — wordmark kiri +
   // gear kanan via AppHeader shared (pola Riwayat).
+  // v1.27.1: personal tambah tombol teks "Masuk" → Profil (lubang
+  // discoverability: Profil/Family cuma reachable dari identitas login).
   testWidgets('header beranda wordmark + gear sejajar (opsi A)', (
     tester,
   ) async {
@@ -721,6 +723,8 @@ void main() {
 
     expect(find.text('MyWallet'), findsOneWidget);
     expect(find.byTooltip('Pengaturan'), findsOneWidget);
+    // v1.27.1: tombol Masuk personal → pintu Profil (discoverability).
+    expect(find.widgetWithText(TextButton, 'Masuk'), findsOneWidget);
 
     await _flushDriftCloseTimer(tester);
   });

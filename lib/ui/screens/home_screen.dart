@@ -460,10 +460,17 @@ class _DailyStrip extends ConsumerWidget {
 
 /// Header Beranda v1.27: identitas kondisional login.
 ///
-/// Belum login (`personal`/loading) = wordmark `MyWallet` (kontrak lama,
-/// nol berubah). Sudah login = avatar inisial 40px + sapaan 2 baris
-/// (kecil sapaan waktu + tebal nama) dalam satu InkWell → Profil.
+/// Belum login (`personal`/loading) = wordmark `MyWallet` + tombol teks
+/// `Masuk` → Profil + gear. Sudah login = avatar inisial 40px + sapaan
+/// 2 baris (kecil sapaan waktu + tebal nama) dalam satu InkWell → Profil.
 /// Kanan selalu gear → Pengaturan.
+///
+/// v1.27.1: tombol `Masuk` menutup lubang discoverability — Profil/Family
+/// hanya reachable dari identitas login, jadi logged-out terkunci total
+/// tanpa tombol ini. TextButton ringan (bukan FilledButton) agar tak
+/// berteriak saingan CTA hero; tampil saat loading juga (tap → Profil
+/// personal, tombol Google besar tetap bisa ditekan manual — fallback
+/// v1.17.3), jadi tak ada kedip muncul-hilang.
 class _HomeHeader extends ConsumerWidget {
   const _HomeHeader({required this.onSettings, required this.onProfile});
 
@@ -487,7 +494,7 @@ class _HomeHeader extends ConsumerWidget {
     final s = session.value;
     final loggedIn = s != null && !s.isPersonal;
     if (!loggedIn) {
-      // Personal/loading: wordmark persis seperti sebelum v1.27.
+      // Personal/loading: wordmark + tombol Masuk → Profil + gear.
       return Row(
         children: [
           Expanded(
@@ -497,6 +504,13 @@ class _HomeHeader extends ConsumerWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+          ),
+          TextButton(
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              onProfile();
+            },
+            child: const Text('Masuk'),
           ),
           gear,
         ],

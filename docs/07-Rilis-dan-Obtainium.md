@@ -4,6 +4,7 @@
 Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, bukan Actions artifacts. Jadi tiap versi stabil diterbitkan sebagai Release berisi APK bertanda tangan → HP dapat notifikasi update otomatis.
 
 ## Riwayat rilis
+- **v1.27.1** (13 Okt 2026): Tombol Masuk di Beranda sebelum login — ketuk untuk buka Profil lalu masuk Google. Perbaiki jalan login yang tak terlihat saat logged-out.
 - **v1.27.0** (13 Okt 2026): Profil + Keluarga mandiri — pohon akun Beranda → Profil → Keluarga; header avatar + sapaan setelah login (belum login = wordmark tetap); nama panggilan bisa diubah di Profil; Pengaturan jadi 4 grup. 5 regression test.
 
 ## Signing (sekali saja — sudah dilakukan 7 Okt 2026)

@@ -80,8 +80,10 @@ Future<void> _flushDriftCloseTimer(WidgetTester tester) async {
 }
 
 void main() {
-  // 1. Personal (belum login): header = wordmark MyWallet + gear, nol berubah.
-  testWidgets('v1.27 header personal: wordmark + gear (kontrak lama)',
+  // 1. Personal (belum login): wordmark + tombol Masuk → Profil + gear.
+  // v1.27.1: tombol Masuk menutup lubang discoverability (Profil/Family
+  // cuma reachable dari identitas login → logged-out terkunci total).
+  testWidgets('v1.27 header personal: wordmark + Masuk → Profil + gear',
       (tester) async {
     final db = await _newDb(tester);
     await tester.runAsync(_loadFonts);
@@ -101,6 +103,14 @@ void main() {
     expect(find.byTooltip('Pengaturan'), findsOneWidget);
     // Sapaan TIDAK tampil saat personal (nol berubah dari v1.26).
     expect(find.textContaining('Selamat'), findsNothing);
+    // Tombol Masuk ada + tap → halaman Profil personal.
+    expect(find.widgetWithText(TextButton, 'Masuk'), findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, 'Masuk'));
+    await tester.pump();
+    expect(await _waitFor(tester, find.text('Profil')), isTrue,
+        reason: 'tap Masuk harus buka halaman Profil');
+    // Profil personal: hero + tombol Google besar (jalan login).
+    expect(find.text('Masuk dengan Google'), findsWidgets);
 
     await _flushDriftCloseTimer(tester);
   });
