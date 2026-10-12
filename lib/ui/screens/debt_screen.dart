@@ -20,6 +20,7 @@ import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../display.dart';
 import '../format.dart';
+import '../widgets/account_picker.dart';
 
 /// Layar Utang (tab ke-5) — manajer utang-piutang v1.15.
 ///
@@ -58,7 +59,8 @@ class _DialogControllers extends StatefulWidget {
     BuildContext c,
     StateSetter setS,
     List<TextEditingController> ctrls,
-  ) builder;
+  )
+  builder;
 
   @override
   State<_DialogControllers> createState() => _DialogControllersState();
@@ -113,6 +115,9 @@ class DebtScreen extends ConsumerWidget {
                 onAction: () => _openDebtDialog(context, ref),
               ),
             ),
+            // v1.25: filter dompet global (tanpa Kelola — milik Beranda).
+            const SizedBox(height: AppSpacing.s8),
+            const AccountPicker(),
             const SizedBox(height: AppSpacing.s8),
             Expanded(
               child: debts.when(
@@ -122,12 +127,10 @@ class DebtScreen extends ConsumerWidget {
                 ),
                 error: (e, _) => Center(
                   child: Padding(
-                    padding:
-                        const EdgeInsets.all(AppSpacing.s24),
+                    padding: const EdgeInsets.all(AppSpacing.s24),
                     child: AppErrorState(
                       title: 'Utang gagal dimuat.',
-                      onRetry: () =>
-                          ref.invalidate(debtsProvider),
+                      onRetry: () => ref.invalidate(debtsProvider),
                     ),
                   ),
                 ),
@@ -139,13 +142,11 @@ class DebtScreen extends ConsumerWidget {
                       subtitle:
                           'Catat pinjaman ke teman atau\ntagihan yang harus dibayar.',
                       action: FilledButton.icon(
-                        onPressed: () =>
-                            _openDebtDialog(context, ref),
+                        onPressed: () => _openDebtDialog(context, ref),
                         icon: const Icon(Icons.add),
                         label: const Text('Catat utang'),
                         style: FilledButton.styleFrom(
-                          minimumSize:
-                              const Size.fromHeight(48),
+                          minimumSize: const Size.fromHeight(48),
                           shape: RoundedRectangleBorder(
                             borderRadius: AppRadius.mdAll,
                           ),
@@ -153,10 +154,8 @@ class DebtScreen extends ConsumerWidget {
                       ),
                     );
                   }
-                  final aktif =
-                      list.where((e) => !e.done).toList();
-                  final lunas =
-                      list.where((e) => e.done).toList();
+                  final aktif = list.where((e) => !e.done).toList();
+                  final lunas = list.where((e) => e.done).toList();
                   return ListView(
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.page,
@@ -168,56 +167,38 @@ class DebtScreen extends ConsumerWidget {
                       // B2C v1.20: entrance stagger — teks/key/logika tetap.
                       Stagger(index: 0, child: _DebtOverview(list: list)),
                       if (aktif.isNotEmpty) ...[
-                        const SizedBox(
-                            height: AppSpacing.sectionGap),
+                        const SizedBox(height: AppSpacing.sectionGap),
                         AppSection(
-                          title:
-                              'Aktif (${aktif.length})',
+                          title: 'Aktif (${aktif.length})',
                           child: Column(
                             children: [
-                              for (var i = 0;
-                                  i < aktif.length;
-                                  i++) ...[
+                              for (var i = 0; i < aktif.length; i++) ...[
                                 _DebtItem(
                                   entry: aktif[i],
-                                  onTap: () => _openDebtDetail(
-                                      context,
-                                      ref,
-                                      aktif[i]),
+                                  onTap: () =>
+                                      _openDebtDetail(context, ref, aktif[i]),
                                 ),
                                 if (i < aktif.length - 1)
-                                  const Divider(
-                                    height: 1,
-                                    indent: 48,
-                                  ),
+                                  const Divider(height: 1, indent: 48),
                               ],
                             ],
                           ),
                         ),
                       ],
                       if (lunas.isNotEmpty) ...[
-                        const SizedBox(
-                            height: AppSpacing.sectionGap),
+                        const SizedBox(height: AppSpacing.sectionGap),
                         AppSection(
-                          title:
-                              'Lunas (${lunas.length})',
+                          title: 'Lunas (${lunas.length})',
                           child: Column(
                             children: [
-                              for (var i = 0;
-                                  i < lunas.length;
-                                  i++) ...[
+                              for (var i = 0; i < lunas.length; i++) ...[
                                 _DebtItem(
                                   entry: lunas[i],
-                                  onTap: () => _openDebtDetail(
-                                      context,
-                                      ref,
-                                      lunas[i]),
+                                  onTap: () =>
+                                      _openDebtDetail(context, ref, lunas[i]),
                                 ),
                                 if (i < lunas.length - 1)
-                                  const Divider(
-                                    height: 1,
-                                    indent: 48,
-                                  ),
+                                  const Divider(height: 1, indent: 48),
                               ],
                             ],
                           ),
@@ -227,14 +208,13 @@ class DebtScreen extends ConsumerWidget {
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton.icon(
-                          onPressed: () =>
-                              _openDebtDialog(context, ref),
+                          onPressed: () => _openDebtDialog(context, ref),
                           icon: const Icon(Icons.add),
-                          label:
-                              const Text('Catat utang / piutang'),
+                          label: const Text('Catat utang / piutang'),
                           style: FilledButton.styleFrom(
-                            minimumSize:
-                                const Size.fromHeight(AppSpacing.ctaHeight),
+                            minimumSize: const Size.fromHeight(
+                              AppSpacing.ctaHeight,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: AppRadius.mdAll,
                             ),
@@ -294,9 +274,17 @@ class DebtScreen extends ConsumerWidget {
       );
       if (picked != null) {
         HapticFeedback.selectionClick();
-        setS(() => apply(DateTime(
-            picked.year, picked.month, picked.day,
-            current.hour, current.minute)));
+        setS(
+          () => apply(
+            DateTime(
+              picked.year,
+              picked.month,
+              picked.day,
+              current.hour,
+              current.minute,
+            ),
+          ),
+        );
       }
       // Batal = biarkan (hapus jatuh tempo via tombol X di _DayTile).
     }
@@ -313,230 +301,215 @@ class DebtScreen extends ConsumerWidget {
           Future<void> submit() async {
             if (saving) return;
             final total = parseRp(totalCtrl.text);
-              var bad = false;
-              if (nameCtrl.text.trim().isEmpty) {
-                nameError = 'Isi nama dulu.';
-                bad = true;
-              } else {
-                nameError = null;
-              }
-              if (total <= 0) {
-                totalError = 'Isi total lebih dari 0.';
-                bad = true;
-              } else {
-                if (editing &&
-                    total < existing.paid) {
-                  totalError =
-                      'Minimal ${formatRp(existing.paid)} (sudah dibayar).';
-                  bad = true;
-                } else {
-                  totalError = null;
-                }
-              }
-              setS(() {});
-              if (bad) return;
-              setS(() => saving = true);
-              try {
-                if (editing) {
-                  await editDebt(ref,
-                      id: existing.debt.id,
-                      name: nameCtrl.text,
-                      total: total,
-                      date: date,
-                      dueDate: due,
-                      note: noteCtrl.text);
-                } else {
-                  await addDebt(ref,
-                      name: nameCtrl.text,
-                      isDebt: isDebt,
-                      total: total,
-                      date: date,
-                      dueDate: due,
-                      note: noteCtrl.text);
-                }
-              } on ArgumentError catch (e) {
-                setS(() {
-                  saving = false;
-                  totalError = e.message;
-                });
-                return;
-              } on DebtInvalidTotalException {
-                setS(() {
-                  saving = false;
-                  totalError =
-                      'Minimal ${formatRp(existing!.paid)} (sudah dibayar).';
-                });
-                return;
-              } catch (_) {
-                setS(() {
-                  saving = false;
-                  totalError =
-                      'Gagal menyimpan. Coba lagi.';
-                });
-                return;
-              }
-              if (c.mounted) Navigator.pop(c, 'saved');
+            var bad = false;
+            if (nameCtrl.text.trim().isEmpty) {
+              nameError = 'Isi nama dulu.';
+              bad = true;
+            } else {
+              nameError = null;
             }
+            if (total <= 0) {
+              totalError = 'Isi total lebih dari 0.';
+              bad = true;
+            } else {
+              if (editing && total < existing.paid) {
+                totalError =
+                    'Minimal ${formatRp(existing.paid)} (sudah dibayar).';
+                bad = true;
+              } else {
+                totalError = null;
+              }
+            }
+            setS(() {});
+            if (bad) return;
+            setS(() => saving = true);
+            try {
+              if (editing) {
+                await editDebt(
+                  ref,
+                  id: existing.debt.id,
+                  name: nameCtrl.text,
+                  total: total,
+                  date: date,
+                  dueDate: due,
+                  note: noteCtrl.text,
+                );
+              } else {
+                await addDebt(
+                  ref,
+                  name: nameCtrl.text,
+                  isDebt: isDebt,
+                  total: total,
+                  date: date,
+                  dueDate: due,
+                  note: noteCtrl.text,
+                );
+              }
+            } on ArgumentError catch (e) {
+              setS(() {
+                saving = false;
+                totalError = e.message;
+              });
+              return;
+            } on DebtInvalidTotalException {
+              setS(() {
+                saving = false;
+                totalError =
+                    'Minimal ${formatRp(existing!.paid)} (sudah dibayar).';
+              });
+              return;
+            } catch (_) {
+              setS(() {
+                saving = false;
+                totalError = 'Gagal menyimpan. Coba lagi.';
+              });
+              return;
+            }
+            if (c.mounted) Navigator.pop(c, 'saved');
+          }
 
-            return AlertDialog(
-              title: Text(editing
+          return AlertDialog(
+            title: Text(
+              editing
                   ? 'Ubah ${existing.debt.isDebt ? 'utang' : 'piutang'}'
-                  : 'Catat utang / piutang'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment:
-                      CrossAxisAlignment.stretch,
-                  children: [
-                    if (!editing) ...[
-                      SegmentedButton<bool>(
-                        segments: const [
-                          ButtonSegment(
-                            value: true,
-                            label: Text('Utang'),
-                            icon: Icon(
-                                Icons.arrow_downward,
-                                size: 18),
-                          ),
-                          ButtonSegment(
-                            value: false,
-                            label: Text('Piutang'),
-                            icon: Icon(Icons.arrow_upward,
-                                size: 18),
-                          ),
-                        ],
-                        selected: {isDebt},
-                        onSelectionChanged: (s) =>
-                            setS(() => isDebt = s.first),
-                      ),
-                      const SizedBox(height: AppSpacing.s12),
-                      Text(
-                        isDebt
-                            ? 'Aku pinjam → saldo BERTAMBAH, bayar = keluar.'
-                            : 'Aku meminjami → saldo BERKURANG, terima = masuk.',
-                        style: AppType.secondary(c),
-                      ),
-                      const SizedBox(height: AppSpacing.s12),
-                    ] else
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceOf(c),
-                          borderRadius: AppRadius.mdAll,
-                          border: Border.all(
-                              color: AppColors.borderOf(c)),
+                  : 'Catat utang / piutang',
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (!editing) ...[
+                    SegmentedButton<bool>(
+                      segments: const [
+                        ButtonSegment(
+                          value: true,
+                          label: Text('Utang'),
+                          icon: Icon(Icons.arrow_downward, size: 18),
                         ),
-                        padding:
-                            const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.s12,
-                                vertical: AppSpacing.s8),
-                        child: Text(
-                          existing.debt.isDebt
-                              ? 'Utang (tipe dikunci)'
-                              : 'Piutang (tipe dikunci)',
-                          style: AppType.secondary(c),
+                        ButtonSegment(
+                          value: false,
+                          label: Text('Piutang'),
+                          icon: Icon(Icons.arrow_upward, size: 18),
                         ),
-                      ),
-                    if (editing)
-                      const SizedBox(height: AppSpacing.s12),
-                    TextField(
-                      controller: nameCtrl,
-                      decoration: InputDecoration(
-                        labelText: 'Nama orang',
-                        hintText: 'cth. Budi',
-                        errorText: nameError,
-                      ),
-                      textInputAction: TextInputAction.next,
+                      ],
+                      selected: {isDebt},
+                      onSelectionChanged: (s) => setS(() => isDebt = s.first),
                     ),
                     const SizedBox(height: AppSpacing.s12),
-                    TextField(
-                      controller: totalCtrl,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        ThousandSeparatorInputFormatter()
-                      ],
-                      decoration: InputDecoration(
-                        labelText: 'Total (Rp)',
-                        hintText: 'cth. 1.000.000',
-                        prefixText: 'Rp ',
-                        errorText: totalError,
+                    Text(
+                      isDebt
+                          ? 'Aku pinjam → saldo BERTAMBAH, bayar = keluar.'
+                          : 'Aku meminjami → saldo BERKURANG, terima = masuk.',
+                      style: AppType.secondary(c),
+                    ),
+                    const SizedBox(height: AppSpacing.s12),
+                  ] else
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceOf(c),
+                        borderRadius: AppRadius.mdAll,
+                        border: Border.all(color: AppColors.borderOf(c)),
                       ),
-                      onSubmitted: (_) => submit(),
-                    ),
-                    const SizedBox(height: AppSpacing.s8),
-                    _DayTile(
-                      label: 'Tanggal',
-                      date: date,
-                      onTap: () => pickDay(c, setS, date,
-                          (d) => date = d),
-                    ),
-                    const SizedBox(height: AppSpacing.s8),
-                    _DayTile(
-                      label: 'Jatuh tempo (opsional)',
-                      date: due,
-                      placeholder: 'Tanpa jatuh tempo',
-                      onTap: () => pickDay(
-                          c, setS, due ?? DateTime.now(),
-                          (d) => due = d),
-                      onClear: due == null
-                          ? null
-                          : () => setS(() => due = null),
-                    ),
-                    const SizedBox(height: AppSpacing.s8),
-                    TextField(
-                      controller: noteCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Catatan (opsional)',
-                        hintText: 'cth. pinjam buat bensin',
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.s12,
+                        vertical: AppSpacing.s8,
                       ),
-                      maxLines: 2,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => submit(),
-                    ),
-                    if (editing &&
-                        existing.paid > 0) ...[
-                      const SizedBox(height: AppSpacing.s8),
-                      Text(
-                        'Sudah dibayar ${formatRp(existing.paid)} — '
-                        'total baru tidak boleh di bawah itu.',
+                      child: Text(
+                        existing.debt.isDebt
+                            ? 'Utang (tipe dikunci)'
+                            : 'Piutang (tipe dikunci)',
                         style: AppType.secondary(c),
                       ),
-                    ],
-                    if (editing) ...[
-                      const SizedBox(
-                          height: AppSpacing.s8),
-                      TextButton.icon(
-                        onPressed: saving
-                            ? null
-                            : () =>
-                                Navigator.pop(c, 'delete'),
-                        icon: const Icon(
-                            Icons.delete_outline,
-                            size: 18),
-                        label: Text(editing
-                            ? 'Hapus ${existing.debt.isDebt ? 'utang' : 'piutang'}'
-                            : 'Hapus'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Theme.of(c)
-                              .colorScheme
-                              .error,
-                        ),
-                      ),
-                    ],
+                    ),
+                  if (editing) const SizedBox(height: AppSpacing.s12),
+                  TextField(
+                    controller: nameCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Nama orang',
+                      hintText: 'cth. Budi',
+                      errorText: nameError,
+                    ),
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: AppSpacing.s12),
+                  TextField(
+                    controller: totalCtrl,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [ThousandSeparatorInputFormatter()],
+                    decoration: InputDecoration(
+                      labelText: 'Total (Rp)',
+                      hintText: 'cth. 1.000.000',
+                      prefixText: 'Rp ',
+                      errorText: totalError,
+                    ),
+                    onSubmitted: (_) => submit(),
+                  ),
+                  const SizedBox(height: AppSpacing.s8),
+                  _DayTile(
+                    label: 'Tanggal',
+                    date: date,
+                    onTap: () => pickDay(c, setS, date, (d) => date = d),
+                  ),
+                  const SizedBox(height: AppSpacing.s8),
+                  _DayTile(
+                    label: 'Jatuh tempo (opsional)',
+                    date: due,
+                    placeholder: 'Tanpa jatuh tempo',
+                    onTap: () =>
+                        pickDay(c, setS, due ?? DateTime.now(), (d) => due = d),
+                    onClear: due == null ? null : () => setS(() => due = null),
+                  ),
+                  const SizedBox(height: AppSpacing.s8),
+                  TextField(
+                    controller: noteCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Catatan (opsional)',
+                      hintText: 'cth. pinjam buat bensin',
+                    ),
+                    maxLines: 2,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => submit(),
+                  ),
+                  if (editing && existing.paid > 0) ...[
+                    const SizedBox(height: AppSpacing.s8),
+                    Text(
+                      'Sudah dibayar ${formatRp(existing.paid)} — '
+                      'total baru tidak boleh di bawah itu.',
+                      style: AppType.secondary(c),
+                    ),
                   ],
-                ),
+                  if (editing) ...[
+                    const SizedBox(height: AppSpacing.s8),
+                    TextButton.icon(
+                      onPressed: saving
+                          ? null
+                          : () => Navigator.pop(c, 'delete'),
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      label: Text(
+                        editing
+                            ? 'Hapus ${existing.debt.isDebt ? 'utang' : 'piutang'}'
+                            : 'Hapus',
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Theme.of(c).colorScheme.error,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              actions: [
-                TextButton(
-                    onPressed: saving
-                        ? null
-                        : () => Navigator.pop(c),
-                    child: const Text('Batal')),
-                FilledButton(
-                    onPressed: saving ? null : submit,
-                    child: Text(
-                        saving ? 'Menyimpan…' : 'Simpan')),
-              ],
-            );
+            ),
+            actions: [
+              TextButton(
+                onPressed: saving ? null : () => Navigator.pop(c),
+                child: const Text('Batal'),
+              ),
+              FilledButton(
+                onPressed: saving ? null : submit,
+                child: Text(saving ? 'Menyimpan…' : 'Simpan'),
+              ),
+            ],
+          );
         },
       ),
     );
@@ -544,13 +517,14 @@ class DebtScreen extends ConsumerWidget {
       HapticFeedback.lightImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text(editing
+          content: Text(
+            editing
                 ? 'Perubahan tersimpan.'
-                : '${isDebt ? 'Utang' : 'Piutang'} tercatat — saldo ikut berubah.')),
+                : '${isDebt ? 'Utang' : 'Piutang'} tercatat — saldo ikut berubah.',
+          ),
+        ),
       );
-    } else if (res == 'delete' &&
-        existing != null &&
-        context.mounted) {
+    } else if (res == 'delete' && existing != null && context.mounted) {
       await _confirmDelete(context, ref, existing);
     }
   }
@@ -565,8 +539,7 @@ class DebtScreen extends ConsumerWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: Text(
-            'Hapus ${d.isDebt ? 'utang' : 'piutang'}?'),
+        title: Text('Hapus ${d.isDebt ? 'utang' : 'piutang'}?'),
         content: Text(
           '${d.name} · ${formatRp(d.total)} akan dihapus beserta '
           '${item.paid > 0 ? 'riwayat bayar + ' : ''}catatan transaksinya di '
@@ -574,11 +547,13 @@ class DebtScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: const Text('Batal')),
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Batal'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(c, true),
-              child: const Text('Hapus')),
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Hapus'),
+          ),
         ],
       ),
     );
@@ -587,8 +562,8 @@ class DebtScreen extends ConsumerWidget {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-          content: Text(
-              '${d.isDebt ? 'Utang' : 'Piutang'} ${d.name} dihapus.')),
+        content: Text('${d.isDebt ? 'Utang' : 'Piutang'} ${d.name} dihapus.'),
+      ),
     );
   }
 
@@ -621,8 +596,7 @@ class DebtScreen extends ConsumerWidget {
                 entry: entry,
                 onEdit: () {
                   Navigator.pop(c);
-                  _openDebtDialog(context, ref,
-                      existing: entry);
+                  _openDebtDialog(context, ref, existing: entry);
                 },
                 onDelete: () {
                   Navigator.pop(c);
@@ -631,14 +605,14 @@ class DebtScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.s12),
               StreamBuilder<List<DebtPayment>>(
-                stream:
-                    watchDebtPayments(db, entry.debt.id),
+                stream: watchDebtPayments(db, entry.debt.id),
                 builder: (c, snap) {
                   final pays = snap.data ?? const [];
                   if (pays.isEmpty) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.s8),
+                        vertical: AppSpacing.s8,
+                      ),
                       child: Text(
                         'Belum ada pembayaran.',
                         style: AppType.secondary(c),
@@ -649,41 +623,32 @@ class DebtScreen extends ConsumerWidget {
                     child: ListView.separated(
                       shrinkWrap: true,
                       itemCount: pays.length,
-                      separatorBuilder: (_, _) =>
-                          const Divider(height: 1),
+                      separatorBuilder: (_, _) => const Divider(height: 1),
                       itemBuilder: (_, i) {
                         final p = pays[i];
                         return ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: const CategoryGlyph(
-                              emoji: '🤝',
-                              size: 36,
-                              iconSize: 18),
+                            emoji: '🤝',
+                            size: 36,
+                            iconSize: 18,
+                          ),
                           title: Text(
                             formatRp(p.amount),
-                            style: Theme.of(c)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                    fontWeight:
-                                        FontWeight.w600),
+                            style: Theme.of(c).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           subtitle: Text(
                             '${formatDate(p.date)}${p.note.trim().isNotEmpty ? ' · ${p.note.trim()}' : ''}',
-                            style:
-                                AppType.secondary(c),
+                            style: AppType.secondary(c),
                           ),
                           trailing: IconButton(
-                            icon: const Icon(
-                                Icons.delete_outline,
-                                size: 20),
+                            icon: const Icon(Icons.delete_outline, size: 20),
                             tooltip: 'Hapus pembayaran',
-                            color: Theme.of(c)
-                                .colorScheme
-                                .error,
+                            color: Theme.of(c).colorScheme.error,
                             onPressed: () =>
-                                _confirmDeletePayment(
-                                    context, ref, p),
+                                _confirmDeletePayment(context, ref, p),
                           ),
                         );
                       },
@@ -698,16 +663,16 @@ class DebtScreen extends ConsumerWidget {
                   child: FilledButton.icon(
                     onPressed: () {
                       Navigator.pop(c);
-                      _openPaymentDialog(
-                          context, ref, entry);
+                      _openPaymentDialog(context, ref, entry);
                     },
                     icon: const Icon(Icons.payments_outlined),
-                    label: Text(entry.debt.isDebt
-                        ? 'Bayar (${formatRp(entry.remaining)} lagi)'
-                        : 'Terima (${formatRp(entry.remaining)} lagi)'),
+                    label: Text(
+                      entry.debt.isDebt
+                          ? 'Bayar (${formatRp(entry.remaining)} lagi)'
+                          : 'Terima (${formatRp(entry.remaining)} lagi)',
+                    ),
                     style: FilledButton.styleFrom(
-                      minimumSize:
-                          const Size.fromHeight(AppSpacing.ctaHeight),
+                      minimumSize: const Size.fromHeight(AppSpacing.ctaHeight),
                       shape: RoundedRectangleBorder(
                         borderRadius: AppRadius.mdAll,
                       ),
@@ -716,8 +681,7 @@ class DebtScreen extends ConsumerWidget {
                 )
               else
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.s12),
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.s12),
                   alignment: Alignment.center,
                   child: Text(
                     'Lunas — tidak ada sisa. 🎉',
@@ -754,130 +718,128 @@ class DebtScreen extends ConsumerWidget {
           Future<void> submit() async {
             if (saving) return;
             final amount = parseRp(amountCtrl.text);
-              if (amount <= 0) {
-                setS(() => amountError =
-                    'Isi nominal lebih dari 0.');
-                return;
-              }
-              if (amount > entry.remaining) {
-                setS(() => amountError =
-                    'Melebihi sisa (${formatRp(entry.remaining)}).');
-                return;
-              }
-              setS(() {
-                amountError = null;
-                saving = true;
-              });
-              try {
-                await addDebtPayment(ref,
-                    debtId: d.id,
-                    amount: amount,
-                    date: date,
-                    note: noteCtrl.text);
-              } on DebtOverpayException catch (e) {
-                setS(() {
-                  saving = false;
-                  amountError = e.toString();
-                });
-                return;
-              } catch (_) {
-                setS(() {
-                  saving = false;
-                  amountError =
-                      'Gagal menyimpan. Coba lagi.';
-                });
-                return;
-              }
-              if (c.mounted) {
-                Navigator.pop(
-                    c,
-                    amount >= entry.remaining
-                        ? 'paid_off'
-                        : 'saved');
-              }
+            if (amount <= 0) {
+              setS(() => amountError = 'Isi nominal lebih dari 0.');
+              return;
             }
+            if (amount > entry.remaining) {
+              setS(
+                () => amountError =
+                    'Melebihi sisa (${formatRp(entry.remaining)}).',
+              );
+              return;
+            }
+            setS(() {
+              amountError = null;
+              saving = true;
+            });
+            try {
+              await addDebtPayment(
+                ref,
+                debtId: d.id,
+                amount: amount,
+                date: date,
+                note: noteCtrl.text,
+              );
+            } on DebtOverpayException catch (e) {
+              setS(() {
+                saving = false;
+                amountError = e.toString();
+              });
+              return;
+            } catch (_) {
+              setS(() {
+                saving = false;
+                amountError = 'Gagal menyimpan. Coba lagi.';
+              });
+              return;
+            }
+            if (c.mounted) {
+              Navigator.pop(
+                c,
+                amount >= entry.remaining ? 'paid_off' : 'saved',
+              );
+            }
+          }
 
-            return AlertDialog(
-              title: Text(d.isDebt
+          return AlertDialog(
+            title: Text(
+              d.isDebt
                   ? 'Bayar utang — ${d.name}'
-                  : 'Terima piutang — ${d.name}'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment:
-                      CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Sisa: ${formatRp(entry.remaining)} '
-                      'dari ${formatRp(d.total)}',
-                      style: AppType.secondary(c),
+                  : 'Terima piutang — ${d.name}',
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Sisa: ${formatRp(entry.remaining)} '
+                    'dari ${formatRp(d.total)}',
+                    style: AppType.secondary(c),
+                  ),
+                  const SizedBox(height: AppSpacing.s12),
+                  TextField(
+                    controller: amountCtrl,
+                    autofocus: true,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [ThousandSeparatorInputFormatter()],
+                    decoration: InputDecoration(
+                      labelText: 'Nominal (Rp)',
+                      hintText: 'cth. ${formatAmountField(entry.remaining)}',
+                      prefixText: 'Rp ',
+                      errorText: amountError,
                     ),
-                    const SizedBox(height: AppSpacing.s12),
-                    TextField(
-                      controller: amountCtrl,
-                      autofocus: true,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        ThousandSeparatorInputFormatter()
-                      ],
-                      decoration: InputDecoration(
-                        labelText: 'Nominal (Rp)',
-                        hintText:
-                            'cth. ${formatAmountField(entry.remaining)}',
-                        prefixText: 'Rp ',
-                        errorText: amountError,
-                      ),
-                      onSubmitted: (_) => submit(),
-                    ),
-                    const SizedBox(height: AppSpacing.s8),
-                    _DayTile(
-                      label: 'Tanggal',
-                      date: date,
-                      onTap: () async {
-                        final picked =
-                            await showDatePicker(
-                          context: c,
-                          initialDate: date,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime.now().add(
-                              const Duration(days: 365)),
+                    onSubmitted: (_) => submit(),
+                  ),
+                  const SizedBox(height: AppSpacing.s8),
+                  _DayTile(
+                    label: 'Tanggal',
+                    date: date,
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: c,
+                        initialDate: date,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (picked != null) {
+                        HapticFeedback.selectionClick();
+                        setS(
+                          () => date = DateTime(
+                            picked.year,
+                            picked.month,
+                            picked.day,
+                            date.hour,
+                            date.minute,
+                          ),
                         );
-                        if (picked != null) {
-                          HapticFeedback
-                              .selectionClick();
-                          setS(() => date = DateTime(
-                              picked.year,
-                              picked.month,
-                              picked.day,
-                              date.hour,
-                              date.minute));
-                        }
-                      },
+                      }
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.s8),
+                  TextField(
+                    controller: noteCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Catatan (opsional)',
                     ),
-                    const SizedBox(height: AppSpacing.s8),
-                    TextField(
-                      controller: noteCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Catatan (opsional)',
-                      ),
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => submit(),
-                    ),
-                  ],
-                ),
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => submit(),
+                  ),
+                ],
               ),
-              actions: [
-                TextButton(
-                    onPressed: saving
-                        ? null
-                        : () => Navigator.pop(c),
-                    child: const Text('Batal')),
-                FilledButton(
-                    onPressed: saving ? null : submit,
-                    child: Text(
-                        saving ? 'Menyimpan…' : 'Simpan')),
-              ],
-            );
+            ),
+            actions: [
+              TextButton(
+                onPressed: saving ? null : () => Navigator.pop(c),
+                child: const Text('Batal'),
+              ),
+              FilledButton(
+                onPressed: saving ? null : submit,
+                child: Text(saving ? 'Menyimpan…' : 'Simpan'),
+              ),
+            ],
+          );
         },
       ),
     );
@@ -885,14 +847,16 @@ class DebtScreen extends ConsumerWidget {
       HapticFeedback.lightImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text(res == 'paid_off'
+          content: Text(
+            res == 'paid_off'
                 ? 'Lunas! 🎉 Saldo ikut berubah.'
-                : 'Pembayaran tercatat — saldo ikut berubah.')),
+                : 'Pembayaran tercatat — saldo ikut berubah.',
+          ),
+        ),
       );
       // Setelah bayar, entry lama basi — buka ulang detail segar.
       if (context.mounted && res == 'paid_off') {
-        final fresh =
-            await fetchDebts(ref.read(dbProvider));
+        final fresh = await fetchDebts(ref.read(dbProvider));
         final hit = fresh.where((e) => e.debt.id == d.id);
         if (hit.isNotEmpty && context.mounted) {
           _openDebtDetail(context, ref, hit.first);
@@ -916,11 +880,13 @@ class DebtScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: const Text('Batal')),
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Batal'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(c, true),
-              child: const Text('Hapus')),
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Hapus'),
+          ),
         ],
       ),
     );
@@ -928,8 +894,7 @@ class DebtScreen extends ConsumerWidget {
     await removeDebtPayment(ref, p.id);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('Pembayaran dihapus — saldo ikut berubah.')),
+      const SnackBar(content: Text('Pembayaran dihapus — saldo ikut berubah.')),
     );
   }
 }
@@ -960,8 +925,9 @@ class _DebtOverview extends ConsumerWidget {
         if (!e.done) sisaPiutang += e.remaining;
       }
     }
-    final pctU =
-        totalUtang == 0 ? 0.0 : (paidUtang / totalUtang).clamp(0.0, 1.0);
+    final pctU = totalUtang == 0
+        ? 0.0
+        : (paidUtang / totalUtang).clamp(0.0, 1.0);
     final pctP = totalPiutang == 0
         ? 0.0
         : (paidPiutang / totalPiutang).clamp(0.0, 1.0);
@@ -969,51 +935,40 @@ class _DebtOverview extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Ringkasan utang-piutang',
-              style: AppType.labelMuted(context)),
+          Text('Ringkasan utang-piutang', style: AppType.labelMuted(context)),
           const SizedBox(height: AppSpacing.s8),
           Row(
             children: [
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Sisa utang',
-                        style:
-                            AppType.labelMuted(context)),
-                    Text(display.money(sisaUtang),
-                        style: AppType.amount(context)
-                            .copyWith(
-                                color: AppColors.expenseOf(
-                                    context))),
+                    Text('Sisa utang', style: AppType.labelMuted(context)),
+                    Text(
+                      display.money(sisaUtang),
+                      style: AppType.amount(
+                        context,
+                      ).copyWith(color: AppColors.expenseOf(context)),
+                    ),
                     const SizedBox(height: AppSpacing.s4),
-                    AppProgress(
-                        value: pctU,
-                        color: scheme.error,
-                        height: 6),
+                    AppProgress(value: pctU, color: scheme.error, height: 6),
                   ],
                 ),
               ),
               const SizedBox(width: AppSpacing.s16),
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Sisa piutang',
-                        style:
-                            AppType.labelMuted(context)),
-                    Text(display.money(sisaPiutang),
-                        style: AppType.amount(context)
-                            .copyWith(
-                                color: AppColors.incomeOf(
-                                    context))),
+                    Text('Sisa piutang', style: AppType.labelMuted(context)),
+                    Text(
+                      display.money(sisaPiutang),
+                      style: AppType.amount(
+                        context,
+                      ).copyWith(color: AppColors.incomeOf(context)),
+                    ),
                     const SizedBox(height: AppSpacing.s4),
-                    AppProgress(
-                        value: pctP,
-                        color: scheme.primary,
-                        height: 6),
+                    AppProgress(value: pctP, color: scheme.primary, height: 6),
                   ],
                 ),
               ),
@@ -1036,15 +991,17 @@ class _DebtItem extends ConsumerWidget {
     final display = ref.watch(displayPrefsProvider);
     final scheme = Theme.of(context).colorScheme;
     final d = entry.debt;
-    final pct = d.total == 0
-        ? 0.0
-        : (entry.paid / d.total).clamp(0.0, 1.0);
+    final pct = d.total == 0 ? 0.0 : (entry.paid / d.total).clamp(0.0, 1.0);
     final due = d.dueDate;
     final now = DateTime.now();
-    final overdue = !entry.done &&
+    final overdue =
+        !entry.done &&
         due != null &&
-        DateTime(due.year, due.month, due.day)
-            .isBefore(DateTime(now.year, now.month, now.day));
+        DateTime(
+          due.year,
+          due.month,
+          due.day,
+        ).isBefore(DateTime(now.year, now.month, now.day));
     final sub = entry.done
         ? 'Lunas · ${display.money(d.total)}'
         : [
@@ -1060,31 +1017,26 @@ class _DebtItem extends ConsumerWidget {
       },
       borderRadius: AppRadius.mdAll,
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-            vertical: AppSpacing.s12),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.s12),
         child: Row(
           children: [
             CategoryGlyph(
-                emoji: entry.done ? '✅' : '🤝',
-                size: 40,
-                iconSize: 20),
+              emoji: entry.done ? '✅' : '🤝',
+              size: 40,
+              iconSize: 20,
+            ),
             const SizedBox(width: AppSpacing.s12),
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
                       Expanded(
                         child: Text(
                           d.name,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(
-                                  fontWeight:
-                                      FontWeight.w500),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w500),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1094,16 +1046,12 @@ class _DebtItem extends ConsumerWidget {
                         entry.done
                             ? display.money(d.total)
                             : '−${display.money(entry.remaining)}',
-                        style: AppType.amount(context,
-                                size: 14)
-                            .copyWith(
+                        style: AppType.amount(context, size: 14).copyWith(
                           color: entry.done
                               ? AppColors.mutedOf(context)
                               : d.isDebt
-                                  ? AppColors.expenseOf(
-                                      context)
-                                  : AppColors.incomeOf(
-                                      context),
+                              ? AppColors.expenseOf(context)
+                              : AppColors.incomeOf(context),
                         ),
                       ),
                       const SizedBox(width: AppSpacing.s4),
@@ -1120,8 +1068,9 @@ class _DebtItem extends ConsumerWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: overdue
-                        ? AppType.secondaryStrong(context)
-                            .copyWith(color: scheme.error)
+                        ? AppType.secondaryStrong(
+                            context,
+                          ).copyWith(color: scheme.error)
                         : AppType.secondaryStrong(context),
                   ),
                   const SizedBox(height: AppSpacing.s8),
@@ -1130,8 +1079,8 @@ class _DebtItem extends ConsumerWidget {
                     color: entry.done
                         ? AppColors.mutedOf(context)
                         : d.isDebt
-                            ? scheme.error
-                            : scheme.primary,
+                        ? scheme.error
+                        : scheme.primary,
                   ),
                 ],
               ),
@@ -1145,10 +1094,11 @@ class _DebtItem extends ConsumerWidget {
 
 /// Kepala detail: nama + chip tipe + statistik + aksi edit/hapus.
 class _DetailHeader extends ConsumerWidget {
-  const _DetailHeader(
-      {required this.entry,
-      required this.onEdit,
-      required this.onDelete});
+  const _DetailHeader({
+    required this.entry,
+    required this.onEdit,
+    required this.onDelete,
+  });
   final DebtEntry entry;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -1158,29 +1108,23 @@ class _DetailHeader extends ConsumerWidget {
     final display = ref.watch(displayPrefsProvider);
     final scheme = Theme.of(context).colorScheme;
     final d = entry.debt;
-    final pct = d.total == 0
-        ? 0.0
-        : (entry.paid / d.total).clamp(0.0, 1.0);
+    final pct = d.total == 0 ? 0.0 : (entry.paid / d.total).clamp(0.0, 1.0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const CategoryGlyph(
-                emoji: '🤝', size: 44, iconSize: 22),
+            const CategoryGlyph(emoji: '🤝', size: 44, iconSize: 22),
             const SizedBox(width: AppSpacing.s12),
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     d.name,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(
-                            fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1200,8 +1144,7 @@ class _DetailHeader extends ConsumerWidget {
               onPressed: onEdit,
             ),
             IconButton(
-              icon:
-                  const Icon(Icons.delete_outline, size: 20),
+              icon: const Icon(Icons.delete_outline, size: 20),
               tooltip: 'Hapus',
               color: scheme.error,
               onPressed: onDelete,
@@ -1212,20 +1155,21 @@ class _DetailHeader extends ConsumerWidget {
         Row(
           children: [
             Expanded(
-                child: _DetailStat(
-                    label: 'Total',
-                    value: display.money(d.total))),
+              child: _DetailStat(label: 'Total', value: display.money(d.total)),
+            ),
             Expanded(
-                child: _DetailStat(
-                    label: entry.debt.isDebt
-                        ? 'Dibayar'
-                        : 'Diterima',
-                    value: display.money(entry.paid))),
+              child: _DetailStat(
+                label: entry.debt.isDebt ? 'Dibayar' : 'Diterima',
+                value: display.money(entry.paid),
+              ),
+            ),
             Expanded(
-                child: _DetailStat(
-                    label: 'Sisa',
-                    value: display.money(entry.remaining),
-                    highlight: !entry.done)),
+              child: _DetailStat(
+                label: 'Sisa',
+                value: display.money(entry.remaining),
+                highlight: !entry.done,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: AppSpacing.s8),
@@ -1234,15 +1178,13 @@ class _DetailHeader extends ConsumerWidget {
           color: entry.done
               ? AppColors.mutedOf(context)
               : d.isDebt
-                  ? scheme.error
-                  : scheme.primary,
+              ? scheme.error
+              : scheme.primary,
           height: 8,
         ),
         const SizedBox(height: AppSpacing.s4),
         Text(
-          entry.done
-              ? 'Lunas'
-              : '${(pct * 100).round()}% dibayar',
+          entry.done ? 'Lunas' : '${(pct * 100).round()}% dibayar',
           style: AppType.secondary(context),
         ),
       ],
@@ -1251,10 +1193,11 @@ class _DetailHeader extends ConsumerWidget {
 }
 
 class _DetailStat extends StatelessWidget {
-  const _DetailStat(
-      {required this.label,
-      required this.value,
-      this.highlight = false});
+  const _DetailStat({
+    required this.label,
+    required this.value,
+    this.highlight = false,
+  });
   final String label;
   final String value;
   final bool highlight;
@@ -1267,9 +1210,10 @@ class _DetailStat extends StatelessWidget {
         Text(label, style: AppType.labelMuted(context)),
         Text(
           value,
-          style: AppType.amount(context, size: 15).copyWith(
-              fontWeight:
-                  highlight ? FontWeight.w700 : null),
+          style: AppType.amount(
+            context,
+            size: 15,
+          ).copyWith(fontWeight: highlight ? FontWeight.w700 : null),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -1300,39 +1244,35 @@ class _DayTile extends StatelessWidget {
       borderRadius: AppRadius.mdAll,
       child: Container(
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.s12, vertical: AppSpacing.s8),
+          horizontal: AppSpacing.s12,
+          vertical: AppSpacing.s8,
+        ),
         decoration: BoxDecoration(
           border: Border.all(
-              color: Theme.of(context)
-                  .colorScheme
-                  .outlineVariant),
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
           borderRadius: AppRadius.mdAll,
         ),
         child: Row(
           children: [
-            Icon(Icons.calendar_month_outlined,
-                size: 20,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurfaceVariant),
+            Icon(
+              Icons.calendar_month_outlined,
+              size: 20,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
             const SizedBox(width: AppSpacing.s12),
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label,
-                      style:
-                          AppType.labelMuted(context)),
+                  Text(label, style: AppType.labelMuted(context)),
                   Text(
                     date == null
                         ? (placeholder ?? 'Pilih tanggal')
                         : formatDate(date!),
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(
-                            fontWeight: FontWeight.w500),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),

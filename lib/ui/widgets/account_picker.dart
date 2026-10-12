@@ -11,7 +11,9 @@ import '../design/app_spacing.dart';
 ///
 /// - Selalu ada "Semua" (gabungan, default — nol berubah utk user lama).
 /// - Dompet terarsip disembunyikan (keputusan plan); kelola buka sheet.
-/// - Chip geser hilang bila 1 dompet + tak perlu pilih (hemat vertikal).
+/// - Tanpa [onManage] + 1 dompet = geser hilang (hemat vertikal di
+///   layar tanpa pintu kelola). Dengan onManage (Beranda) strip selalu
+///   tampil ramping 1 baris — Kelola = pintu tambah dompet.
 ///
 /// Bahasa form: constraints 48px + elipsis ikut B2CFilterChip (tanpa
 /// hitung manual). Haptic ikut chip.

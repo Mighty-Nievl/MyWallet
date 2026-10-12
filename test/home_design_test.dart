@@ -726,6 +726,68 @@ void main() {
       isTrue,
     );
   });
+
+  // v1.25: 1 dompet = strip penuh tapi ramping (Semua + Utama +
+  // Kelola, 1 baris horizontal). Konsisten + Kelola reachable.
+  testWidgets('pemilih dompet hilang bila 1 dompet (v1.25)', (tester) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(() async {
+      await _loadFonts();
+      await _seed(db);
+    });
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(find.text('SALDO SAAT INI'), findsOneWidget);
+    expect(find.byKey(const ValueKey('home:accounts')), findsOneWidget);
+    // Strip ramping 1 baris: Semua + Utama + Kelola.
+    expect(find.text('Semua'), findsOneWidget);
+    expect(find.text('Kelola'), findsOneWidget);
+    expect(find.text('Utama'), findsOneWidget);
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // v1.25: 2 dompet = chip Semua + nama + Kelola; tap = filter jalan.
+  testWidgets('pemilih dompet 2 dompet: tap filter (v1.25)', (tester) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(() async {
+      await _loadFonts();
+      await db
+          .into(db.accounts)
+          .insert(AccountsCompanion.insert(name: 'Keluarga'));
+      await _seed(db);
+    });
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(find.text('Semua'), findsOneWidget);
+    expect(find.text('Keluarga'), findsOneWidget);
+    expect(find.text('Kelola'), findsOneWidget);
+    // Tap Keluarga → chip terseleksi (filter global aktif).
+    await tester.tap(find.text('Keluarga'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('Keluarga'), findsOneWidget);
+    await _flushDriftCloseTimer(tester);
+  });
 }
 
 /// Lepas tree, lalu flush timer 0ms dari drift

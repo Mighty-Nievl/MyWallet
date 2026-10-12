@@ -18,6 +18,7 @@ import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../display.dart';
 import '../format.dart';
+import '../widgets/account_picker.dart';
 
 /// Layar laporan: ringkasan bulan + grafik 6 bulan + rincian kategori.
 ///
@@ -57,6 +58,10 @@ class ReportsScreen extends ConsumerWidget {
               onShift: (d) => ref.read(selectedMonthProvider.notifier).state =
                   shiftMonth(month, d),
             ),
+            // v1.25: filter dompet global (tanpa Kelola — hemat vertikal;
+            // kelola milik Beranda). Semua angka ikut via provider.
+            const SizedBox(height: AppSpacing.s8),
+            const AccountPicker(),
             const SizedBox(height: AppSpacing.s16),
             // B2C v1.20: entrance stagger per seksi — teks/key/logika tetap.
             // v1.24.11: Selisih = hero (jawaban), Masuk/Keluar = bahan.

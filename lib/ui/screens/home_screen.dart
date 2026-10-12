@@ -92,7 +92,7 @@ class HomeScreen extends ConsumerWidget {
                     child: _HeroCard(balance: balance),
                   ),
                   // v1.25: pemilih dompet (Semua + chip + Kelola).
-                  // Hilang bila 1 dompet (hemat vertikal).
+                  // 1 baris ramping.
                   SliverToBoxAdapter(
                     key: const ValueKey('home:accounts'),
                     child: Padding(

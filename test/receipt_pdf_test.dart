@@ -159,6 +159,38 @@ Denda   5.000
       expect(data.byCategory, hasLength(1));
       expect(data.byCategory.single.name, 'Makan & Minum');
       expect(data.transactions, hasLength(2));
+      expect(data.accountLabel, isNull); // gabungan: tanpa label dompet
+    });
+
+    test('fetchMonthReport per dompet: angka + label jujur (v1.25)', () async {
+      final keluargaId = await db
+          .into(db.accounts)
+          .insert(AccountsCompanion.insert(name: 'Keluarga'));
+      await db
+          .into(db.transactions)
+          .insert(
+            TransactionsCompanion.insert(
+              amount: 200000,
+              isExpense: const Value(true),
+              categoryId: const Value(null),
+              date: DateTime(2026, 10, 6),
+              accountId: Value(keluargaId),
+            ),
+          );
+      final (from, to) = monthRangeOf('2026-10');
+      final data = await fetchMonthReport(
+        db,
+        month: '2026-10',
+        from: from,
+        to: to,
+        accountId: keluargaId,
+        accountName: 'Keluarga',
+      );
+      expect(data.expense, 200000);
+      expect(data.income, 0);
+      expect(data.accountLabel, 'Keluarga');
+      final bytes = await buildMonthReportPdf(data);
+      expect(String.fromCharCodes(bytes.take(5)), '%PDF-');
     });
 
     test('buildMonthReportPdf: header PDF valid + ada isi', () async {

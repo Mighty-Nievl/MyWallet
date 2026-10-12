@@ -22,6 +22,7 @@ class MonthReportData {
     required this.expense,
     required this.byCategory,
     required this.transactions,
+    this.accountLabel,
   });
 
   final String monthKey;
@@ -31,20 +32,30 @@ class MonthReportData {
   final List<CategoryTotal> byCategory;
   final List<TxWithCategory> transactions;
 
+  /// Nama dompet bila PDF difilter satu dompet (v1.25); null = gabungan.
+  final String? accountLabel;
+
   int get net => income - expense;
 }
 
 /// Ambil semua data laporan satu bulan dari [db].
+///
+/// v1.25: [accountId] null = gabungan. PDF ikut dompet AKTIF (konsisten
+/// WYSIWYG dengan layar — yang difilter itulah yang diekspor).
 Future<MonthReportData> fetchMonthReport(
   AppDatabase db, {
   required String month,
   required DateTime from,
   required DateTime to,
+  int? accountId,
+  String? accountName,
 }) async {
-  final (income, expense) = await db.getTotals(from, to);
-  final byCat = await db.totalsByCategory(from, to, true);
+  final (income, expense) = await db.getTotals(from, to, accountId: accountId);
+  final byCat = await db.totalsByCategory(from, to, true, accountId: accountId);
   // Urutan terbaru dulu (sama kayak layar Riwayat).
-  final txs = await db.watchHistory(from: from, to: to, limit: 100000).first;
+  final txs = await db
+      .watchHistory(from: from, to: to, accountId: accountId, limit: 100000)
+      .first;
   return MonthReportData(
     monthKey: month,
     monthLabel: _monthLabelId(month),
@@ -52,13 +63,24 @@ Future<MonthReportData> fetchMonthReport(
     expense: expense,
     byCategory: byCat,
     transactions: txs,
+    accountLabel: accountName,
   );
 }
 
 String _monthLabelId(String key) {
   const full = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+    'Januari',
+    'Februari',
+    'Maret',
+    'April',
+    'Mei',
+    'Juni',
+    'Juli',
+    'Agustus',
+    'September',
+    'Oktober',
+    'November',
+    'Desember',
   ];
   final parts = key.split('-');
   if (parts.length != 2) return key;
@@ -78,10 +100,7 @@ Future<Uint8List> buildMonthReportPdf(MonthReportData data) async {
     author: 'MyWallet',
   );
 
-  final header = pw.TextStyle(
-    fontSize: 20,
-    fontWeight: pw.FontWeight.bold,
-  );
+  final header = pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold);
   final sub = pw.TextStyle(fontSize: 11, color: PdfColors.grey700);
   final label = pw.TextStyle(fontSize: 10, color: PdfColors.grey600);
   final amount = pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold);
@@ -106,6 +125,9 @@ Future<Uint8List> buildMonthReportPdf(MonthReportData data) async {
       build: (ctx) {
         final body = <pw.Widget>[
           pw.Text('Laporan ${data.monthLabel}', style: header),
+          // v1.25: jujur — PDF satu dompet menyebut namanya.
+          if (data.accountLabel != null)
+            pw.Text('Dompet: ${data.accountLabel}', style: sub),
           pw.SizedBox(height: 2),
           pw.Text(
             'MyWallet · dibuat ${DateTime.now().day} '
@@ -125,21 +147,20 @@ Future<Uint8List> buildMonthReportPdf(MonthReportData data) async {
             ],
           ),
           pw.SizedBox(height: 16),
-          pw.Text('Rincian pengeluaran per kategori',
-              style: pw.TextStyle(
-                  fontSize: 13, fontWeight: pw.FontWeight.bold)),
+          pw.Text(
+            'Rincian pengeluaran per kategori',
+            style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
+          ),
           pw.SizedBox(height: 6),
         ];
 
         if (data.byCategory.isEmpty) {
           body.add(pw.Text('Belum ada pengeluaran bulan ini.', style: cell));
         } else {
-          final total =
-              data.byCategory.fold<int>(0, (s, e) => s + e.total);
+          final total = data.byCategory.fold<int>(0, (s, e) => s + e.total);
           body.add(
             pw.Table(
-              border: pw.TableBorder.all(
-                  color: PdfColors.grey300, width: 0.5),
+              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
               columnWidths: {
                 0: const pw.FlexColumnWidth(3),
                 1: const pw.FlexColumnWidth(1),
@@ -147,49 +168,59 @@ Future<Uint8List> buildMonthReportPdf(MonthReportData data) async {
               },
               children: [
                 pw.TableRow(
-                  decoration: const pw.BoxDecoration(
-                      color: PdfColors.grey200),
+                  decoration: const pw.BoxDecoration(color: PdfColors.grey200),
                   children: [
                     pw.Padding(
-                        padding: const pw.EdgeInsets.all(6),
-                        child: pw.Text('Kategori', style: cellBold)),
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text('Kategori', style: cellBold),
+                    ),
                     pw.Padding(
-                        padding: const pw.EdgeInsets.all(6),
-                        child: pw.Text('%', style: cellBold)),
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text('%', style: cellBold),
+                    ),
                     pw.Padding(
-                        padding: const pw.EdgeInsets.all(6),
-                        child: pw.Text('Nominal', style: cellBold)),
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text('Nominal', style: cellBold),
+                    ),
                   ],
                 ),
                 for (final c in data.byCategory)
-                  pw.TableRow(children: [
-                    pw.Padding(
+                  pw.TableRow(
+                    children: [
+                      pw.Padding(
                         padding: const pw.EdgeInsets.all(6),
-                        child: pw.Text(c.name, style: cell)),
-                    pw.Padding(
+                        child: pw.Text(c.name, style: cell),
+                      ),
+                      pw.Padding(
                         padding: const pw.EdgeInsets.all(6),
                         child: pw.Text(
-                            total == 0
-                                ? '0%'
-                                : '${(100 * c.total / total).round()}%',
-                            style: cell)),
-                    pw.Padding(
+                          total == 0
+                              ? '0%'
+                              : '${(100 * c.total / total).round()}%',
+                          style: cell,
+                        ),
+                      ),
+                      pw.Padding(
                         padding: const pw.EdgeInsets.all(6),
-                        child: pw.Text(_rp(c.total), style: cell)),
-                  ]),
+                        child: pw.Text(_rp(c.total), style: cell),
+                      ),
+                    ],
+                  ),
                 pw.TableRow(
-                  decoration: const pw.BoxDecoration(
-                      color: PdfColors.grey100),
+                  decoration: const pw.BoxDecoration(color: PdfColors.grey100),
                   children: [
                     pw.Padding(
-                        padding: const pw.EdgeInsets.all(6),
-                        child: pw.Text('Total keluar', style: cellBold)),
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text('Total keluar', style: cellBold),
+                    ),
                     pw.Padding(
-                        padding: const pw.EdgeInsets.all(6),
-                        child: pw.Text('100%', style: cellBold)),
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text('100%', style: cellBold),
+                    ),
                     pw.Padding(
-                        padding: const pw.EdgeInsets.all(6),
-                        child: pw.Text(_rp(total), style: cellBold)),
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text(_rp(total), style: cellBold),
+                    ),
                   ],
                 ),
               ],
@@ -198,9 +229,12 @@ Future<Uint8List> buildMonthReportPdf(MonthReportData data) async {
         }
 
         body.add(pw.SizedBox(height: 16));
-        body.add(pw.Text('Daftar transaksi',
-            style: pw.TextStyle(
-                fontSize: 13, fontWeight: pw.FontWeight.bold)));
+        body.add(
+          pw.Text(
+            'Daftar transaksi',
+            style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
+          ),
+        );
         body.add(pw.SizedBox(height: 6));
 
         if (data.transactions.isEmpty) {
@@ -208,8 +242,7 @@ Future<Uint8List> buildMonthReportPdf(MonthReportData data) async {
         } else {
           body.add(
             pw.Table(
-              border: pw.TableBorder.all(
-                  color: PdfColors.grey300, width: 0.5),
+              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
               columnWidths: {
                 0: const pw.FlexColumnWidth(2),
                 1: const pw.FlexColumnWidth(1),
@@ -218,51 +251,59 @@ Future<Uint8List> buildMonthReportPdf(MonthReportData data) async {
               },
               children: [
                 pw.TableRow(
-                  decoration: const pw.BoxDecoration(
-                      color: PdfColors.grey200),
+                  decoration: const pw.BoxDecoration(color: PdfColors.grey200),
                   children: [
                     pw.Padding(
-                        padding: const pw.EdgeInsets.all(6),
-                        child: pw.Text('Tanggal', style: cellBold)),
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text('Tanggal', style: cellBold),
+                    ),
                     pw.Padding(
-                        padding: const pw.EdgeInsets.all(6),
-                        child: pw.Text('Tipe', style: cellBold)),
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text('Tipe', style: cellBold),
+                    ),
                     pw.Padding(
-                        padding: const pw.EdgeInsets.all(6),
-                        child: pw.Text('Kategori / catatan',
-                            style: cellBold)),
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text('Kategori / catatan', style: cellBold),
+                    ),
                     pw.Padding(
-                        padding: const pw.EdgeInsets.all(6),
-                        child: pw.Text('Nominal', style: cellBold)),
+                      padding: const pw.EdgeInsets.all(6),
+                      child: pw.Text('Nominal', style: cellBold),
+                    ),
                   ],
                 ),
                 for (final t in data.transactions)
-                  pw.TableRow(children: [
-                    pw.Padding(
+                  pw.TableRow(
+                    children: [
+                      pw.Padding(
                         padding: const pw.EdgeInsets.all(6),
-                        child: pw.Text(_date(t.date), style: cell)),
-                    pw.Padding(
-                        padding: const pw.EdgeInsets.all(6),
-                        child: pw.Text(
-                            t.isExpense ? 'Keluar' : 'Masuk',
-                            style: cell)),
-                    pw.Padding(
-                      padding: const pw.EdgeInsets.all(6),
-                      child: pw.Text(
-                        [
-                          t.catName ?? 'Tanpa kategori',
-                          if (t.note.trim().isNotEmpty)
-                            '— ${t.note.trim()}',
-                        ].join(' '),
-                        style: cell,
+                        child: pw.Text(_date(t.date), style: cell),
                       ),
-                    ),
-                    pw.Padding(
+                      pw.Padding(
                         padding: const pw.EdgeInsets.all(6),
                         child: pw.Text(
-                            '${t.isExpense ? '-' : '+'}${_rp(t.amount)}',
-                            style: cell)),
-                  ]),
+                          t.isExpense ? 'Keluar' : 'Masuk',
+                          style: cell,
+                        ),
+                      ),
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(6),
+                        child: pw.Text(
+                          [
+                            t.catName ?? 'Tanpa kategori',
+                            if (t.note.trim().isNotEmpty) '— ${t.note.trim()}',
+                          ].join(' '),
+                          style: cell,
+                        ),
+                      ),
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.all(6),
+                        child: pw.Text(
+                          '${t.isExpense ? '-' : '+'}${_rp(t.amount)}',
+                          style: cell,
+                        ),
+                      ),
+                    ],
+                  ),
               ],
             ),
           );
@@ -288,8 +329,7 @@ String _rp(int n) {
 
 String _date(DateTime d) => '${d.day}/${d.month}/${d.year}';
 
-String _ym(DateTime d) =>
-    '${d.year}-${d.month.toString().padLeft(2, '0')}';
+String _ym(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}';
 
 /// Service export PDF laporan bulanan.
 ///
@@ -306,13 +346,20 @@ class ReportPdfService {
   }) async {
     final db = ref.read(dbProvider);
     final (from, to) = monthRangeOf(monthKey);
-    final data =
-        await fetchMonthReport(db, month: monthKey, from: from, to: to);
+    // v1.25: PDF = cermin layar (ikut dompet aktif).
+    final acct = ref.read(selectedAccountProvider);
+    final data = await fetchMonthReport(
+      db,
+      month: monthKey,
+      from: from,
+      to: to,
+      accountId: acct,
+      accountName: await _accountName(db, acct),
+    );
     final bytes = await buildMonthReportPdf(data);
 
     final dir = await getTemporaryDirectory();
-    final file = File(p.join(
-        dir.path, 'mywallet-laporan-$monthKey.pdf'));
+    final file = File(p.join(dir.path, 'mywallet-laporan-$monthKey.pdf'));
     await file.writeAsBytes(bytes, flush: true);
     await SharePlus.instance.share(
       ShareParams(
@@ -331,13 +378,30 @@ class ReportPdfService {
   }) async {
     final db = ref.read(dbProvider);
     final (from, to) = monthRangeOf(monthKey);
-    final data =
-        await fetchMonthReport(db, month: monthKey, from: from, to: to);
+    // v1.25: PDF = cermin layar (ikut dompet aktif).
+    final acct = ref.read(selectedAccountProvider);
+    final data = await fetchMonthReport(
+      db,
+      month: monthKey,
+      from: from,
+      to: to,
+      accountId: acct,
+      accountName: await _accountName(db, acct),
+    );
     final bytes = await buildMonthReportPdf(data);
     return FilePicker.saveFile(
       dialogTitle: 'Simpan laporan ${data.monthLabel}',
       fileName: 'mywallet-laporan-$monthKey.pdf',
       bytes: bytes,
     );
+  }
+
+  /// Nama dompet aktif (null bila Semua/gabungan) — v1.25.
+  static Future<String?> _accountName(AppDatabase db, int? id) async {
+    if (id == null) return null;
+    final a = await (db.select(
+      db.accounts,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    return a?.name;
   }
 }

@@ -20,16 +20,12 @@ import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../display.dart';
 import '../format.dart';
+import '../widgets/account_picker.dart';
 import 'categories_screen.dart';
 
 /// Satu baris budget: data + nama/ikon + terpakai.
 /// Sama dengan bentuk yang dikembalikan [budgetsProvider].
-typedef BudgetEntry = ({
-  Budget budget,
-  String name,
-  String icon,
-  int spent,
-});
+typedef BudgetEntry = ({Budget budget, String name, String icon, int spent});
 
 /// Ambang peringatan: >= 80% dari batas = waspada (tertiary).
 /// Ditulis sekali di sini — dipakai overview + item.
@@ -68,21 +64,20 @@ class BudgetScreen extends ConsumerWidget {
                 title: 'Budget',
                 actionIcon: Icons.add,
                 actionTooltip: 'Tambah budget',
-                onAction: () => _openBudgetDialog(
-                  context,
-                  ref,
-                  month,
-                  budgets.value ?? [],
-                ),
+                onAction: () =>
+                    _openBudgetDialog(context, ref, month, budgets.value ?? []),
               ),
             ),
             const SizedBox(height: AppSpacing.s8),
             AppMonthNav(
               month: month,
-              onShift: (d) => ref
-                  .read(selectedMonthProvider.notifier)
-                  .state = shiftMonth(month, d),
+              onShift: (d) => ref.read(selectedMonthProvider.notifier).state =
+                  shiftMonth(month, d),
             ),
+            // v1.25: filter dompet global (tanpa Kelola — milik Beranda).
+            const SizedBox(height: AppSpacing.s8),
+            const AccountPicker(),
+            const SizedBox(height: AppSpacing.s8),
             Expanded(
               child: budgets.when(
                 loading: () => const Padding(
@@ -91,12 +86,10 @@ class BudgetScreen extends ConsumerWidget {
                 ),
                 error: (e, _) => Center(
                   child: Padding(
-                    padding:
-                        const EdgeInsets.all(AppSpacing.s24),
+                    padding: const EdgeInsets.all(AppSpacing.s24),
                     child: AppErrorState(
                       title: 'Budget gagal dimuat.',
-                      onRetry: () =>
-                          ref.invalidate(budgetsProvider),
+                      onRetry: () => ref.invalidate(budgetsProvider),
                     ),
                   ),
                 ),
@@ -108,13 +101,12 @@ class BudgetScreen extends ConsumerWidget {
                       subtitle:
                           'Belum ada budget bulan ini.\nTambahkan batas per kategori agar pengeluaran terkontrol.',
                       action: FilledButton.icon(
-                        onPressed: () => _openBudgetDialog(
-                            context, ref, month, list),
+                        onPressed: () =>
+                            _openBudgetDialog(context, ref, month, list),
                         icon: const Icon(Icons.add),
                         label: const Text('Tambah budget'),
                         style: FilledButton.styleFrom(
-                          minimumSize:
-                              const Size.fromHeight(48),
+                          minimumSize: const Size.fromHeight(48),
                           shape: RoundedRectangleBorder(
                             borderRadius: AppRadius.mdAll,
                           ),
@@ -131,15 +123,12 @@ class BudgetScreen extends ConsumerWidget {
                     ),
                     children: [
                       _OverviewCard(list: list, month: month),
-                      const SizedBox(
-                          height: AppSpacing.sectionGap),
+                      const SizedBox(height: AppSpacing.sectionGap),
                       AppSection(
                         title: 'Batas per kategori',
                         child: Column(
                           children: [
-                            for (var i = 0;
-                                i < list.length;
-                                i++) ...[
+                            for (var i = 0; i < list.length; i++) ...[
                               // B2C v1.20: entrance stagger per item —
                               // teks/key/logika item tidak berubah.
                               Stagger(
@@ -156,10 +145,7 @@ class BudgetScreen extends ConsumerWidget {
                                 ),
                               ),
                               if (i < list.length - 1)
-                                const Divider(
-                                  height: 1,
-                                  indent: 48,
-                                ),
+                                const Divider(height: 1, indent: 48),
                             ],
                           ],
                         ),
@@ -168,14 +154,14 @@ class BudgetScreen extends ConsumerWidget {
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton.icon(
-                          onPressed: () => _openBudgetDialog(
-                              context, ref, month, list),
+                          onPressed: () =>
+                              _openBudgetDialog(context, ref, month, list),
                           icon: const Icon(Icons.add),
-                          label:
-                              const Text('Tambah budget'),
+                          label: const Text('Tambah budget'),
                           style: FilledButton.styleFrom(
-                            minimumSize:
-                                const Size.fromHeight(AppSpacing.ctaHeight),
+                            minimumSize: const Size.fromHeight(
+                              AppSpacing.ctaHeight,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: AppRadius.mdAll,
                             ),
@@ -210,12 +196,10 @@ class BudgetScreen extends ConsumerWidget {
     final editing = existing != null;
     int? catId = existing?.budget.categoryId;
     final limitCtrl = TextEditingController(
-      text: existing != null
-          ? formatAmountField(existing.budget.limit)
-          : '',
+      text: existing != null ? formatAmountField(existing.budget.limit) : '',
     );
     final known = {
-      for (final e in current) e.budget.categoryId: e.budget.limit
+      for (final e in current) e.budget.categoryId: e.budget.limit,
     };
     String? catError;
     String? limitError;
@@ -225,8 +209,7 @@ class BudgetScreen extends ConsumerWidget {
       BuildContext c,
       void Function(void Function()) setS,
     ) async {
-      final cats =
-          await ref.read(expenseCategoriesProvider.future);
+      final cats = await ref.read(expenseCategoriesProvider.future);
       if (!c.mounted) return;
       final picked = await showModalBottomSheet<int>(
         context: c,
@@ -242,10 +225,9 @@ class BudgetScreen extends ConsumerWidget {
             children: [
               Text(
                 'Pilih kategori',
-                style: Theme.of(s)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w600),
+                style: Theme.of(
+                  s,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: AppSpacing.s8),
               for (final cat in cats)
@@ -254,39 +236,33 @@ class BudgetScreen extends ConsumerWidget {
                   borderRadius: AppRadius.mdAll,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                        vertical: AppSpacing.s8),
+                      vertical: AppSpacing.s8,
+                    ),
                     child: Row(
                       children: [
-                        CategoryGlyph(
-                            emoji: cat.icon,
-                            size: 36,
-                            iconSize: 18),
-                        const SizedBox(
-                            width: AppSpacing.s12),
+                        CategoryGlyph(emoji: cat.icon, size: 36, iconSize: 18),
+                        const SizedBox(width: AppSpacing.s12),
                         Expanded(
-                          child: Text(cat.name,
-                              style: Theme.of(s)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                      fontWeight:
-                                          FontWeight.w500)),
+                          child: Text(
+                            cat.name,
+                            style: Theme.of(s).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
                         if (known.containsKey(cat.id))
                           Text(
                             formatRp(known[cat.id]!),
-                            style:
-                                AppType.secondary(s),
+                            style: AppType.secondary(s),
                           ),
                         if (catId == cat.id)
                           Padding(
-                            padding: const EdgeInsets.only(
-                                left: AppSpacing.s8),
-                            child: Icon(Icons.check,
-                                size: 20,
-                                color: Theme.of(s)
-                                    .colorScheme
-                                    .primary),
+                            padding: const EdgeInsets.only(left: AppSpacing.s8),
+                            child: Icon(
+                              Icons.check,
+                              size: 20,
+                              color: Theme.of(s).colorScheme.primary,
+                            ),
                           ),
                       ],
                     ),
@@ -294,16 +270,13 @@ class BudgetScreen extends ConsumerWidget {
                 ),
               const Divider(height: 24),
               ListTile(
-                leading: const Icon(
-                    Icons.settings_outlined),
+                leading: const Icon(Icons.settings_outlined),
                 title: const Text('Kelola kategori'),
                 contentPadding: EdgeInsets.zero,
                 onTap: () {
                   Navigator.pop(s);
                   Navigator.of(c).push(
-                    MaterialPageRoute(
-                        builder: (_) =>
-                            const CategoriesScreen()),
+                    MaterialPageRoute(builder: (_) => const CategoriesScreen()),
                   );
                 },
               ),
@@ -318,9 +291,9 @@ class BudgetScreen extends ConsumerWidget {
         final old = known[picked];
         if (old != null) {
           limitCtrl.text = formatAmountField(old);
-          limitCtrl.selection =
-              TextSelection.collapsed(
-                  offset: limitCtrl.text.length);
+          limitCtrl.selection = TextSelection.collapsed(
+            offset: limitCtrl.text.length,
+          );
         }
       });
     }
@@ -351,15 +324,16 @@ class BudgetScreen extends ConsumerWidget {
               if (bad) return;
               setS(() => saving = true);
               try {
-                await upsertBudget(ref,
-                    categoryId: catId!,
-                    limit: limit,
-                    month: month);
+                await upsertBudget(
+                  ref,
+                  categoryId: catId!,
+                  limit: limit,
+                  month: month,
+                );
               } catch (_) {
                 setS(() {
                   saving = false;
-                  limitError =
-                      'Gagal menyimpan. Coba lagi.';
+                  limitError = 'Gagal menyimpan. Coba lagi.';
                 });
                 return;
               }
@@ -377,46 +351,38 @@ class BudgetScreen extends ConsumerWidget {
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment:
-                      CrossAxisAlignment.stretch,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (editing)
                       Container(
                         decoration: BoxDecoration(
                           color: AppColors.surfaceOf(c),
                           borderRadius: AppRadius.mdAll,
-                          border: Border.all(
-                              color:
-                                  AppColors.borderOf(c)),
+                          border: Border.all(color: AppColors.borderOf(c)),
                         ),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.s12, vertical: AppSpacing.s8),
+                          horizontal: AppSpacing.s12,
+                          vertical: AppSpacing.s8,
+                        ),
                         child: Row(
                           children: [
-                            CategoryGlyph(
-                                emoji: existing.icon,
-                                size: 40),
-                            const SizedBox(
-                                width: AppSpacing.s12),
+                            CategoryGlyph(emoji: existing.icon, size: 40),
+                            const SizedBox(width: AppSpacing.s12),
                             Expanded(
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(existing.name,
-                                      style: Theme.of(c)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(
-                                              fontWeight:
-                                                  FontWeight
-                                                      .w500),
-                                      maxLines: 1,
-                                      overflow: TextOverflow
-                                          .ellipsis),
-                                  Text('Kategori dikunci',
-                                      style: AppType
-                                          .secondary(c)),
+                                  Text(
+                                    existing.name,
+                                    style: Theme.of(c).textTheme.bodyMedium
+                                        ?.copyWith(fontWeight: FontWeight.w500),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    'Kategori dikunci',
+                                    style: AppType.secondary(c),
+                                  ),
                                 ],
                               ),
                             ),
@@ -425,9 +391,7 @@ class BudgetScreen extends ConsumerWidget {
                       )
                     else
                       FutureBuilder<List<Category>>(
-                        future: ref.read(
-                            expenseCategoriesProvider
-                                .future),
+                        future: ref.read(expenseCategoriesProvider.future),
                         builder: (c, snap) {
                           if (snap.hasData) {
                             for (final k in snap.data!) {
@@ -438,56 +402,43 @@ class BudgetScreen extends ConsumerWidget {
                             }
                           }
                           return AppCard(
-                            padding:
-                                const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.s12,
-                                    vertical: AppSpacing.s8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.s12,
+                              vertical: AppSpacing.s8,
+                            ),
                             child: InkWell(
-                              onTap: () =>
-                                  pickCategory(c, setS),
-                              borderRadius:
-                                  AppRadius.mdAll,
+                              onTap: () => pickCategory(c, setS),
+                              borderRadius: AppRadius.mdAll,
                               child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(
-                                        vertical: AppSpacing.s4),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: AppSpacing.s4,
+                                ),
                                 child: Row(
                                   children: [
                                     CategoryGlyph(
-                                        emoji: current?.icon ??
-                                            '📦',
-                                        size: 40),
-                                    const SizedBox(
-                                        width:
-                                            AppSpacing.s12),
+                                      emoji: current?.icon ?? '📦',
+                                      size: 40,
+                                    ),
+                                    const SizedBox(width: AppSpacing.s12),
                                     Expanded(
                                       child: Text(
-                                        current?.name ??
-                                            'Pilih kategori',
-                                        style: Theme.of(c)
-                                            .textTheme
-                                            .bodyMedium
+                                        current?.name ?? 'Pilih kategori',
+                                        style: Theme.of(c).textTheme.bodyMedium
                                             ?.copyWith(
-                                                fontWeight:
-                                                    FontWeight
-                                                        .w500,
-                                                color: current ==
-                                                        null
-                                                    ? AppColors
-                                                        .mutedOf(
-                                                            c)
-                                                    : null),
+                                              fontWeight: FontWeight.w500,
+                                              color: current == null
+                                                  ? AppColors.mutedOf(c)
+                                                  : null,
+                                            ),
                                         maxLines: 1,
-                                        overflow:
-                                            TextOverflow
-                                                .ellipsis,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                     Icon(
-                                        Icons.chevron_right,
-                                        size: 20,
-                                        color: AppColors
-                                            .mutedOf(c)),
+                                      Icons.chevron_right,
+                                      size: 20,
+                                      color: AppColors.mutedOf(c),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -497,23 +448,21 @@ class BudgetScreen extends ConsumerWidget {
                       ),
                     if (catError != null)
                       Padding(
-                        padding: const EdgeInsets.only(
-                            top: 6, left: 4),
-                        child: Text(catError!,
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(c)
-                                    .colorScheme
-                                    .error)),
+                        padding: const EdgeInsets.only(top: 6, left: 4),
+                        child: Text(
+                          catError!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(c).colorScheme.error,
+                          ),
+                        ),
                       ),
                     if (overwrite)
                       Padding(
-                        padding: const EdgeInsets.only(
-                            top: AppSpacing.s8),
+                        padding: const EdgeInsets.only(top: AppSpacing.s8),
                         child: Text(
                           '${current?.name ?? 'Kategori ini'} sudah punya budget ${formatRp(known[catId]!)} bulan ini — Simpan akan menggantinya.',
-                          style:
-                              AppType.secondary(c),
+                          style: AppType.secondary(c),
                         ),
                       ),
                     const SizedBox(height: AppSpacing.s12),
@@ -521,9 +470,7 @@ class BudgetScreen extends ConsumerWidget {
                       controller: limitCtrl,
                       autofocus: true,
                       keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        ThousandSeparatorInputFormatter()
-                      ],
+                      inputFormatters: [ThousandSeparatorInputFormatter()],
                       decoration: InputDecoration(
                         labelText: 'Batas (Rp)',
                         hintText: 'cth. 1.500.000',
@@ -533,21 +480,15 @@ class BudgetScreen extends ConsumerWidget {
                       onSubmitted: (_) => submit(),
                     ),
                     if (editing) ...[
-                      const SizedBox(
-                          height: AppSpacing.s8),
+                      const SizedBox(height: AppSpacing.s8),
                       TextButton.icon(
                         onPressed: saving
                             ? null
-                            : () =>
-                                Navigator.pop(c, 'delete'),
-                        icon: const Icon(
-                            Icons.delete_outline,
-                            size: 18),
-                        label:
-                            const Text('Hapus budget'),
+                            : () => Navigator.pop(c, 'delete'),
+                        icon: const Icon(Icons.delete_outline, size: 18),
+                        label: const Text('Hapus budget'),
                         style: TextButton.styleFrom(
-                          foregroundColor:
-                              Theme.of(c).colorScheme.error,
+                          foregroundColor: Theme.of(c).colorScheme.error,
                         ),
                       ),
                     ],
@@ -556,29 +497,24 @@ class BudgetScreen extends ConsumerWidget {
               ),
               actions: [
                 TextButton(
-                    onPressed: saving
-                        ? null
-                        : () => Navigator.pop(c),
-                    child: const Text('Batal')),
+                  onPressed: saving ? null : () => Navigator.pop(c),
+                  child: const Text('Batal'),
+                ),
                 FilledButton(
-                    onPressed: saving ? null : submit,
-                    child: Text(
-                        saving ? 'Menyimpan…' : 'Simpan')),
+                  onPressed: saving ? null : submit,
+                  child: Text(saving ? 'Menyimpan…' : 'Simpan'),
+                ),
               ],
             );
           },
         ),
       );
       if (res == 'saved' && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Budget tersimpan.')),
-        );
-      } else if (res == 'delete' &&
-          existing != null &&
-          context.mounted) {
-        await _confirmDelete(
-            context, ref, month, existing);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Budget tersimpan.')));
+      } else if (res == 'delete' && existing != null && context.mounted) {
+        await _confirmDelete(context, ref, month, existing);
       }
     } finally {
       limitCtrl.dispose();
@@ -603,11 +539,13 @@ class BudgetScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: const Text('Batal')),
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Batal'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(c, true),
-              child: const Text('Hapus')),
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Hapus'),
+          ),
         ],
       ),
     );
@@ -623,10 +561,7 @@ class BudgetScreen extends ConsumerWidget {
         action: SnackBarAction(
           label: 'Urungkan',
           onPressed: () {
-            upsertBudget(ref,
-                categoryId: catId,
-                limit: limit,
-                month: month);
+            upsertBudget(ref, categoryId: catId, limit: limit, month: month);
           },
         ),
       ),
@@ -639,8 +574,7 @@ class BudgetScreen extends ConsumerWidget {
 ///
 /// Aman = muted; hanya waspada (>=80%) & jebol yang berwarna.
 class _OverviewCard extends ConsumerWidget {
-  const _OverviewCard(
-      {required this.list, required this.month});
+  const _OverviewCard({required this.list, required this.month});
   final List<BudgetEntry> list;
   final String month;
 
@@ -648,8 +582,7 @@ class _OverviewCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final display = ref.watch(displayPrefsProvider);
     final scheme = Theme.of(context).colorScheme;
-    final totalLimit =
-        list.fold<int>(0, (s, e) => s + e.budget.limit);
+    final totalLimit = list.fold<int>(0, (s, e) => s + e.budget.limit);
     final totalSpent = list.fold<int>(0, (s, e) => s + e.spent);
     final pct = totalLimit == 0
         ? 0.0
@@ -657,23 +590,16 @@ class _OverviewCard extends ConsumerWidget {
     final over = totalSpent > totalLimit;
     final warn = !over && pct >= _warnAt;
     final remain = totalLimit - totalSpent;
-    final safe =
-        list.where((e) => e.spent <= e.budget.limit).length;
+    final safe = list.where((e) => e.spent <= e.budget.limit).length;
     // B2C v1.20: overview dibungkus gradasi status — aman = aksen,
     // waspada/jebol = status (teks putih, kontras terjaga karena
     // warna status digelapkan dulu). Gradien dari scheme langsung
     // (bukan fungsi Home) agar transparan di semua tema.
     final gradBase = over
-        ? HSLColor.fromColor(scheme.error)
-            .withLightness(0.38)
-            .toColor()
+        ? HSLColor.fromColor(scheme.error).withLightness(0.38).toColor()
         : warn
-        ? HSLColor.fromColor(scheme.tertiary)
-            .withLightness(0.42)
-            .toColor()
-        : HSLColor.fromColor(scheme.primary)
-            .withLightness(0.36)
-            .toColor();
+        ? HSLColor.fromColor(scheme.tertiary).withLightness(0.42).toColor()
+        : HSLColor.fromColor(scheme.primary).withLightness(0.36).toColor();
     final white = Colors.white;
     return Container(
       padding: AppSpacing.cardPadding,
@@ -681,10 +607,7 @@ class _OverviewCard extends ConsumerWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            gradBase,
-            Color.lerp(gradBase, Colors.black, 0.22)!,
-          ],
+          colors: [gradBase, Color.lerp(gradBase, Colors.black, 0.22)!],
         ),
         borderRadius: AppRadius.lgAll,
         boxShadow: [
@@ -698,21 +621,26 @@ class _OverviewCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Anggaran · ${monthLabel(month)}',
-              style: AppType.labelMuted(context)
-                  .copyWith(color: white.withValues(alpha: 0.85))),
+          Text(
+            'Anggaran · ${monthLabel(month)}',
+            style: AppType.labelMuted(
+              context,
+            ).copyWith(color: white.withValues(alpha: 0.85)),
+          ),
           const SizedBox(height: AppSpacing.s4),
-          Text(display.money(totalLimit),
-              style: AppType.balance(context).copyWith(color: white)),
+          Text(
+            display.money(totalLimit),
+            style: AppType.balance(context).copyWith(color: white),
+          ),
           const SizedBox(height: AppSpacing.s4),
           Text(
             over
                 ? 'Lewat ${display.money(-remain)}'
                 : '${display.money(remain)} tersisa',
             style: AppType.secondary(context).copyWith(
-                  color: white.withValues(alpha: 0.92),
-                  fontWeight: FontWeight.w600,
-                ),
+              color: white.withValues(alpha: 0.92),
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: AppSpacing.s12),
           AppProgress(
@@ -723,8 +651,9 @@ class _OverviewCard extends ConsumerWidget {
           const SizedBox(height: AppSpacing.s8),
           Text(
             '$safe dari ${list.length} budget aman',
-            style: AppType.secondary(context)
-                .copyWith(color: white.withValues(alpha: 0.92)),
+            style: AppType.secondary(
+              context,
+            ).copyWith(color: white.withValues(alpha: 0.92)),
           ),
         ],
       ),
@@ -750,15 +679,17 @@ class _BudgetItem extends ConsumerWidget {
         : (b.spent / b.budget.limit).clamp(0.0, 1.0);
     final over = b.spent > b.budget.limit;
     final warn = !over && pct >= _warnAt;
-    final color =
-        over ? scheme.error : warn ? scheme.tertiary : null;
+    final color = over
+        ? scheme.error
+        : warn
+        ? scheme.tertiary
+        : null;
     final remain = b.budget.limit - b.spent;
     return InkWell(
       onTap: onEdit,
       borderRadius: AppRadius.mdAll,
       child: Padding(
-        padding:
-            const EdgeInsets.symmetric(vertical: AppSpacing.s8),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.s8),
         child: Row(
           children: [
             CategoryGlyph(emoji: b.icon, size: 36, iconSize: 18),
@@ -767,23 +698,23 @@ class _BudgetItem extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(b.name,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(
-                              fontWeight: FontWeight.w500),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
+                  Text(
+                    b.name,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: AppSpacing.micro),
                   Row(
                     children: [
-                      Text(display.money(b.spent),
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(
-                                  fontWeight: FontWeight.w600)),
+                      Text(
+                        display.money(b.spent),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       Flexible(
                         child: Text(
                           ' / ${display.money(b.budget.limit)}',
@@ -795,9 +726,7 @@ class _BudgetItem extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.s8),
-                  AppProgress(
-                      value: pct,
-                      color: color ?? scheme.primary),
+                  AppProgress(value: pct, color: color ?? scheme.primary),
                   const SizedBox(height: AppSpacing.s4),
                   Text(
                     over
@@ -805,18 +734,20 @@ class _BudgetItem extends ConsumerWidget {
                         : '${display.money(remain)} tersisa · ${(pct * 100).round()}%',
                     style: color == null
                         ? AppType.secondary(context)
-                        : AppType.secondary(context).copyWith(
-                            color: color,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        : AppType.secondary(
+                            context,
+                          ).copyWith(color: color, fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right,
-                size: 20, color: AppColors.mutedOf(context)),
+            Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: AppColors.mutedOf(context),
+            ),
           ],
         ),
       ),
