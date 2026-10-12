@@ -26,6 +26,20 @@ const appChangelog = <({
   String? breaking,
 })>[
   (
+    version: 'v1.24.11',
+    date: '12 Okt 2026',
+    user:
+        'Halaman Laporan kini menjawab: selisih ditonjolkan, grafik '
+        'punya keterangan warna, ada kalimat wawasan vs bulan lalu, '
+        'dan diagram lingkaran menyebut nama kategorinya.',
+    tech:
+        'Selisih hero 20px + judul dinamis; sixMonthFlow/prevMonth '
+        'provider (ganti FutureBuilder); legenda bar+pie + Semantics; '
+        'privacy rata-batang; iris <=3% bisu + footnote 6-terbesar; '
+        '8 test Laporan; vision light+dark PASS.',
+    breaking: null,
+  ),
+  (
     version: 'v1.24.10',
     date: '12 Okt 2026',
     user:

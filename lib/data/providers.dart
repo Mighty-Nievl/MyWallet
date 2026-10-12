@@ -111,6 +111,74 @@ final monthExpenseByCategoryProvider = StreamProvider<List<CategoryTotal>>((
       .asyncMap((_) => db.totalsByCategory(from, to, true));
 });
 
+/// Satu titik arus kas bulanan: kunci "yyyy-MM" + (masuk, keluar).
+/// Dipakai grafik 6 bulan di Laporan — fungsi murni (testable).
+typedef MonthFlow = ({String key, int masuk, int keluar});
+
+/// 6 titik arus (5 bulan mundur + bulan dipilih), TANPA DateTime.now()
+/// (v1.24.11: testable + ikut bulan yang user lihat, bukan bulan HP).
+/// Fungsi murni (tanpa ref) agar bisa di-test langsung dengan db in-memory.
+Future<List<MonthFlow>> fetchSixMonthFlow(AppDatabase db, String anchorKey) {
+  final parts = anchorKey.split('-');
+  final y = int.tryParse(parts[0]) ?? DateTime.now().year;
+  final m = parts.length > 1
+      ? int.tryParse(parts[1]) ?? DateTime.now().month
+      : DateTime.now().month;
+  return () async {
+    final out = <MonthFlow>[];
+    for (var i = 5; i >= 0; i--) {
+      final d = DateTime(y, m - i, 1);
+      final from = DateTime(d.year, d.month, 1);
+      final to = DateTime(
+        d.year,
+        d.month + 1,
+        1,
+      ).subtract(const Duration(milliseconds: 1));
+      final (masuk, keluar) = await db.getTotals(from, to);
+      out.add((
+        key: '${d.year}-${d.month.toString().padLeft(2, '0')}',
+        masuk: masuk,
+        keluar: keluar,
+      ));
+    }
+    return out;
+  }();
+}
+
+/// Arus 6 bulan reaktif (v1.24.11): dengarkan transaksi + bulan aktif —
+/// ganti `_SixMonthChart.FutureBuilder` manual (balapan future, tak
+/// reaktif). Guard balapan GRATIS: provider hanya emit hasil query
+/// milik bulan+data terakhir (Riverpod buang stream basi otomatis).
+final sixMonthFlowProvider = StreamProvider<List<MonthFlow>>((ref) {
+  final db = ref.watch(dbProvider);
+  final anchor = ref.watch(selectedMonthProvider);
+  return db
+      .select(db.transactions)
+      .watch()
+      .asyncMap((_) => fetchSixMonthFlow(db, anchor));
+});
+
+/// Total (masuk, keluar) bulan SEBELUM bulan dipilih — bahan strip
+/// wawasan Laporan ("Keluar naik 12% vs Sep"). Fungsi murni via
+/// [monthRangeOf] (tak ada DateTime.now, ikut bulan yang dilihat).
+final prevMonthTotalsProvider = StreamProvider<(int, int)>((ref) {
+  final db = ref.watch(dbProvider);
+  final anchor = ref.watch(selectedMonthProvider);
+  final parts = anchor.split('-');
+  final y = int.tryParse(parts[0]) ?? DateTime.now().year;
+  final m = parts.length > 1
+      ? int.tryParse(parts[1]) ?? DateTime.now().month
+      : DateTime.now().month;
+  final prev = DateTime(y, m - 1, 1);
+  final (from, to) = monthRangeOf(
+    '${prev.year}-${prev.month.toString().padLeft(2, '0')}',
+  );
+  return db
+      .select(db.transactions)
+      .watch()
+      .asyncMap((_) => db.getTotals(from, to));
+});
+
 /// Filter riwayat (diubah dari layar Riwayat).
 class HistoryFilter {
   const HistoryFilter({this.categoryId, this.isExpense, this.keyword = ''});
