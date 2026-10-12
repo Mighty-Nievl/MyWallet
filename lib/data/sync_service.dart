@@ -27,6 +27,7 @@ class SyncState {
 
 /// Sync engine beta Fase 2: push/pull transaksi + kategori antar-HP
 /// serumah. Opt-in — tanpa household = nol jalan.
+/// v1.25: + dompet (identitas + arsip, tanpa saldo).
 ///
 /// Kontrak (keputusan roadmap):
 /// - Offline-first tetap: tiap tahap `.timeout()` + pesan ramah;
@@ -34,6 +35,9 @@ class SyncState {
 /// - Last-write-wins per baris via `updatedAt` ([remoteWins]).
 /// - Cermin utang TIDAK di-push mentah ([isMirrorTx]) — rebuild per-HP
 ///   Fase 3. Pull men-skip dokumen cermin bila ada yang nyasar.
+/// - Kaki transfer di-push sebagai 2 dokumen biasa + `transferId`
+///   (netral di semua HP via filter `transfer_id IS NULL`).
+/// - Urutan tahap: akun → transaksi (resolusi accountUuid satu siklus).
 /// - Soft-delete merambat sebagai tombstone (`deletedAt`).
 class SyncService {
   SyncService({FirebaseFirestore? store, AuthService? auth}) {
@@ -58,16 +62,22 @@ class SyncService {
 
   static const opTimeout = Duration(seconds: 30);
 
-  CollectionReference<Map<String, dynamic>> _catsOf(String hid) =>
-      _needStore()
-          .collection(HouseholdPaths.households)
-          .doc(hid)
-          .collection('cats');
+  CollectionReference<Map<String, dynamic>> _catsOf(String hid) => _needStore()
+      .collection(HouseholdPaths.households)
+      .doc(hid)
+      .collection('cats');
 
   CollectionReference<Map<String, dynamic>> _txOf(String hid) => _needStore()
       .collection(HouseholdPaths.households)
       .doc(hid)
       .collection('tx');
+
+  /// Koleksi dompet (v1.25) — identitas + arsip, tanpa saldo.
+  CollectionReference<Map<String, dynamic>> _accountsOf(String hid) =>
+      _needStore()
+          .collection(HouseholdPaths.households)
+          .doc(hid)
+          .collection('accounts');
 
   /// Satu siklus penuh: push lokal → pull remote → upsert LWW.
   /// [onProgress] opsional untuk update UI per tahap.
@@ -111,6 +121,24 @@ class SyncService {
       }
       await stampPushedCats(db, catIds, hid);
 
+      // ---- PUSH dompet (v1.25, sebelum transaksi) ----
+      // Urutan disengaja: HP lain yang pull di tengah siklus baca akun
+      // dulu sebelum transaksi yang merujuknya.
+      onProgress?.call('Mengirim dompet…');
+      final accs = await pushableAccounts(db);
+      final accIds = <int>[];
+      for (final a in accs) {
+        final uuid = a.uuid;
+        if (uuid == null || uuid.isEmpty) continue;
+        await _accountsOf(hid)
+            .doc(uuid)
+            .set(accountToMap(a, hid, u), SetOptions(merge: true))
+            .timeout(opTimeout);
+        pushed++;
+        accIds.add(a.id);
+      }
+      await stampPushedAccounts(db, accIds, hid);
+
       // ---- PUSH transaksi non-cermin ----
       onProgress?.call('Mengirim transaksi…');
       final txs = await pushableTx(db);
@@ -129,20 +157,33 @@ class SyncService {
 
       // ---- PULL kategori ----
       onProgress?.call('Mengambil kategori…');
-      final rCats = await _catsOf(hid).get(const GetOptions(
-        source: Source.server,
-      )).timeout(opTimeout);
+      final rCats = await _catsOf(
+        hid,
+      ).get(const GetOptions(source: Source.server)).timeout(opTimeout);
       for (final d in rCats.docs) {
         final r = parseRemoteCat(d.data());
         if (r == null) continue;
         if (await upsertLocalCat(db, r, hid)) pulled++;
       }
 
+      // ---- PULL dompet (v1.25, sebelum transaksi) ----
+      // Urutan disengaja: upsertLocalTx butuh akun lokal untuk resolusi
+      // accountUuid → accountId dalam SIKLUS YANG SAMA.
+      onProgress?.call('Mengambil dompet…');
+      final rAccs = await _accountsOf(
+        hid,
+      ).get(const GetOptions(source: Source.server)).timeout(opTimeout);
+      for (final d in rAccs.docs) {
+        final r = parseRemoteAccount(d.data());
+        if (r == null) continue;
+        if (await upsertLocalAccount(db, r, hid)) pulled++;
+      }
+
       // ---- PULL transaksi (skip cermin nyasar) ----
       onProgress?.call('Mengambil transaksi…');
-      final rTxs = await _txOf(hid).get(const GetOptions(
-        source: Source.server,
-      )).timeout(opTimeout);
+      final rTxs = await _txOf(
+        hid,
+      ).get(const GetOptions(source: Source.server)).timeout(opTimeout);
       for (final d in rTxs.docs) {
         final m = d.data();
         // Cermin tidak pernah di-push; bila ada (tulis manual console),
@@ -161,10 +202,7 @@ class SyncService {
         at: DateTime.now(),
       );
     } catch (e) {
-      return SyncState(
-        phase: SyncPhase.failed,
-        message: friendlyAuthError(e),
-      );
+      return SyncState(phase: SyncPhase.failed, message: friendlyAuthError(e));
     }
   }
 }
@@ -177,5 +215,4 @@ final syncServiceProvider = Provider<SyncService>((ref) {
 });
 
 /// Status terakhir (untuk UI Keluarga → Sinkronisasi).
-final syncStateProvider =
-    StateProvider<SyncState>((ref) => const SyncState());
+final syncStateProvider = StateProvider<SyncState>((ref) => const SyncState());

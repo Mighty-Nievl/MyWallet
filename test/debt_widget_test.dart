@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,7 @@ import 'package:mywallet/data/database.dart';
 import 'package:mywallet/data/debt_actions.dart';
 import 'package:mywallet/data/providers.dart';
 import 'package:mywallet/ui/app_theme.dart';
+import 'package:mywallet/ui/screens/accounts_screen.dart';
 import 'package:mywallet/ui/screens/debt_screen.dart';
 import 'package:mywallet/ui/screens/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -348,6 +350,132 @@ void main() {
       await _pump(tester, ticks: 30);
 
       expect(find.text('Utang & piutang'), findsNothing);
+    } finally {
+      await _cleanup(tester, db);
+    }
+  });
+
+  // v1.25: layar Utang ikut dompet aktif — utang Keluarga tak terlihat
+  // saat filter = Utama.
+  testWidgets('utang ikut filter dompet aktif (v1.25)', (tester) async {
+    final db = await _newDb(tester);
+    try {
+      final utama = await _utama(db);
+      final famId = await tester.runAsync(
+        () => db
+            .into(db.accounts)
+            .insert(AccountsCompanion.insert(name: 'Keluarga')),
+      );
+      await tester.runAsync(() async {
+        await insertDebt(
+          db,
+          name: 'Kantor',
+          isDebt: false,
+          total: 20000,
+          date: DateTime.now(),
+          dueDate: null,
+          note: '',
+          accountId: famId!,
+        );
+        await insertDebt(
+          db,
+          name: 'Tetangga',
+          isDebt: true,
+          total: 50000,
+          date: DateTime.now(),
+          dueDate: null,
+          note: '',
+          accountId: utama,
+        );
+      });
+      await _pumpDebt(tester, db);
+      expect(
+        await _waitFor(tester, find.text('Tetangga')),
+        isTrue,
+        reason: 'gabungan (Semua) tampilkan dua-duanya',
+      );
+      expect(find.text('Kantor'), findsOneWidget);
+
+      // Pilih Utama lewat strip picker di layar Utang.
+      await tester.tap(find.text('Utama'));
+      await _pump(tester, ticks: 10);
+      await _nap(tester, ms: 300);
+      expect(find.text('Tetangga'), findsOneWidget);
+      expect(find.text('Kantor'), findsNothing);
+    } finally {
+      await _cleanup(tester, db);
+    }
+  });
+
+  // v1.25: TransferSheet end-to-end — pindah 50rb, saldo ikut.
+  testWidgets('transfer sheet: pindah dana antar dompet (v1.25)', (
+    tester,
+  ) async {
+    final db = await _newDb(tester);
+    try {
+      final utama = await _utama(db);
+      await tester.runAsync(() async {
+        await db
+            .into(db.accounts)
+            .insert(AccountsCompanion.insert(name: 'Keluarga'));
+        await db
+            .into(db.transactions)
+            .insert(
+              TransactionsCompanion.insert(
+                amount: 100000,
+                isExpense: const Value(false),
+                categoryId: const Value(null),
+                date: DateTime.now(),
+                accountId: Value(utama),
+              ),
+            );
+      });
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [dbProvider.overrideWithValue(db)],
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            home: const AccountsScreen(),
+          ),
+        ),
+      );
+      await _pump(tester, ticks: 10);
+      expect(await _waitFor(tester, find.text('Keluarga')), isTrue);
+
+      // Buka sheet transfer dari kartu pertama (urutan alfabetis:
+      // Keluarga dulu). Default asal/tujuan otomatis beda — arah tak
+      // penting, yang diuji = 2 kaki + saldo per-dompet bergeser 50rb.
+      await tester.tap(find.byTooltip('Pindah dana').first);
+      await _pump(tester, ticks: 10);
+      await _nap(tester, ms: 300);
+      expect(find.text('Pindahkan'), findsOneWidget);
+
+      // Isi nominal + simpan.
+      await tester.enterText(find.byType(TextField).first, '50000');
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(find.text('Pindahkan'));
+      await _pump(tester, ticks: 10);
+      await _nap(tester, ms: 300);
+
+      expect(await tester.runAsync(() => db.getBalance()), 100000);
+      // Satu dompet 50rb, satunya 50rb (arah ikut urutan kartu).
+      // 150rb = Keluarga→Utama; 50rb = Utama→Keluarga.
+      final utamaBal = await tester.runAsync(
+        () => db.getBalance(accountId: utama),
+      );
+      expect(utamaBal == 50000 || utamaBal == 150000, isTrue);
+      final famBal = await tester.runAsync(() async {
+        final famId = (await db.select(db.accounts).get())
+            .firstWhere((a) => a.name == 'Keluarga')
+            .id;
+        return db.getBalance(accountId: famId);
+      });
+      // Netral global: jumlah kedua dompet tetap 100rb.
+      expect(utamaBal! + famBal!, 100000);
+      final allTx = (await tester.runAsync(
+            () => db.select(db.transactions).get(),
+          ))!;
+      expect(allTx.where((t) => t.transferId != null), hasLength(2));
     } finally {
       await _cleanup(tester, db);
     }

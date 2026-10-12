@@ -77,6 +77,18 @@ service cloud.firestore {
           && request.resource.data.updatedBy == request.auth.uid;
         allow delete: if false;
       }
+      // Dompet v1.25: identitas + arsip saja. Saldo TIDAK sync
+      // (dihitung per-HP) — tolak dokumen yang bawa angka.
+      match /accounts/{doc} {
+        allow read: if isMember(hid);
+        allow create, update: if isMember(hid)
+          && request.resource.data.updatedBy == request.auth.uid
+          && (!('openingBalance' in request.resource.data)
+            || request.resource.data.openingBalance == null)
+          && (!('amount' in request.resource.data)
+            || request.resource.data.amount == null);
+        allow delete: if false;
+      }
     }
 
     // ---- Invite: get-per-kode untuk user login (tanpa list) ----
