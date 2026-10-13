@@ -81,7 +81,9 @@ void main() {
 
     expect(find.text('Utama'), findsOneWidget);
     expect(find.byKey(const ValueKey('home:carousel')), findsOneWidget);
-    expect(find.byKey(const ValueKey('home:dots-0')), findsNothing);
+    // v1.30: dots = halaman (1 dompet + Kelola = 2 dots).
+    expect(find.byKey(const ValueKey('home:dots-0')), findsOneWidget);
+    expect(find.byKey(const ValueKey('home:dots-manage')), findsOneWidget);
     // Kartu Kelola trailing (v1.29.1) belum di-build — di luar viewport.
     expect(find.byKey(const ValueKey('home:card-manage')), findsNothing);
     // Chip Semua (era chip) sudah tidak ada.
@@ -91,7 +93,7 @@ void main() {
   });
 
   // Kartu Kelola (v1.29.1): halaman TERAKHIR carousel, bergambar gear,
-  // tap → Kelola. Dots tetap milik dompet (tak ada dot baru).
+  // tap → Kelola. v1.30: dots = indikator halaman (Kelola dapat 1 dot).
   testWidgets('kartu Kelola trailing: geser → tap → Kelola (v1.29.1)',
       (tester) async {
     final db = await _newDb(tester);
@@ -110,8 +112,17 @@ void main() {
     expect(find.byKey(const ValueKey('home:card-manage')), findsOneWidget);
     expect(find.text('Kelola dompet'), findsOneWidget);
     expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
-    // Dots tetap sembunyi (kartu Kelola bukan filter).
-    expect(find.byKey(const ValueKey('home:dots-0')), findsNothing);
+    // Dot Kelola ikut menyala (halaman trailing tampil).
+    expect(find.byKey(const ValueKey('home:dots-manage')), findsOneWidget);
+    // Filter tak berubah di halaman trailing (masih Utama).
+    final utamaId = (await tester.runAsync(
+      () => db.select(db.accounts).get(),
+    ))!.firstWhere((a) => a.name == 'Utama').id;
+    final ctx = tester.element(find.byKey(const ValueKey('home:carousel')));
+    expect(
+      ProviderScope.containerOf(ctx).read(selectedAccountProvider),
+      utamaId,
+    );
     // Tap kartu → layar Kelola terbuka.
     await tester.tap(find.text('Kelola dompet'));
     await tester.pump();
@@ -119,6 +130,32 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
     expect(find.byType(AccountsScreen), findsOneWidget);
+
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // Dots Kelola (v1.30): tap dot trailing → lompat ke kartu Kelola,
+  // filter TIDAK berubah (guard onPageChanged).
+  testWidgets('tap dots-manage → halaman Kelola, filter tetap (v1.30)',
+      (tester) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(_loadFonts);
+    await _pumpCarousel(tester, db);
+
+    final utamaId = (await tester.runAsync(
+      () => db.select(db.accounts).get(),
+    ))!.firstWhere((a) => a.name == 'Utama').id;
+
+    await tester.tap(find.byKey(const ValueKey('home:dots-manage')));
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(find.byKey(const ValueKey('home:card-manage')), findsOneWidget);
+    final ctx = tester.element(find.byKey(const ValueKey('home:carousel')));
+    expect(
+      ProviderScope.containerOf(ctx).read(selectedAccountProvider),
+      utamaId,
+    );
 
     await _flushDriftCloseTimer(tester);
   });
@@ -143,6 +180,8 @@ void main() {
 
     expect(find.byKey(const ValueKey('home:dots-0')), findsOneWidget);
     expect(find.byKey(const ValueKey('home:dots-1')), findsOneWidget);
+    // v1.30: halaman trailing Kelola ikut dapat dot.
+    expect(find.byKey(const ValueKey('home:dots-manage')), findsOneWidget);
     // Halaman 0 = Utama. Geser kiri → halaman 1 = Keluarga.
     // (PageView drop halaman offstage dari cache — setelah geser,
     // Utama hilang total dan Keluarga tepat 1, bukan findsWidgets.)

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/actions.dart';
@@ -108,11 +109,9 @@ class BudgetScreen extends ConsumerWidget {
                             _openBudgetDialog(context, ref, month, list),
                         icon: const Icon(Icons.add),
                         label: const Text('Tambah budget'),
+                        // v1.30: bentuk ikut tema global (pill).
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(48),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: AppRadius.mdAll,
-                          ),
                         ),
                       ),
                     );
@@ -161,12 +160,10 @@ class BudgetScreen extends ConsumerWidget {
                               _openBudgetDialog(context, ref, month, list),
                           icon: const Icon(Icons.add),
                           label: const Text('Tambah budget'),
+                          // v1.30: bentuk ikut tema global (pill).
                           style: FilledButton.styleFrom(
                             minimumSize: const Size.fromHeight(
                               AppSpacing.ctaHeight,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: AppRadius.mdAll,
                             ),
                           ),
                         ),
@@ -360,7 +357,9 @@ class BudgetScreen extends ConsumerWidget {
                       Container(
                         decoration: BoxDecoration(
                           color: AppColors.surfaceOf(c),
-                          borderRadius: AppRadius.mdAll,
+                          // v1.30: radius kartu ikut token (cermin box
+                          // dialog utang — dalam dialog = kartu kecil).
+                          borderRadius: AppRadius.cardAll,
                           border: Border.all(color: AppColors.borderOf(c)),
                         ),
                         padding: const EdgeInsets.symmetric(
@@ -411,7 +410,7 @@ class BudgetScreen extends ConsumerWidget {
                             ),
                             child: InkWell(
                               onTap: () => pickCategory(c, setS),
-                              borderRadius: AppRadius.mdAll,
+                              borderRadius: AppRadius.pillAll,
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: AppSpacing.s4,
@@ -690,7 +689,11 @@ class _BudgetItem extends ConsumerWidget {
         : null;
     final remain = b.budget.limit - b.spent;
     return InkWell(
-      onTap: onEdit,
+      // v1.30: umpan sentuh ikut baris lain (satu sentuh = jujur bisa tap).
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onEdit();
+      },
       borderRadius: AppRadius.mdAll,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.s8),

@@ -20,6 +20,23 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.30.0',
+    date: '14 Okt 2026',
+    user:
+        'Kartu Kelola dompet kini sejajar dengan kartu saldo — tidak '
+        'melompat lagi saat digeser, dan titik halaman ikut sampai kartu '
+        'terakhir. Tiap transaksi dan judul kini menyebut nama dompetnya '
+        'bila Anda punya lebih dari satu. Tombol dan kartu di seluruh '
+        'aplikasi tampil lebih membulat dan lembut.',
+    tech:
+        'Kartu Kelola parity bingkai + dots halaman list.length+1 + '
+        'guard sync-back _prevIndex; watchHistory JOIN accounts + suffix '
+        'multi-dompet (>1) di Beranda/Riwayat/Laporan; token pill/kartu/'
+        'thumb + MeshGradient ringkasan utang; kontras mesh utang >=4.5:1 '
+        '(96 pengukuran); golden regen.',
+    breaking: null,
+  ),
+  (
     version: 'v1.29.1',
     date: '14 Okt 2026',
     user:

@@ -436,8 +436,10 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
                 label: Text(_editing ? 'Simpan Perubahan' : 'Simpan Transaksi'),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(52),
+                  // v1.30 (karakteristik #3): pill ikut tema global
+                  // (dulu md override = satu-satunya CTA kotak).
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    borderRadius: AppRadius.pillAll,
                   ),
                 ),
               ),
@@ -454,8 +456,10 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
                     foregroundColor: Theme.of(context).colorScheme.error,
                     side: BorderSide(color: AppColors.borderOf(context)),
                     minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    // v1.30 (karakteristik #3): pill ikut tema global
+                    // (tombol hapus = varian destruktif, bukan kotak).
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: AppRadius.pillAll,
                     ),
                   ),
                 ),
@@ -591,8 +595,10 @@ class _TypeSelector extends StatelessWidget {
           onChanged(s.first);
         },
         style: SegmentedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.md),
+          // v1.30 (karakteristik #3): pill ikut bahasa tombol tema
+          // (M3 default = stadium; override md dulu melawan itu).
+          shape: const RoundedRectangleBorder(
+            borderRadius: AppRadius.pillAll,
           ),
           side: BorderSide(color: AppColors.borderOf(context)),
           selectedBackgroundColor: isExpense
@@ -663,7 +669,9 @@ class _AmountField extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceOf(context),
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        // v1.30 (karakteristik #3): kartu input ikut token kartu
+        // (dulu md = beda sendiri vs AppCard lain).
+        borderRadius: AppRadius.cardAll,
         border: Border.all(color: AppColors.borderOf(context)),
       ),
       padding: const EdgeInsets.symmetric(
@@ -835,6 +843,8 @@ class _SheetRow extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
+      // v1.30: splash baris sheet kecil ikut md (bukan kartu —
+      // selaras sheet Riwayat/Budget).
       borderRadius: AppRadius.mdAll,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.s8),

@@ -48,7 +48,9 @@ class SettingRow extends StatelessWidget {
               color: destructive
                   ? scheme.errorContainer
                   : AppColors.subtleOf(context),
-              borderRadius: AppRadius.mdAll,
+              // v1.30 (karakteristik #3+#5): thumbnail konsisten ikut
+              // token thumb (dulu md = beda sendiri vs glyph lain).
+              borderRadius: AppRadius.thumbAll,
             ),
             alignment: Alignment.center,
             child: Icon(

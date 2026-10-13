@@ -160,6 +160,7 @@ Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi 
 - [x] **Tombol Masuk header (v1.27.1)**: personal + tombol teks Masuk → Profil; tutup lubang discoverability login. 2 assertion regression test.
 - [x] **Carousel kartu dompet (v1.29.0)**: PageView per-dompet gantikan hero gabungan + chip; kartu tampil = filter aktif; reorder drag di Kelola (sortOrder + sync LWW); 9 regression test carousel+reorder+integrasi.
 - [x] **Navbar + kartu Kelola (v1.29.1)**: Beranda pensiun (no-op) → pintasan Riwayat; Kelola pindah ke kartu trailing bergambar gear; lingkaran + via Stack+SafeArea (transform melukis di luar clip); drag presisi −350.
+- [x] **Kartu jujur + label dompet + karakter (v1.30.0)**: kartu Kelola parity bingkai + dots halaman (+1 Kelola, tap lompat); label nama dompet di tile/judul/strip (>1 dompet); pill/kartu/thumb + mesh ringkasan utang + cicilan ellipsis; kontras mesh utang ≥4.5:1.
 - [ ] Fase 3 — utang + budget ikut sync + uji 2 emulator bareng.
 - [ ] Fase 4 — hardening production-grade: RLS audit, hapus akun, kebijakan privasi (wajib Play Store), crash reporting.
 

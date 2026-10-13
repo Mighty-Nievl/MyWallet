@@ -821,7 +821,23 @@ void main() {
     expect(find.byKey(const ValueKey('home:carousel')), findsOneWidget);
     expect(find.byKey(const ValueKey('home:dots-0')), findsOneWidget);
     expect(find.byKey(const ValueKey('home:dots-1')), findsOneWidget);
+    // v1.30: dots = halaman (2 dompet + Kelola = 3 dots).
+    expect(find.byKey(const ValueKey('home:dots-manage')), findsOneWidget);
     expect(find.text('Semua'), findsNothing);
+    // v1.30: 2 dompet + auto-select kartu pertama (Keluarga, alfabetis) =
+    // judul seksi sebut scope. Pola gulir ikut test kategori-ganda
+    // (grid v1.26 mendorong judul ke bawah lipatan).
+    await tester.ensureVisible(
+      find.text('Pengeluaran bulan ini · Keluarga'),
+    );
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(
+      find.text('Pengeluaran bulan ini · Keluarga'),
+      findsOneWidget,
+    );
+    expect(find.text('Pengeluaran bulan ini'), findsNothing);
     await _flushDriftCloseTimer(tester);
   });
 }

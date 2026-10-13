@@ -371,12 +371,15 @@ class AppDatabase extends _$AppDatabase {
       accountId: accountId,
     );
     final query = customSelect(
-      'SELECT t.*, c.name AS cat_name, c.icon AS cat_icon '
+      // v1.30: ikut bawa nama dompet (label per-baris + judul jujur).
+      'SELECT t.*, c.name AS cat_name, c.icon AS cat_icon, '
+      'a.name AS account_name '
       'FROM transactions t LEFT JOIN categories c ON c.id = t.category_id '
+      'LEFT JOIN accounts a ON a.id = t.account_id '
       'WHERE ${parts.where.join(' AND ')} '
       'ORDER BY t.date DESC, t.id DESC LIMIT $limit OFFSET $offset',
       variables: parts.vars,
-      readsFrom: {transactions, categories},
+      readsFrom: {transactions, categories, accounts},
     );
     return query.watch().map(
       (rows) => rows.map(TxWithCategory.fromRow).toList(),
@@ -441,7 +444,7 @@ class AppDatabase extends _$AppDatabase {
   }
 }
 
-/// Satu baris transaksi + info kategori (hasil join).
+/// Satu baris transaksi + info kategori + nama dompet (hasil join).
 class TxWithCategory {
   TxWithCategory({
     required this.id,
@@ -452,6 +455,7 @@ class TxWithCategory {
     required this.note,
     this.catName,
     this.catIcon,
+    this.accountName,
   });
 
   factory TxWithCategory.fromRow(QueryRow row) => TxWithCategory(
@@ -463,6 +467,8 @@ class TxWithCategory {
     note: row.read<String>('note'),
     catName: row.readNullable<String>('cat_name'),
     catIcon: row.readNullable<String>('cat_icon'),
+    // v1.30: null = tx lama pra-dompet / dompet terhapus → tile sembunyikan.
+    accountName: row.readNullable<String>('account_name'),
   );
 
   final int id;
@@ -473,6 +479,7 @@ class TxWithCategory {
   final String note;
   final String? catName;
   final String? catIcon;
+  final String? accountName;
 }
 
 /// Total nominal per kategori.

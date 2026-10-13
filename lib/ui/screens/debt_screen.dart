@@ -13,6 +13,7 @@ import '../components/app_header.dart';
 import '../components/app_progress.dart';
 import '../components/app_section.dart';
 import '../components/category_glyph.dart';
+import '../components/mesh_gradient.dart';
 import '../design/app_colors.dart';
 import '../design/app_motion.dart';
 import '../design/app_radius.dart';
@@ -147,11 +148,9 @@ class DebtScreen extends ConsumerWidget {
                         onPressed: () => _openDebtDialog(context, ref),
                         icon: const Icon(Icons.add),
                         label: const Text('Catat utang'),
+                        // v1.30: bentuk ikut tema global (pill).
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(48),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: AppRadius.mdAll,
-                          ),
                         ),
                       ),
                     );
@@ -213,12 +212,10 @@ class DebtScreen extends ConsumerWidget {
                           onPressed: () => _openDebtDialog(context, ref),
                           icon: const Icon(Icons.add),
                           label: const Text('Catat utang / piutang'),
+                          // v1.30: bentuk ikut tema global (pill).
                           style: FilledButton.styleFrom(
                             minimumSize: const Size.fromHeight(
                               AppSpacing.ctaHeight,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: AppRadius.mdAll,
                             ),
                           ),
                         ),
@@ -410,7 +407,8 @@ class DebtScreen extends ConsumerWidget {
                     Container(
                       decoration: BoxDecoration(
                         color: AppColors.surfaceOf(c),
-                        borderRadius: AppRadius.mdAll,
+                        // v1.30: radius kartu ikut token (dalam dialog).
+                        borderRadius: AppRadius.cardAll,
                         border: Border.all(color: AppColors.borderOf(c)),
                       ),
                       padding: const EdgeInsets.symmetric(
@@ -625,33 +623,60 @@ class DebtScreen extends ConsumerWidget {
                     child: ListView.separated(
                       shrinkWrap: true,
                       itemCount: pays.length,
-                      separatorBuilder: (_, _) => const Divider(height: 1),
+                      // v1.30 (karakteristik #5): baris cicilan = glyph +
+                      // kolom teks ellipsis (bukan ListTile polos tanpa
+                      // batas — overflow 300px terkunci).
+                      separatorBuilder: (_, _) => const Divider(
+                        height: 1,
+                        indent: AppSpacing.s12,
+                        endIndent: AppSpacing.s12,
+                      ),
                       itemBuilder: (_, i) {
                         final p = pays[i];
-                        return ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: const CategoryGlyph(
-                            emoji: '🤝',
-                            size: 36,
-                            iconSize: 18,
-                          ),
-                          title: Text(
-                            formatRp(p.amount),
-                            style: Theme.of(c).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
+                        return Row(
+                          children: [
+                            const CategoryGlyph(
+                              emoji: '🤝',
+                              size: 36,
+                              iconSize: 18,
                             ),
-                          ),
-                          subtitle: Text(
-                            '${formatDate(p.date)}${p.note.trim().isNotEmpty ? ' · ${p.note.trim()}' : ''}',
-                            style: AppType.secondary(c),
-                          ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline, size: 20),
-                            tooltip: 'Hapus pembayaran',
-                            color: Theme.of(c).colorScheme.error,
-                            onPressed: () =>
-                                _confirmDeletePayment(context, ref, p),
-                          ),
+                            const SizedBox(width: AppSpacing.s12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    formatRp(p.amount),
+                                    style: Theme.of(c)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    '${formatDate(p.date)}${p.note.trim().isNotEmpty ? ' · ${p.note.trim()}' : ''}',
+                                    style: AppType.secondary(c),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                size: 20,
+                              ),
+                              tooltip: 'Hapus pembayaran',
+                              color: Theme.of(c).colorScheme.error,
+                              onPressed: () =>
+                                  _confirmDeletePayment(context, ref, p),
+                            ),
+                          ],
                         );
                       },
                     ),
@@ -675,9 +700,6 @@ class DebtScreen extends ConsumerWidget {
                     ),
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(AppSpacing.ctaHeight),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: AppRadius.mdAll,
-                      ),
                     ),
                   ),
                 )
@@ -933,11 +955,40 @@ class _DebtOverview extends ConsumerWidget {
     final pctP = totalPiutang == 0
         ? 0.0
         : (paidPiutang / totalPiutang).clamp(0.0, 1.0);
-    return AppCard(
+    // Identitas v1.30 (karakteristik #1): ringkasan = MeshGradient status
+    // (cermin _OverviewCard Budget) — ada sisa utang aktif = error,
+    // selain itu aksen. Teks putih; kontras dikunci visual_identity_test.
+    final trouble = list.any((e) => !e.done && e.debt.isDebt);
+    final statusColor = trouble ? scheme.error : scheme.primary;
+    final gradBase = HSLColor.fromColor(statusColor)
+        .withLightness(scheme.brightness == Brightness.dark ? 0.22 : 0.26)
+        .toColor();
+    Color blob(Color c, double deg) {
+      final hsl = HSLColor.fromColor(c);
+      final lift = scheme.brightness == Brightness.dark ? 0.08 : 0.04;
+      return hsl
+          .withHue(((hsl.hue + deg) % 360 + 360) % 360)
+          .withLightness((hsl.lightness + lift).clamp(0.0, 1.0))
+          .toColor();
+    }
+    final white = Colors.white;
+    return MeshGradient(
+      base: gradBase,
+      blobs: [
+        blob(statusColor, 30),
+        blob(statusColor, -35),
+        blob(statusColor, 60),
+      ],
+      padding: AppSpacing.cardPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Ringkasan utang-piutang', style: AppType.labelMuted(context)),
+          Text(
+            'Ringkasan utang-piutang',
+            style: AppType.labelMuted(
+              context,
+            ).copyWith(color: white.withValues(alpha: 0.85)),
+          ),
           const SizedBox(height: AppSpacing.s8),
           Row(
             children: [
@@ -945,15 +996,22 @@ class _DebtOverview extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Sisa utang', style: AppType.labelMuted(context)),
+                    Text(
+                      'Sisa utang',
+                      style: AppType.labelMuted(context).copyWith(
+                        color: white.withValues(alpha: 0.85),
+                      ),
+                    ),
                     Text(
                       display.money(sisaUtang),
-                      style: AppType.amount(
-                        context,
-                      ).copyWith(color: AppColors.expenseOf(context)),
+                      style: AppType.amount(context).copyWith(color: white),
                     ),
                     const SizedBox(height: AppSpacing.s4),
-                    AppProgress(value: pctU, color: scheme.error, height: 6),
+                    AppProgress(
+                      value: pctU,
+                      color: white.withValues(alpha: 0.95),
+                      height: 6,
+                    ),
                   ],
                 ),
               ),
@@ -962,15 +1020,22 @@ class _DebtOverview extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Sisa piutang', style: AppType.labelMuted(context)),
+                    Text(
+                      'Sisa piutang',
+                      style: AppType.labelMuted(context).copyWith(
+                        color: white.withValues(alpha: 0.85),
+                      ),
+                    ),
                     Text(
                       display.money(sisaPiutang),
-                      style: AppType.amount(
-                        context,
-                      ).copyWith(color: AppColors.incomeOf(context)),
+                      style: AppType.amount(context).copyWith(color: white),
                     ),
                     const SizedBox(height: AppSpacing.s4),
-                    AppProgress(value: pctP, color: scheme.primary, height: 6),
+                    AppProgress(
+                      value: pctP,
+                      color: white.withValues(alpha: 0.95),
+                      height: 6,
+                    ),
                   ],
                 ),
               ),
@@ -1243,7 +1308,8 @@ class _DayTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: AppRadius.mdAll,
+      // v1.30: splash ikut wadah pill (tile tanggal = input pill).
+      borderRadius: AppRadius.pillAll,
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.s12,
@@ -1253,7 +1319,8 @@ class _DayTile extends StatelessWidget {
           border: Border.all(
             color: Theme.of(context).colorScheme.outlineVariant,
           ),
-          borderRadius: AppRadius.mdAll,
+          // v1.30: pill ikut bahasa input tema (tile tanggal = input).
+          borderRadius: AppRadius.pillAll,
         ),
         child: Row(
           children: [

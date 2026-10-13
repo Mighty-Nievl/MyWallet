@@ -56,6 +56,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     // v1.24.9: total jujur tanpa limit (strip "Menampilkan 100 dari N").
     final totalAsync = ref.watch(historyCountProvider);
     final month = ref.watch(selectedMonthProvider);
+    // v1.30: label dompet per-baris hanya bermakna bila >1 dompet
+    // (1 dompet = semua baris miliknya; suffix cuma noise + merusak
+    // exact-match meta lama. Selaras _RecentList Beranda).
+    final multiWallet = (ref.watch(accountsProvider).value?.length ?? 0) > 1;
 
     return Scaffold(
       body: SafeArea(
@@ -215,6 +219,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         total: totalAsync.value,
                         inTotal: inTotal,
                         outTotal: outTotal,
+                        // v1.30: strip Riwayat wajib sebut dompet asal
+                        // (null = Semua → tak disebut, default jujur).
+                        accountLabel: _selectedAccountName(ref),
                       ),
                       for (var i = 0; i < entries.length; i++) ...[
                         Padding(
@@ -235,6 +242,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                             showDate: false,
                             // v1.24.9: arsip rapat (kritik L2).
                             dense: true,
+                            // v1.30: label dompet (filter Semua + >1 dompet
+                            // = tiap baris sebut asalnya).
+                            showAccount: multiWallet,
                             onTap: () => Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (ctx) => TxFormScreen(existing: tx),
@@ -261,6 +271,19 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       (f.isExpense != null ? 1 : 0) +
       (f.categoryId != null ? 1 : 0) +
       (selectedAccount != null ? 1 : 0);
+
+  /// Nama dompet filter aktif (v1.30 — label dompet di strip Riwayat).
+  /// null = Semua / tak ketemu / cuma 1 dompet → strip tak sebut dompet
+  /// (default jujur; 1 dompet = suffix cuma noise, cermin Beranda).
+  String? _selectedAccountName(WidgetRef ref) {
+    final id = ref.watch(selectedAccountProvider);
+    final accs = ref.watch(accountsProvider).value ?? const <Account>[];
+    if (id == null || accs.length <= 1) return null;
+    for (final a in accs) {
+      if (a.id == id) return a.name;
+    }
+    return null;
+  }
 
   /// Opsi A (v1.24.10): buka bottom-sheet filter. Reset = nol-kan SEMUA
   /// dimensi termasuk keyword (+ teks search ikut dibersihkan) dan
@@ -688,6 +711,7 @@ class _ResultStrip extends ConsumerWidget {
     required this.total,
     required this.inTotal,
     required this.outTotal,
+    this.accountLabel,
   });
 
   /// Baris yang tampil (≤ limit query).
@@ -698,6 +722,10 @@ class _ResultStrip extends ConsumerWidget {
   final int inTotal;
   final int outTotal;
 
+  /// Nama dompet filter aktif (v1.30 — label dompet di Riwayat).
+  /// null = Semua (tak disebut — gabungan memang default jujur).
+  final String? accountLabel;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final display = ref.watch(displayPrefsProvider);
@@ -706,10 +734,12 @@ class _ResultStrip extends ConsumerWidget {
     final head = (total != null && total! > shown)
         ? 'Menampilkan $shown dari $total transaksi · '
         : '$shown transaksi · ';
+    // v1.30: scope dompet di depan (paling penting: angka milik siapa).
+    final scope = accountLabel == null ? '' : 'Dompet $accountLabel · ';
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.s8),
       child: Text(
-        '$head'
+        '$scope$head'
         'Masuk ${display.signed(inTotal, isExpense: false)} · '
         'Keluar ${display.signed(outTotal, isExpense: true)}',
         style: AppType.secondary(context),

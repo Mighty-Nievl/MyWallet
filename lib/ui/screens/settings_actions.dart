@@ -807,7 +807,8 @@ class _PickRow<V> extends StatelessWidget {
                   color: selected
                       ? scheme.primaryContainer
                       : AppColors.subtleOf(context),
-                  borderRadius: AppRadius.mdAll,
+                  // v1.30: thumbnail opsi ikut token thumb.
+                  borderRadius: AppRadius.thumbAll,
                 ),
                 alignment: Alignment.center,
                 child: Icon(

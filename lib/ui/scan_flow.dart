@@ -346,7 +346,8 @@ class _ScanPreviewScreenState extends ConsumerState<ScanPreviewScreen> {
               padding: const EdgeInsets.all(AppSpacing.s12),
               decoration: BoxDecoration(
                 color: scheme.tertiaryContainer,
-                borderRadius: BorderRadius.circular(AppRadius.md),
+                // v1.30: banner ikut token kartu.
+                borderRadius: AppRadius.cardAll,
               ),
               child: Row(
                 children: [
@@ -461,7 +462,8 @@ class _ScanPreviewScreenState extends ConsumerState<ScanPreviewScreen> {
                   padding: const EdgeInsets.all(AppSpacing.s12),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceOf(context),
-                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    // v1.30: box teks struk ikut token kartu.
+                    borderRadius: AppRadius.cardAll,
                     border: Border.all(
                       color: AppColors.borderOf(context),
                     ),

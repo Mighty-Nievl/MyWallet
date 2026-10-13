@@ -652,4 +652,100 @@ void main() {
       await _flushDb(tester);
     }
   });
+
+  // v1.30 (label dompet): 2 dompet = tiap tile Riwayat sebut asalnya
+  // (suffix `· Keluarga` / `· Utama` di meta, showDate false).
+  testWidgets('tile riwayat sebut dompet asal bila >1 (v1.30)',
+      (tester) async {
+    final db = await _newDb(tester);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final keluargaId = await tester.runAsync(
+      () => db.into(db.accounts).insert(AccountsCompanion.insert(name: 'Keluarga')),
+    );
+    await tester.runAsync(() async {
+      await _tx(db, 45000, true, 1, today, note: 'Makan siang');
+      await db
+          .into(db.transactions)
+          .insert(
+            TransactionsCompanion.insert(
+              amount: 18000,
+              isExpense: const Value(true),
+              categoryId: const Value(2),
+              date: today,
+              note: const Value('Ojek anak'),
+              accountId: Value(keluargaId),
+            ),
+          );
+    });
+    try {
+      await _pumpHistory(tester, db);
+      expect(await _waitFor(tester, find.text('Makan siang')), isTrue);
+      expect(await _waitFor(tester, find.text('Ojek anak')), isTrue);
+      // Meta tile = kategori + dompet (tanggal off di grup Riwayat).
+      expect(find.textContaining('· Utama'), findsWidgets);
+      expect(find.textContaining('· Keluarga'), findsWidgets);
+      // Query join bawa nama (bukan null).
+      final rows = await tester.runAsync(
+        () => db.watchHistory(from: DateTime(now.year, now.month, 1)).first,
+      );
+      expect(
+        rows?.map((r) => r.accountName),
+        containsAll(['Utama', 'Keluarga']),
+      );
+    } finally {
+      await _flushDb(tester);
+    }
+  });
+
+  // v1.30 (label dompet): filter dompet spesifik = strip sebut scope-nya
+  // + list menyempit ke dompet itu.
+  testWidgets('strip riwayat sebut scope dompet terpilih (v1.30)',
+      (tester) async {
+    final db = await _newDb(tester);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final keluargaId = await tester.runAsync(
+      () => db.into(db.accounts).insert(AccountsCompanion.insert(name: 'Keluarga')),
+    );
+    await tester.runAsync(() async {
+      await _tx(db, 45000, true, 1, today, note: 'Makan siang');
+      await db
+          .into(db.transactions)
+          .insert(
+            TransactionsCompanion.insert(
+              amount: 18000,
+              isExpense: const Value(true),
+              categoryId: const Value(2),
+              date: today,
+              note: const Value('Ojek anak'),
+              accountId: Value(keluargaId),
+            ),
+          );
+    });
+    try {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            dbProvider.overrideWithValue(db),
+            selectedAccountProvider.overrideWith((_) => keluargaId),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            home: const HistoryScreen(),
+          ),
+        ),
+      );
+      await _pump(tester, ticks: 10);
+      expect(
+        await _waitFor(tester, find.textContaining('Dompet Keluarga')),
+        isTrue,
+      );
+      // List menyempit: tx Keluarga tampil, tx Utama hilang.
+      expect(find.text('Ojek anak'), findsOneWidget);
+      expect(find.text('Makan siang'), findsNothing);
+    } finally {
+      await _flushDb(tester);
+    }
+  });
 }

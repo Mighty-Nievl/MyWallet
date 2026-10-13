@@ -19,7 +19,7 @@
 - **Penyimpanan:** 100% lokal, SQLite via Drift — tanpa login, tanpa server.
 - **State:** flutter_riverpod 3.x (`StreamProvider` auto-refresh, `StateProvider` via `legacy.dart`).
 - **File DB:** `mywallet.sqlite` di folder dokumen aplikasi.
-- **Status:** v1.29.1 — Navbar [Riwayat][+][Scan]; kartu Kelola trailing bergambar gear; lingkaran + anti-kepotong (Stack+SafeArea).
+- **Status:** v1.30.0 — Kartu Kelola sejajar + dots halaman; label nama dompet di transaksi & judul (multi-dompet); pill/kartu/thumb + mesh utang di seluruh aplikasi.
 
 ## Peta kode
 

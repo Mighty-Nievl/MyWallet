@@ -90,12 +90,10 @@ class CategoriesScreen extends ConsumerWidget {
                         icon: const Icon(Icons.add),
                         label:
                             const Text('Tambah kategori'),
+                        // v1.30: bentuk ikut tema global (pill).
                         style: FilledButton.styleFrom(
                           minimumSize:
                               const Size.fromHeight(48),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: AppRadius.mdAll,
-                          ),
                         ),
                       ),
                     );
@@ -162,12 +160,10 @@ class CategoriesScreen extends ConsumerWidget {
                           icon: const Icon(Icons.add),
                           label: const Text(
                               'Tambah kategori'),
+                          // v1.30: bentuk ikut tema global (pill).
                           style: FilledButton.styleFrom(
                             minimumSize:
                                 const Size.fromHeight(AppSpacing.ctaHeight),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: AppRadius.mdAll,
-                            ),
                           ),
                         ),
                       ),
@@ -239,8 +235,9 @@ class CategoriesScreen extends ConsumerWidget {
                   onSelectionChanged: (s) =>
                       setS(() => isExpense = s.first),
                   style: SegmentedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.mdAll,
+                    // v1.30: pill ikut bahasa tombol tema (selaras form).
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: AppRadius.pillAll,
                     ),
                     side: BorderSide(
                         color:

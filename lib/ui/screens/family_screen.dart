@@ -165,6 +165,9 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
 
   Future<void> _run(Future<FamilySession> Function() job) async {
     if (_busy) return;
+    // v1.30: umpan sentuh tiap aksi Keluarga (satu pintu di sini =
+    // Coba lagi + keluar + masuk + grup + anggota ikut kena).
+    HapticFeedback.selectionClick();
     setState(() {
       _busy = true;
       _errorMsg = null;

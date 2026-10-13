@@ -129,7 +129,8 @@ class _EntryCard extends StatelessWidget {
                 scheme.surface,
               )
             : scheme.surface,
-        borderRadius: AppRadius.mdAll,
+        // v1.30 (karakteristik #3): kartu entri ikut token kartu.
+        borderRadius: AppRadius.cardAll,
         border: Border.all(
           color: isInstalled
               ? scheme.primary
@@ -310,8 +311,11 @@ class _OlderGroup extends StatelessWidget {
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.s8),
-        shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
-        collapsedShape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
+        // v1.30: grup arsip ikut token kartu (wadah kartu).
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.cardAll),
+        collapsedShape: const RoundedRectangleBorder(
+          borderRadius: AppRadius.cardAll,
+        ),
         collapsedBackgroundColor: Theme.of(
           context,
         ).colorScheme.surfaceContainerLow,

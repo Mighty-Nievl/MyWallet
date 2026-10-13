@@ -35,6 +35,8 @@ class ReportsScreen extends ConsumerWidget {
     final prevTotals = ref.watch(prevMonthTotalsProvider);
     final byCat = ref.watch(monthExpenseByCategoryProvider);
     final display = ref.watch(displayPrefsProvider);
+    // v1.30: suffix dompet utk judul section (jujur: angka milik siapa).
+    final acctSuffix = _accountSuffix(ref);
 
     return Scaffold(
       body: SafeArea(
@@ -71,7 +73,7 @@ class ReportsScreen extends ConsumerWidget {
             Stagger(
               index: 0,
               child: AppSection(
-                title: 'Ringkasan ${monthLabel(month)}',
+                title: 'Ringkasan ${monthLabel(month)}$acctSuffix',
                 child: _SummaryCard(totals: totals),
               ),
             ),
@@ -104,7 +106,7 @@ class ReportsScreen extends ConsumerWidget {
             Stagger(
               index: 2,
               child: AppSection(
-                title: 'Rincian ${monthLabel(month)}',
+                title: 'Rincian ${monthLabel(month)}$acctSuffix',
                 child: _Breakdown(byCat: byCat, display: display),
               ),
             ),
@@ -113,6 +115,19 @@ class ReportsScreen extends ConsumerWidget {
       ),
     );
   }
+
+/// Suffix judul jujur dompet (v1.30 — label dompet di Laporan).
+/// null (Semua) = tanpa suffix; spesifik = ` · Nama`.
+/// Cermin [accountTitleSuffix] Beranda: 1 dompet = tanpa suffix.
+String _accountSuffix(WidgetRef ref) {
+  final id = ref.watch(selectedAccountProvider);
+  final accs = ref.watch(accountsProvider).value ?? const <Account>[];
+  if (id == null || accs.length <= 1) return '';
+  for (final a in accs) {
+    if (a.id == id) return ' · ${a.name}';
+  }
+  return '';
+}
 
   /// Export PDF bulan aktif: tanya Simpan-file vs Bagikan dulu,
   /// lalu panggil [ReportPdfService]. 100% lokal, tanpa server.

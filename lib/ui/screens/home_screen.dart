@@ -53,6 +53,11 @@ class HomeScreen extends ConsumerWidget {
     final showRecent = ref.watch(showRecentProvider).value ?? true;
     final recentCount = ref.watch(recentCountProvider).value ?? 5;
     final showDaily = ref.watch(showDailyTotalsProvider).value ?? true;
+    // v1.30: suffix dompet utk judul section (jujur: angka milik siapa).
+    final acctSuffix = accountTitleSuffix(
+      ref.watch(accountsProvider).value ?? const <Account>[],
+      ref.watch(selectedAccountProvider),
+    );
     final statusPad = MediaQuery.paddingOf(context).top;
     // Status bar adaptif (kritik brutal v1.24.2): ikon terang di dark,
     // gelap di light — bukan hardcode gelap terus.
@@ -130,7 +135,7 @@ class HomeScreen extends ConsumerWidget {
                       key: const ValueKey('home:topcats'),
                       child: _pad(
                         AppSection(
-                          title: 'Pengeluaran bulan ini',
+                          title: 'Pengeluaran bulan ini$acctSuffix',
                           trailing: TextButton(
                             // v1.24.3: label konteks, bukan generik
                             // "Lihat semua" (kritik brutal L5).
@@ -155,7 +160,7 @@ class HomeScreen extends ConsumerWidget {
                       key: const ValueKey('home:recent'),
                       child: _pad(
                         AppSection(
-                          title: 'Terakhir dicatat',
+                          title: 'Terakhir dicatat$acctSuffix',
                           trailing: TextButton(
                             // v1.24.3: label konteks (kritik brutal L5).
                             // v1.26: push langsung (tab 1 sudah tak ada).
@@ -188,6 +193,20 @@ class HomeScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Suffix judul jujur dompet (v1.30 — label dompet di Beranda):
+/// null (Semua) = tanpa suffix; spesifik = ` · Nama`.
+/// 1 dompet = tanpa suffix (semua angka pasti miliknya — cermin aturan
+/// meta tile `showAccount: multiWallet`). Suffix hanya bermakna bila
+/// >1 dompet, saat ambiguitasnya nyata.
+/// Dipanggil dgn daftar dompet + id terpilih (murni, testable).
+String accountTitleSuffix(List<Account> accounts, int? selectedId) {
+  if (selectedId == null || accounts.length <= 1) return '';
+  for (final a in accounts) {
+    if (a.id == selectedId) return ' · ${a.name}';
+  }
+  return '';
 }
 
 /// Padding horizontal halaman untuk satu section.
@@ -437,6 +456,8 @@ class _HomeHeader extends ConsumerWidget {
 
 /// Transaksi terakhir dikelompokkan per tanggal (header tanggal +
 /// baris ber-chevron). Seluruh baris tap → edit, affordance kelihatan.
+/// v1.30: ikut filter dompet aktif ([selectedAccountProvider] — konsisten
+/// dgn kartu tampil = filter aktif) + label dompet per-baris bila >1.
 class _RecentList extends ConsumerWidget {
   const _RecentList({required this.count});
   final int count;
@@ -445,8 +466,15 @@ class _RecentList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final db = ref.watch(dbProvider);
     final display = ref.watch(displayPrefsProvider);
+    // Label dompet hanya bermakna bila >1 dompet (1 dompet = semua baris
+    // miliknya, suffix cuma noise).
+    final multiWallet =
+        (ref.watch(accountsProvider).value?.length ?? 0) > 1;
     return StreamBuilder<List<TxWithCategory>>(
-      stream: db.watchHistory(limit: count),
+      stream: db.watchHistory(
+        limit: count,
+        accountId: ref.watch(selectedAccountProvider),
+      ),
       builder: (context, snap) {
         if (snap.hasError) {
           return const AppErrorState(title: 'Transaksi gagal dimuat.');
@@ -494,6 +522,9 @@ class _RecentList extends ConsumerWidget {
                   // v1.24.4: tanggal sudah di header grup → sembunyikan
                   // di tiap baris (rapikan "Ke..." kepotong).
                   showDate: false,
+                  // v1.30: label dompet (Riwayat & Terakhir catat wajib
+                  // sebut dompet asal bila >1).
+                  showAccount: multiWallet,
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => TxFormScreen(existing: tx),

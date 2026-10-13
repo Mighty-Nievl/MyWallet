@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
+import '../components/app_card.dart';
 import '../components/category_glyph.dart';
 import '../design/app_colors.dart';
 import '../design/app_radius.dart';
@@ -31,6 +32,10 @@ import '../display.dart';
 ///
 /// [dense]: kepadatan arsip (v1.24.9) — padding vertikal s8, khusus
 /// Riwayat yang list-nya panjang. Beranda (teaser 5 item) tetap lega s12.
+///
+/// [showAccount]: tampilkan nama dompet di meta (v1.30 — label dompet).
+/// Caller nyalakan bila >1 dompet; tx lama/dompet terhapus (null)
+/// tetap disembunyikan (jujur, bukan "Semua").
 class TxTile extends ConsumerWidget {
   const TxTile({
     super.key,
@@ -38,12 +43,14 @@ class TxTile extends ConsumerWidget {
     this.onTap,
     this.showDate = true,
     this.dense = false,
+    this.showAccount = false,
   });
 
   final TxWithCategory tx;
   final VoidCallback? onTap;
   final bool showDate;
   final bool dense;
+  final bool showAccount;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -61,115 +68,129 @@ class TxTile extends ConsumerWidget {
     final catName = tx.catName ?? 'Tanpa kategori';
     final hasNote = tx.note.isNotEmpty;
     final title = hasNote ? tx.note : catName;
-    final datePart = showDate ? display.date(tx.date) : '';
-    // v1.24.10: baris 2 = kategori (+ tanggal bila showDate). Tanpa
-    // catatan = judul sudah nama kategori → baris 2 tinggal tanggal
-    // (atau kosong total bila tanggal juga off — judul saja).
-    final meta = hasNote
-        ? (showDate ? '$catName · $datePart' : catName)
-        : datePart;
+    // v1.30: meta dari PARTS (bukan string tempel) — tiap dimensi bisa
+    // hilang sendiri: judul=kategori → kategori off; grup tanggal →
+    // tanggal off; 1 dompet/null → dompet off. Nol "·" gantung.
+    final parts = <String>[];
+    if (hasNote) parts.add(catName);
+    if (showDate) parts.add(display.date(tx.date));
+    final acct = tx.accountName;
+    if (showAccount && acct != null && acct.isNotEmpty) parts.add(acct);
+    final meta = parts.join(' · ');
     final tap = onTap;
-    return InkWell(
-      onTap: tap == null
-          ? null
-          : () {
-              // B2C v1.20: umpan sentuh ringan di tiap baris transaksi.
-              HapticFeedback.selectionClick();
-              tap();
-            },
-      borderRadius: AppRadius.mdAll,
-      child: Padding(
-        // v1.24.9: dense = arsip rapat s8 (Riwayat); default lega s12
-        // (Beranda teaser 5 item — kritik L2: 24px antar-baris boros
-        // untuk arsip 50 baris).
-        padding: EdgeInsets.symmetric(
-          vertical: dense ? AppSpacing.s8 : AppSpacing.s12,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            if (display.showIcons) ...[
-              CategoryGlyph(emoji: tx.catIcon ?? '📦'),
-              const SizedBox(width: AppSpacing.s12),
-            ],
-            // v1.24.10: kolom teks full-width — baris 1 catatan, baris 2
-            // meta kiri + nominal kanan (rebutan horizontal dihapus).
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  // v1.24.4: baris 2 cuma dirender kalau ada isinya
-                  // (Beranda tanpa-catatan = kosong total → judul saja).
-                  if (meta.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.micro),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            meta,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppType.secondaryStrong(context),
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.s8),
-                        // v1.24.5: nominal TETAP Expanded + rata kanan —
-                        // dua slot 1:1 → tepi kanan sejajar vertikal
-                        // (kritik screenshot: -Rp8.000 mundur vs
-                        // -Rp300.000). Yang menyusut saat sempit = meta
-                        // (ellipsis), bukan nominal. Anti-overflow 300px.
-                        Expanded(
-                          child: Text(
-                            display.signed(tx.amount, isExpense: tx.isExpense),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.end,
-                            style: AppType.amount(
-                              context,
-                            ).copyWith(color: amountColor),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ] else ...[
-                    const SizedBox(height: AppSpacing.micro),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        display.signed(tx.amount, isExpense: tx.isExpense),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.end,
-                        style: AppType.amount(
-                          context,
-                        ).copyWith(color: amountColor),
+    // Karakteristik #5 (v1.30): tiap baris = kartu kecil (bukan teks
+    // polos) — padding s12, glyph 40, radius kartu + shadow lembut.
+    return AppCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.s12,
+        vertical: AppSpacing.s8,
+      ),
+      child: InkWell(
+        onTap: tap == null
+            ? null
+            : () {
+                // B2C v1.20: umpan sentuh ringan di tiap baris transaksi.
+                HapticFeedback.selectionClick();
+                tap();
+              },
+        // v1.30: splash ikut radius wadah AppCard (kartu, bukan md).
+        borderRadius: AppRadius.cardAll,
+        child: Padding(
+          // v1.24.9: dense = arsip rapat s8 (Riwayat); default lega s12
+          // (Beranda teaser 5 item — kritik L2: 24px antar-baris boros
+          // untuk arsip 50 baris).
+          padding: EdgeInsets.symmetric(
+            vertical: dense ? AppSpacing.s4 : AppSpacing.s8,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (display.showIcons) ...[
+                CategoryGlyph(emoji: tx.catIcon ?? '📦', size: 40),
+                const SizedBox(width: AppSpacing.s12),
+              ],
+              // v1.24.10: kolom teks full-width — baris 1 catatan, baris 2
+              // meta kiri + nominal kanan (rebutan horizontal dihapus).
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
+                    // v1.24.4: baris 2 cuma dirender kalau ada isinya
+                    // (Beranda tanpa-catatan = kosong total → judul saja).
+                    if (meta.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.micro),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              meta,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppType.secondaryStrong(context),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.s8),
+                          // v1.24.5: nominal TETAP Expanded + rata kanan —
+                          // dua slot 1:1 → tepi kanan sejajar vertikal
+                          // (kritik screenshot: -Rp8.000 mundur vs
+                          // -Rp300.000). Yang menyusut saat sempit = meta
+                          // (ellipsis), bukan nominal. Anti-overflow 300px.
+                          Expanded(
+                            child: Text(
+                              display.signed(
+                                tx.amount,
+                                isExpense: tx.isExpense,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.end,
+                              style: AppType.amount(
+                                context,
+                              ).copyWith(color: amountColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else ...[
+                      const SizedBox(height: AppSpacing.micro),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          display.signed(tx.amount, isExpense: tx.isExpense),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.end,
+                          style: AppType.amount(
+                            context,
+                          ).copyWith(color: amountColor),
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            // Seluruh baris tap → edit: chevron sebagai affordance.
-            // v1.24.5: chevron DIJANGKAR tepi layar (bukan nempel ujung
-            // teks) → kolom chevron stabil, tidak wobble ikut panjang
-            // nominal.
-            if (onTap != null) ...[
-              const SizedBox(width: AppSpacing.s4),
-              Icon(
-                Icons.chevron_right,
-                size: 20,
-                color: scheme.onSurfaceVariant,
-              ),
+              // Seluruh baris tap → edit: chevron sebagai affordance.
+              // v1.24.5: chevron DIJANGKAR tepi layar (bukan nempel ujung
+              // teks) → kolom chevron stabil, tidak wobble ikut panjang
+              // nominal.
+              if (onTap != null) ...[
+                const SizedBox(width: AppSpacing.s4),
+                Icon(
+                  Icons.chevron_right,
+                  size: 20,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

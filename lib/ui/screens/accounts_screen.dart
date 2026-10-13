@@ -9,9 +9,11 @@ import '../../data/providers.dart';
 import '../../data/sync_meta.dart';
 import '../components/app_empty_state.dart';
 import '../components/app_feedback.dart';
+import '../components/app_section.dart';
 import '../components/setting_row.dart';
 import '../design/app_colors.dart';
 import '../design/app_radius.dart';
+import '../design/app_shadows.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../display.dart';
@@ -58,24 +60,34 @@ class AccountsScreen extends ConsumerWidget {
                           subtitle:
                               'Tambah dompet pertama lewat tombol di bawah.',
                         )
-                      : ReorderableListView(
-                          onReorderItem: (oldIndex, newIndex) =>
-                              _reorder(ref, list, oldIndex, newIndex),
-                          children: [
-                            for (var i = 0; i < list.length; i++)
-                              Padding(
-                                key: ValueKey('acct-${list[i].id}'),
-                                padding: EdgeInsets.only(
-                                  bottom: i < list.length - 1
-                                      ? AppSpacing.s8
-                                      : 0,
-                                ),
-                                child: _AccountCard(
-                                  account: list[i],
-                                  dragIndex: i,
-                                ),
-                              ),
-                          ],
+                      // v1.30 (karakteristik #4): judul section ikut
+                      // bahasa layar lain (dulu list polos tanpa judul).
+                      // Expanded di dalam AppSection (Column) = list tetap
+                      // scrollable sendiri; JANGAN shrinkWrap (dompet
+                      // banyak harus bisa gulir).
+                      : AppSection(
+                          title: 'Dompet saya (${list.length})',
+                          child: Expanded(
+                            child: ReorderableListView(
+                              onReorderItem: (oldIndex, newIndex) =>
+                                  _reorder(ref, list, oldIndex, newIndex),
+                              children: [
+                                for (var i = 0; i < list.length; i++)
+                                  Padding(
+                                    key: ValueKey('acct-${list[i].id}'),
+                                    padding: EdgeInsets.only(
+                                      bottom: i < list.length - 1
+                                          ? AppSpacing.s8
+                                          : 0,
+                                    ),
+                                    child: _AccountCard(
+                                      account: list[i],
+                                      dragIndex: i,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
                         ),
                 ),
               ),
@@ -154,13 +166,16 @@ class _AccountCard extends ConsumerWidget {
       padding: AppSpacing.cardPadding,
       decoration: BoxDecoration(
         color: AppColors.surfaceOf(context),
-        borderRadius: AppRadius.lgAll,
+        // v1.30 (karakteristik #2+#3): radius kartu + shadow lembut ikut
+        // token global (dulu lgAll tanpa shadow = flat vs kartu lain).
+        borderRadius: AppRadius.cardAll,
         border: Border.all(
           color: selected
               ? Theme.of(context).colorScheme.primary
               : AppColors.borderOf(context),
           width: selected ? 2 : AppColors.borderWidthOf(context),
         ),
+        boxShadow: AppShadows.card(context),
       ),
       child: Row(
         children: [

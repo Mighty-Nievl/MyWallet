@@ -8,7 +8,9 @@ import '../../data/settings.dart';
 import '../components/app_empty_state.dart';
 import '../components/app_feedback.dart';
 import '../components/mesh_gradient.dart';
+import '../design/app_colors.dart';
 import '../design/app_radius.dart';
+import '../design/app_shadows.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../display.dart';
@@ -20,8 +22,9 @@ import '../screens/tx_form_screen.dart';
 /// = filter aktif ([selectedAccountProvider], dua arah).
 ///
 /// Tiap kartu = mesh identitas v1.28 + label nama dompet + saldo
-/// per-dompet ([accountBalanceProvider]) + CTA catat. Dots sembunyi
-/// saat 1 dompet; halaman TERAKHIR = kartu Kelola (gear, tap →
+/// per-dompet ([accountBalanceProvider]) + CTA catat. Dots = indikator
+/// halaman (v1.30): tiap dompet + kartu Kelola dapat 1 dot, tap dot =
+/// lompat halaman; halaman TERAKHIR = kartu Kelola (gear, tap → 
 /// AccountsScreen); kosong (semua arsip) = empty-state + Kelola.
 class AccountCarousel extends ConsumerStatefulWidget {
   const AccountCarousel({super.key});
@@ -33,6 +36,19 @@ class AccountCarousel extends ConsumerStatefulWidget {
 class _AccountCarouselState extends ConsumerState<AccountCarousel> {
   late final PageController _ctrl;
   bool _syncing = false;
+
+  /// Halaman tampil terakhir (0..list.length; == list.length = Kelola).
+  /// Dots = indikator halaman, jadi aktif-nya ikut ini, bukan filter.
+  /// ([onPageChanged] selalu setState — termasuk halaman trailing —
+  /// agar dot Kelola ikut menyala.)
+  int _page = 0;
+
+  /// Indeks filter pada build sebelumnya. Sync-back PageView (filter luar
+  /// → halaman) hanya bereaksi terhadap PERUBAHAN filter, bukan posisi
+  /// halaman — tanpa ini, geser ke kartu Kelola (filter tetap) langsung
+  /// ditarik balik ke halaman filter (guard lama bandingkan page≠index).
+  /// Init 0 = halaman awal PageController.
+  int _prevIndex = 0;
 
   @override
   void initState() {
@@ -81,11 +97,18 @@ class _AccountCarouselState extends ConsumerState<AccountCarousel> {
             }
           });
         }
+        // Sync-back: PageView mengikuti filter HANYA bila filter berubah
+        // (dipilih dari luar/pick). Geser user (termasuk ke trailing
+        // Kelola, yg filter-nya tetap) tak boleh ditarik balik.
+        final filterChanged = _prevIndex != index;
+        _prevIndex = index;
         if (_ctrl.hasClients &&
+            filterChanged &&
             (_ctrl.page?.round() ?? -1) != index &&
             !_syncing) {
+          final target = index;
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted && _ctrl.hasClients) _ctrl.jumpToPage(index);
+            if (mounted && _ctrl.hasClients) _ctrl.jumpToPage(target);
           });
         }
         return Column(
@@ -97,8 +120,9 @@ class _AccountCarouselState extends ConsumerState<AccountCarousel> {
                 key: const ValueKey('home:carousel'),
                 controller: _ctrl,
                 onPageChanged: (i) {
-                  // Halaman trailing = kartu Kelola (bukan dompet) —
-                  // filter tidak berubah.
+                  // Lacak halaman tampil utk dots (termasuk trailing).
+                  // Filter hanya berubah utk halaman dompet.
+                  setState(() => _page = i);
                   if (i >= list.length) return;
                   _syncing = true;
                   _pick(list[i].id);
@@ -111,21 +135,33 @@ class _AccountCarouselState extends ConsumerState<AccountCarousel> {
               ),
             ),
             const SizedBox(height: AppSpacing.s8),
-            // Dots = status filter per-dompet (kartu Kelola trailing
-            // tak punya dot — ia aksi, bukan filter).
+            // Dots = indikator HALAMAN (v1.30): tiap dompet + kartu
+            // Kelola trailing dapat 1 dot. Tap dot = lompat halaman
+            // (filter ikut onPageChanged yg sudah guard trailing).
             Row(
               key: const ValueKey('home:dots'),
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (list.length > 1)
-                  ...List.generate(
-                    list.length,
-                    (i) => Padding(
-                      key: ValueKey('home:dots-$i'),
-                      padding: const EdgeInsets.symmetric(horizontal: 3),
-                      child: _Dot(active: i == index),
+                ...List.generate(
+                  list.length + 1,
+                  (i) => Padding(
+                    key: ValueKey(
+                      i < list.length ? 'home:dots-$i' : 'home:dots-manage',
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        _ctrl.jumpToPage(i);
+                      },
+                      child: Padding(
+                        // Hit-area 24px (dot visual tetap 6px).
+                        padding: const EdgeInsets.all(9),
+                        child: _Dot(active: i == _page.clamp(0, list.length)),
+                      ),
                     ),
                   ),
+                ),
               ],
             ),
           ],
@@ -177,14 +213,14 @@ class _WalletCard extends ConsumerWidget {
                 ),
               ),
               Text(
-            'SALDO SAAT INI',
-            style: AppType.labelMuted(context).copyWith(
-              letterSpacing: 0.8,
-              color: white.withValues(alpha: 0.6),
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+                'SALDO SAAT INI',
+                style: AppType.labelMuted(context).copyWith(
+                  letterSpacing: 0.8,
+                  color: white.withValues(alpha: 0.6),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
           const SizedBox(height: AppSpacing.s12),
           balance.when(
             loading: () => const AppSkeleton(lines: 1),
@@ -264,72 +300,109 @@ class _WalletCard extends ConsumerWidget {
 }
 
 /// Halaman TERAKHIR carousel (v1.29.1): kartu Kelola bergambar gear.
-/// Tap → [AccountsScreen]. Outline netral (bukan mesh) agar terbaca
-/// sebagai AKSI, bukan dompet — dan tak punya dot (dots = filter).
+/// v1.30: BINGKAI disamakan dgn [_WalletCard] (margin + padding + shadow
+/// + radius sama; isi Column atas→bawah + CTA 52px di bawah) agar tak
+/// ada lompat vertikal saat geser ke ujung. Outline netral (bukan mesh)
+/// agar terbaca sebagai AKSI; dots = indikator halaman (dapat 1 dot).
 class _ManageCard extends StatelessWidget {
   const _ManageCard();
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    // Dua jalur tap alami (area kartu via InkWell + CTA via FilledButton);
+    // tanpa Semantics luar agar CTA tetap terbaca screen reader.
     return Container(
-      key: const ValueKey('home:card-manage'),
-      margin: const EdgeInsets.fromLTRB(
-        AppSpacing.page,
-        AppSpacing.s24,
-        AppSpacing.page,
-        0,
-      ),
-      child: OutlinedButton(
-        onPressed: () {
-          HapticFeedback.selectionClick();
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const AccountsScreen()),
-          );
-        },
-        style: OutlinedButton.styleFrom(
-          shape: RoundedRectangleBorder(borderRadius: AppRadius.cardAll),
-          side: BorderSide(color: scheme.outlineVariant),
-          padding: AppSpacing.cardPaddingLarge,
+        key: const ValueKey('home:card-manage'),
+        margin: const EdgeInsets.fromLTRB(
+          AppSpacing.page,
+          AppSpacing.s24,
+          AppSpacing.page,
+          0,
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Semantics(
-              button: true,
-              label: 'Kelola dompet',
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: scheme.primary.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.settings_outlined,
-                  size: 28,
-                  color: scheme.primary,
+        padding: AppSpacing.cardPaddingLarge,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceOf(context),
+          borderRadius: AppRadius.cardAll,
+          border: Border.all(color: AppColors.borderOf(context)),
+          boxShadow: AppShadows.card(context),
+        ),
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AccountsScreen()),
+            );
+          },
+          borderRadius: AppRadius.cardAll,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: scheme.primary.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.settings_outlined,
+                      size: 28,
+                      color: scheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.s12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Kelola dompet',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: scheme.onSurface,
+                              ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: AppSpacing.s4),
+                        Text(
+                          'Tambah, susun, arsipkan',
+                          style: AppType.secondary(context),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              SizedBox(
+                width: double.infinity,
+                height: AppSpacing.ctaHeight,
+                child: FilledButton(
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const AccountsScreen(),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    'Buka kelola',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.s12),
-            Text(
-              'Kelola dompet',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: scheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.s4),
-            Text(
-              'Tambah, susun, arsipkan',
-              style: AppType.secondary(context),
-              textAlign: TextAlign.center,
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+      );
   }
 }
 
