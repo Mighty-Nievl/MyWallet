@@ -226,7 +226,7 @@ void main() {
     }
   });
 
-  testWidgets('shell: Beranda + Catat tengah + Scan, tab lama hilang (v1.26)',
+  testWidgets('shell: Riwayat + Catat tengah + Scan, Beranda pensiun (v1.29.1)',
       (tester) async {
     final db = await _newDb(tester);
     try {
@@ -237,16 +237,31 @@ void main() {
         ),
       );
       await _pump(tester);
-      expect(find.text('Beranda'), findsOneWidget);
+      // Slot kiri navbar = pintasan Riwayat (tap → HistoryScreen).
+      // 'Riwayat' juga ada di grid Beranda → scope ke navbar.
+      final navRiwayat = find.descendant(
+        of: find.byKey(const ValueKey('home:navbar')),
+        matching: find.text('Riwayat'),
+      );
+      expect(navRiwayat, findsOneWidget);
       expect(find.text('Scan'), findsOneWidget);
       expect(
         find.bySemanticsLabel('Catat transaksi'),
         findsOneWidget,
       );
+      // Beranda pensiun dari navbar (redundant: tap-nya dulu no-op).
+      expect(find.text('Beranda'), findsNothing);
       // Tab lama + FAB gone (pintu catat tunggal = tombol tengah).
       expect(find.byType(NavigationBar), findsNothing);
       expect(find.byType(FloatingActionButton), findsNothing);
-      expect(find.text('Laporan'), findsOneWidget); // item grid, bukan tab
+      // Tap Riwayat navbar → layar Riwayat terbuka, tombol Kembali
+      // pulang ke Beranda.
+      await tester.tap(navRiwayat);
+      await _pump(tester);
+      expect(find.byType(HistoryScreen), findsOneWidget);
+      await tester.tap(find.byTooltip('Kembali'));
+      await _pump(tester);
+      expect(find.byType(HistoryScreen), findsNothing);
     } finally {
       await _cleanup(tester, db);
     }

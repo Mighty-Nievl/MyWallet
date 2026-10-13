@@ -787,8 +787,9 @@ void main() {
     expect(find.text('SALDO SAAT INI'), findsOneWidget);
     expect(find.byKey(const ValueKey('home:carousel')), findsOneWidget);
     expect(find.text('Utama'), findsOneWidget);
-    expect(find.text('Kelola dompet'), findsOneWidget);
-    // Chip era lama sudah tidak ada.
+    // Tombol teks Kelola pensiun (v1.29.1 → kartu trailing bergambar
+    // gear); chip era lama juga tidak ada.
+    expect(find.text('Kelola dompet'), findsNothing);
     expect(find.text('Semua'), findsNothing);
     expect(find.byKey(const ValueKey('home:accounts')), findsNothing);
     await _flushDriftCloseTimer(tester);

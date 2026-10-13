@@ -13,6 +13,7 @@ import 'package:mywallet/data/account_actions.dart';
 import 'package:mywallet/data/database.dart';
 import 'package:mywallet/data/providers.dart';
 import 'package:mywallet/ui/app_theme.dart';
+import 'package:mywallet/ui/screens/accounts_screen.dart';
 import 'package:mywallet/ui/screens/home_screen.dart';
 import 'package:mywallet/ui/screens/tx_form_screen.dart';
 import 'package:mywallet/ui/widgets/account_carousel.dart';
@@ -81,9 +82,43 @@ void main() {
     expect(find.text('Utama'), findsOneWidget);
     expect(find.byKey(const ValueKey('home:carousel')), findsOneWidget);
     expect(find.byKey(const ValueKey('home:dots-0')), findsNothing);
-    expect(find.text('Kelola dompet'), findsOneWidget);
+    // Kartu Kelola trailing (v1.29.1) belum di-build — di luar viewport.
+    expect(find.byKey(const ValueKey('home:card-manage')), findsNothing);
     // Chip Semua (era chip) sudah tidak ada.
     expect(find.text('Semua'), findsNothing);
+
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // Kartu Kelola (v1.29.1): halaman TERAKHIR carousel, bergambar gear,
+  // tap → Kelola. Dots tetap milik dompet (tak ada dot baru).
+  testWidgets('kartu Kelola trailing: geser → tap → Kelola (v1.29.1)',
+      (tester) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(_loadFonts);
+    await _pumpCarousel(tester, db);
+
+    // 1 dompet = 2 halaman (Utama + Kelola). Geser 1x → kartu Kelola.
+    // (drag presisi, bukan fling — fling 800px/s lompat 2 halaman.)
+    await tester.drag(
+      find.byKey(const ValueKey('home:carousel')),
+      const Offset(-200, 0),
+    );
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(find.byKey(const ValueKey('home:card-manage')), findsOneWidget);
+    expect(find.text('Kelola dompet'), findsOneWidget);
+    expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
+    // Dots tetap sembunyi (kartu Kelola bukan filter).
+    expect(find.byKey(const ValueKey('home:dots-0')), findsNothing);
+    // Tap kartu → layar Kelola terbuka.
+    await tester.tap(find.text('Kelola dompet'));
+    await tester.pump();
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(find.byType(AccountsScreen), findsOneWidget);
 
     await _flushDriftCloseTimer(tester);
   });
@@ -111,10 +146,11 @@ void main() {
     // Halaman 0 = Utama. Geser kiri → halaman 1 = Keluarga.
     // (PageView drop halaman offstage dari cache — setelah geser,
     // Utama hilang total dan Keluarga tepat 1, bukan findsWidgets.)
-    await tester.fling(
+    // NOTE: drag presisi −200 (bukan fling) — fling 800px/s punya
+    // energi 2 halaman dan kini mendarat di kartu Kelola trailing.
+    await tester.drag(
       find.byKey(const ValueKey('home:carousel')),
-      const Offset(-400, 0),
-      800,
+      const Offset(-200, 0),
     );
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 50));
@@ -219,10 +255,11 @@ void main() {
     expect(find.byKey(const ValueKey('home:carousel')), findsOneWidget);
 
     // Geser ke Keluarga → selected berubah → kategori ikut.
-    await tester.fling(
+    // (drag −350: −200 tak lewati threshold snap di HomeScreen penuh;
+    // fling 800px/s lompat 2 halaman → kartu Kelola. Terbukti probe.)
+    await tester.drag(
       find.byKey(const ValueKey('home:carousel')),
-      const Offset(-400, 0),
-      800,
+      const Offset(-350, 0),
     );
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 50));
@@ -261,10 +298,11 @@ void main() {
     }
 
     // Geser ke Keluarga dulu, lalu tap CTA kartu tampil.
-    await tester.fling(
+    // (drag −350: −200 tak lewati threshold snap di HomeScreen penuh;
+    // fling 800px/s lompat 2 halaman → kartu Kelola. Terbukti probe.)
+    await tester.drag(
       find.byKey(const ValueKey('home:carousel')),
-      const Offset(-400, 0),
-      800,
+      const Offset(-350, 0),
     );
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 50));

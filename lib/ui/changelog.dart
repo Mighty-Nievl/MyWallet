@@ -20,6 +20,18 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.29.1',
+    date: '14 Okt 2026',
+    user:
+        'Tombol Beranda di bawah kini jadi pintasan Riwayat. '
+        'Kelola dompet pindah ke kartu bergambar gear di ujung kartu saldo. '
+        'Lingkaran + tengah diperbaiki agar tampil utuh di semua HP.',
+    tech:
+        'Shell [Riwayat][+][Scan]; kartu Kelola trailing; navbar Stack+SafeArea; '
+        'drag presisi −350; 19 regression test.',
+    breaking: null,
+  ),
+  (
     version: 'v1.29.0',
     date: '13 Okt 2026',
     user:

@@ -8,6 +8,7 @@ import '../../data/settings.dart';
 import '../components/app_empty_state.dart';
 import '../components/app_feedback.dart';
 import '../components/mesh_gradient.dart';
+import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../display.dart';
@@ -20,7 +21,8 @@ import '../screens/tx_form_screen.dart';
 ///
 /// Tiap kartu = mesh identitas v1.28 + label nama dompet + saldo
 /// per-dompet ([accountBalanceProvider]) + CTA catat. Dots sembunyi
-/// saat 1 dompet; kosong (semua arsip) = empty-state + Kelola.
+/// saat 1 dompet; halaman TERAKHIR = kartu Kelola (gear, tap →
+/// AccountsScreen); kosong (semua arsip) = empty-state + Kelola.
 class AccountCarousel extends ConsumerStatefulWidget {
   const AccountCarousel({super.key});
 
@@ -95,16 +97,24 @@ class _AccountCarouselState extends ConsumerState<AccountCarousel> {
                 key: const ValueKey('home:carousel'),
                 controller: _ctrl,
                 onPageChanged: (i) {
+                  // Halaman trailing = kartu Kelola (bukan dompet) —
+                  // filter tidak berubah.
+                  if (i >= list.length) return;
                   _syncing = true;
                   _pick(list[i].id);
                   _syncing = false;
                 },
-                itemCount: list.length,
-                itemBuilder: (_, i) => _WalletCard(account: list[i]),
+                itemCount: list.length + 1,
+                itemBuilder: (_, i) => i < list.length
+                    ? _WalletCard(account: list[i])
+                    : const _ManageCard(),
               ),
             ),
             const SizedBox(height: AppSpacing.s8),
+            // Dots = status filter per-dompet (kartu Kelola trailing
+            // tak punya dot — ia aksi, bukan filter).
             Row(
+              key: const ValueKey('home:dots'),
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (list.length > 1)
@@ -116,17 +126,6 @@ class _AccountCarouselState extends ConsumerState<AccountCarousel> {
                       child: _Dot(active: i == index),
                     ),
                   ),
-                TextButton(
-                  onPressed: () {
-                    HapticFeedback.selectionClick();
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const AccountsScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text('Kelola dompet'),
-                ),
               ],
             ),
           ],
@@ -259,6 +258,76 @@ class _WalletCard extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Halaman TERAKHIR carousel (v1.29.1): kartu Kelola bergambar gear.
+/// Tap → [AccountsScreen]. Outline netral (bukan mesh) agar terbaca
+/// sebagai AKSI, bukan dompet — dan tak punya dot (dots = filter).
+class _ManageCard extends StatelessWidget {
+  const _ManageCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      key: const ValueKey('home:card-manage'),
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.page,
+        AppSpacing.s24,
+        AppSpacing.page,
+        0,
+      ),
+      child: OutlinedButton(
+        onPressed: () {
+          HapticFeedback.selectionClick();
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const AccountsScreen()),
+          );
+        },
+        style: OutlinedButton.styleFrom(
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.cardAll),
+          side: BorderSide(color: scheme.outlineVariant),
+          padding: AppSpacing.cardPaddingLarge,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Semantics(
+              button: true,
+              label: 'Kelola dompet',
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: scheme.primary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.settings_outlined,
+                  size: 28,
+                  color: scheme.primary,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s12),
+            Text(
+              'Kelola dompet',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: scheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s4),
+            Text(
+              'Tambah, susun, arsipkan',
+              style: AppType.secondary(context),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
