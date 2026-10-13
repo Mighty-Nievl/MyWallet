@@ -3,6 +3,7 @@
 // (tanpa pumpAndSettle) ikut pola home_design_test.
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +13,7 @@ import 'package:mywallet/data/account_actions.dart';
 import 'package:mywallet/data/database.dart';
 import 'package:mywallet/data/providers.dart';
 import 'package:mywallet/ui/app_theme.dart';
+import 'package:mywallet/ui/screens/home_screen.dart';
 import 'package:mywallet/ui/screens/tx_form_screen.dart';
 import 'package:mywallet/ui/widgets/account_carousel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -158,6 +160,143 @@ void main() {
 
     expect(find.text('Belum ada dompet'), findsOneWidget);
     expect(find.byKey(const ValueKey('home:carousel')), findsNothing);
+
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // Task 6 (integrasi, HomeScreen penuh):
+  // geser kartu → top kategori ikut filter dompet tampil.
+  testWidgets('integrasi: geser → top kategori ikut dompet (v1.29)',
+      (tester) async {
+    final db = await _newDb(tester);
+    final now = DateTime.now();
+    final bulanIni = DateTime(now.year, now.month, now.day);
+    await tester.runAsync(() async {
+      await _loadFonts();
+      final utama = (await db.select(
+        db.accounts,
+      ).get()).firstWhere((a) => a.name == 'Utama');
+      final keluargaId = await db
+          .into(db.accounts)
+          .insert(AccountsCompanion.insert(name: 'Keluarga'));
+      await reorderAccounts(db, [utama.id, keluargaId]);
+      Future<void> tx(
+        int amount,
+        int cat,
+        int accountId,
+        String note,
+      ) => db
+          .into(db.transactions)
+          .insert(
+            TransactionsCompanion.insert(
+              amount: amount,
+              isExpense: const Value(true),
+              categoryId: Value(cat),
+              date: bulanIni,
+              note: Value(note),
+              accountId: Value(accountId),
+            ),
+          );
+      await tx(45000, 1, utama.id, 'JajanUtama');
+      await tx(18000, 2, keluargaId, 'OjekKeluarga');
+    });
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    // Kartu 0 = Utama → kategorinya tampil, Keluarga belum.
+    // (Top kategori ikut selectedAccountProvider; riwayat tidak —
+    // riwayat pakai watchHistory tanpa filter akun, kontrak lama.)
+    expect(find.byKey(const ValueKey('home:carousel')), findsOneWidget);
+
+    // Geser ke Keluarga → selected berubah → kategori ikut.
+    await tester.fling(
+      find.byKey(const ValueKey('home:carousel')),
+      const Offset(-400, 0),
+      800,
+    );
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(find.text('Keluarga'), findsOneWidget);
+
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // Task 6 (integrasi): CTA kartu kedua → tx tersimpan di dompet kedua.
+  testWidgets('integrasi: CTA kartu kedua → tx dompet kedua (v1.29)',
+      (tester) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(() async {
+      await _loadFonts();
+      final utama = (await db.select(
+        db.accounts,
+      ).get()).firstWhere((a) => a.name == 'Utama');
+      final keluargaId = await db
+          .into(db.accounts)
+          .insert(AccountsCompanion.insert(name: 'Keluarga'));
+      await reorderAccounts(db, [utama.id, keluargaId]);
+    });
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    // Geser ke Keluarga dulu, lalu tap CTA kartu tampil.
+    await tester.fling(
+      find.byKey(const ValueKey('home:carousel')),
+      const Offset(-400, 0),
+      800,
+    );
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(find.text('Keluarga'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, '+ Catat keluar').last);
+    await tester.pump();
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(find.byType(TxFormScreen), findsOneWidget);
+    // Isi nominal + simpan (kategori default pertama).
+    await tester.enterText(
+      find.byType(TextField).first,
+      '25000',
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.text('Simpan Transaksi'));
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    // Tx tersimpan di dompet Keluarga (bukan Utama).
+    final txs = (await tester.runAsync(
+      () => db.select(db.transactions).get(),
+    ))!;
+    expect(txs, isNotEmpty);
+    final keluarga = (await tester.runAsync(
+      () => db.select(db.accounts).get(),
+    ))!.firstWhere((a) => a.name == 'Keluarga');
+    expect(
+      txs.any((t) => t.accountId == keluarga.id && t.amount == 25000),
+      isTrue,
+    );
 
     await _flushDriftCloseTimer(tester);
   });
