@@ -1,6 +1,6 @@
 # Spec: Carousel Kartu Dompet (ganti hero + chip) + Reorder di Kelola
 
-Tanggal: 13 Okt 2026. Target rilis: v1.28.0.
+Tanggal: 13 Okt 2026. Target rilis: v1.29.0 (v1.28.0 dipakai sesi lain: identitas visual mesh).
 
 ## 1. Masalah
 
