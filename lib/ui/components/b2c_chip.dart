@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../design/app_motion.dart';
+import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 
 /// Filter chip B2C (v1.20): pil semibold dengan haptic + scale-down
@@ -40,8 +41,7 @@ class B2CFilterChip extends StatelessWidget {
           // v1.24.9: min 48 = touchMin apa pun font-nya (padding 14×2 +
           // label ≈ 48 di font asli; constraint yang menjamin, bukan
           // aritmetika metrik).
-          constraints:
-              const BoxConstraints(minHeight: AppSpacing.touchMin),
+          constraints: const BoxConstraints(minHeight: AppSpacing.touchMin),
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.s16,
             // v1.24.9: 10→14 — dulu total ~40px, di bawah target sentuh
@@ -50,7 +50,7 @@ class B2CFilterChip extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             color: selected ? scheme.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: AppRadius.pillAll,
             border: Border.all(
               color: selected ? scheme.primary : scheme.outlineVariant,
               width: 1,

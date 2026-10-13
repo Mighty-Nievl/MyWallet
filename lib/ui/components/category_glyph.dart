@@ -10,13 +10,17 @@ import '../design/app_radius.dart';
 /// di atas permukaan tonal. Emoji custom yang tidak dikenal jatuh
 /// ke ikon generik — tidak pernah crash, tidak pernah ada kotak kosong.
 ///
+/// Peran thumbnail konsisten (identitas v1.28): default 52px + radius
+/// 16 ([AppRadius.thumbAll]) di semua list. Foto/thumbnail custom
+/// tinggal mengisi slot ini nanti — ukuran + radius sudah dikunci.
+///
 /// Dipakai: TxTile (Beranda + Riwayat) & daftar top kategori Beranda.
 class CategoryGlyph extends StatelessWidget {
   const CategoryGlyph({
     super.key,
     required this.emoji,
-    this.size = 40,
-    this.iconSize = 20,
+    this.size = 52,
+    this.iconSize = 24,
   });
 
   /// String emoji mentah dari DB (`Category.icon`, `TxWithCategory.catIcon`).
@@ -68,10 +72,7 @@ class CategoryGlyph extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: tile,
-        borderRadius: AppRadius.mdAll,
-      ),
+      decoration: BoxDecoration(color: tile, borderRadius: AppRadius.thumbAll),
       alignment: Alignment.center,
       child: Icon(
         iconFor(emoji),

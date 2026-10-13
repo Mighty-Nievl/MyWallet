@@ -12,6 +12,7 @@ import '../components/app_month_nav.dart';
 import '../components/app_progress.dart';
 import '../components/app_section.dart';
 import '../components/category_glyph.dart';
+import '../components/mesh_gradient.dart';
 import '../design/app_colors.dart';
 import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
@@ -212,12 +213,13 @@ Widget _pad(Widget child, {double top = 0}) {
   );
 }
 
-/// Hero minimalis B2C (redesign v1.24): kartu putih bersih dengan
-/// border subtle, CUMA saldo sebagai fokus tunggal + 1 CTA solid aksen.
-/// Masuk/Keluar + budget ledger + tombol ganda DIHAPUS.
+/// Hero mesh cair (identitas v1.28): MeshGradient ikut aksen + teks
+/// putih + CTA putih solid. CUMA saldo sebagai fokus tunggal + 1 CTA.
+/// Masuk/Keluar + budget ledger + tombol ganda DIHAPUS (tetap).
 ///
 /// Kontrak test: key 'home:hero', 'SALDO SAAT INI' (1x), mata toggle,
-/// '+ Catat keluar' (1x).
+/// '+ Catat keluar' (1x). Kontras putih ≥4.5:1 di 6 aksen × 2 tema
+/// dikunci visual_identity_test (bukan eyeball).
 class _HeroCard extends ConsumerWidget {
   const _HeroCard({required this.balance});
   final AsyncValue<int> balance;
@@ -226,8 +228,9 @@ class _HeroCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final hide = ref.watch(hideBalanceProvider).value ?? false;
     final display = ref.watch(displayPrefsProvider);
+    const white = Colors.white;
 
-    return Container(
+    return MeshGradient(
       key: const ValueKey('home:hero'),
       margin: const EdgeInsets.fromLTRB(
         AppSpacing.page,
@@ -236,26 +239,19 @@ class _HeroCard extends ConsumerWidget {
         0,
       ),
       padding: AppSpacing.cardPaddingLarge,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceOf(context),
-        borderRadius: AppRadius.xlAll,
-        border: Border.all(
-          color: AppColors.borderOf(context),
-          width: AppColors.borderWidthOf(context),
-        ),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Label + mata toggle
+          // Label + mata toggle (putih di atas mesh).
           Row(
             children: [
               Expanded(
                 child: Text(
                   'SALDO SAAT INI',
-                  style: AppType.labelMuted(
-                    context,
-                  ).copyWith(letterSpacing: 0.8),
+                  style: AppType.labelMuted(context).copyWith(
+                    letterSpacing: 0.8,
+                    color: white.withValues(alpha: 0.85),
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -267,11 +263,10 @@ class _HeroCard extends ConsumerWidget {
                     ? Icons.visibility_outlined
                     : Icons.visibility_off_outlined,
                 tooltip: hide ? 'Tampilkan saldo' : 'Sembunyikan saldo',
-                color: AppColors.mutedOf(context),
+                color: white.withValues(alpha: 0.92),
                 bordered: false,
-                onPressed: () => ref
-                    .read(settingsServiceProvider)
-                    .setHideBalance(!hide),
+                onPressed: () =>
+                    ref.read(settingsServiceProvider).setHideBalance(!hide),
               ),
             ],
           ),
@@ -284,7 +279,9 @@ class _HeroCard extends ConsumerWidget {
               children: [
                 Text(
                   'Saldo gagal dimuat.',
-                  style: AppType.balance(context).copyWith(fontSize: 20),
+                  style: AppType.balance(
+                    context,
+                  ).copyWith(fontSize: 20, color: white),
                 ),
                 const SizedBox(height: AppSpacing.s8),
                 TextButton(
@@ -300,15 +297,16 @@ class _HeroCard extends ConsumerWidget {
               alignment: Alignment.centerLeft,
               child: Text(
                 hide ? 'Rp••••••' : display.money(b),
-                style: AppType.balanceHero(context),
+                style: AppType.balanceHero(context).copyWith(color: white),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
           ),
           const SizedBox(height: AppSpacing.s24),
-          // CTA tunggal: Catat pengeluaran (solid aksen, full-width).
-          // v1.24.3: 15→17px agar menang atas judul seksi 16px (kritik brutal L3).
+          // CTA tunggal: Catat pengeluaran — kapsul PUTIH solid di atas
+          // mesh (identitas v1.28). Teks = primary gelap via colorScheme
+          // (bukan putih hardcode — kontras dikunci test semua aksen).
           SizedBox(
             width: double.infinity,
             height: AppSpacing.ctaHeight,
@@ -322,11 +320,8 @@ class _HeroCard extends ConsumerWidget {
                 );
               },
               style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                // onPrimary (bukan putih hardcode): dark mode primary =
-                // mint terang → teks putih jebol kontras (bug audit v1.24.1).
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
+                backgroundColor: white,
+                foregroundColor: Theme.of(context).colorScheme.primary,
               ),
               child: const Text(
                 '+ Catat keluar',
@@ -538,10 +533,9 @@ class _HomeHeader extends ConsumerWidget {
                   backgroundColor: scheme.primaryContainer,
                   child: Text(
                     initial,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(color: scheme.onPrimaryContainer),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: scheme.onPrimaryContainer,
+                    ),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.s12),

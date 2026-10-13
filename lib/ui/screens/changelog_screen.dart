@@ -79,23 +79,17 @@ class ChangelogScreen extends ConsumerWidget {
                       // B2C v1.20: entrance stagger — teks/key/logika tetap.
                       for (var i = 0; i < recent.length; i++)
                         Padding(
-                          padding: const EdgeInsets.only(
-                            bottom: AppSpacing.s8,
-                          ),
+                          padding: const EdgeInsets.only(bottom: AppSpacing.s8),
                           child: Stagger(
                             index: i.clamp(0, 4),
                             child: _EntryCard(
                               entry: recent[i],
-                              isInstalled:
-                                  installed == recent[i].version,
+                              isInstalled: installed == recent[i].version,
                             ),
                           ),
                         ),
                       if (older.isNotEmpty)
-                        _OlderGroup(
-                          entries: older,
-                          installed: installed,
-                        ),
+                        _OlderGroup(entries: older, installed: installed),
                     ],
                   );
                 },
@@ -113,7 +107,14 @@ class ChangelogScreen extends ConsumerWidget {
 class _EntryCard extends StatelessWidget {
   const _EntryCard({required this.entry, required this.isInstalled});
 
-  final ({String? breaking, String date, String tech, String user, String version}) entry;
+  final ({
+    String? breaking,
+    String date,
+    String tech,
+    String user,
+    String version,
+  })
+  entry;
   final bool isInstalled;
 
   @override
@@ -151,7 +152,7 @@ class _EntryCard extends StatelessWidget {
                   color: isInstalled
                       ? scheme.primary
                       : scheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: AppRadius.pillAll,
                 ),
                 child: Text(
                   entry.version,
@@ -178,8 +179,7 @@ class _EntryCard extends StatelessWidget {
                   onPressed: () async {
                     await Clipboard.setData(
                       ClipboardData(
-                        text:
-                            '${entry.version} (${entry.date})\n${entry.user}',
+                        text: '${entry.version} (${entry.date})\n${entry.user}',
                       ),
                     );
                     if (!context.mounted) return;
@@ -271,10 +271,9 @@ class _EntryCard extends StatelessWidget {
               collapsedShape: const Border(),
               title: Text(
                 'Detail teknis',
-                style: AppType.secondary(context).copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: scheme.primary,
-                ),
+                style: AppType.secondary(
+                  context,
+                ).copyWith(fontWeight: FontWeight.w600, color: scheme.primary),
               ),
               children: [
                 Align(
@@ -299,7 +298,10 @@ class _EntryCard extends StatelessWidget {
 class _OlderGroup extends StatelessWidget {
   const _OlderGroup({required this.entries, required this.installed});
 
-  final List<({String? breaking, String date, String tech, String user, String version})> entries;
+  final List<
+    ({String? breaking, String date, String tech, String user, String version})
+  >
+  entries;
   final String? installed;
 
   @override
@@ -309,9 +311,7 @@ class _OlderGroup extends StatelessWidget {
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.s8),
         shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
-        collapsedShape: RoundedRectangleBorder(
-          borderRadius: AppRadius.mdAll,
-        ),
+        collapsedShape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
         collapsedBackgroundColor: Theme.of(
           context,
         ).colorScheme.surfaceContainerLow,
@@ -327,10 +327,7 @@ class _OlderGroup extends StatelessWidget {
           for (final e in entries)
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.s8),
-              child: _EntryCard(
-                entry: e,
-                isInstalled: installed == e.version,
-              ),
+              child: _EntryCard(entry: e, isInstalled: installed == e.version),
             ),
         ],
       ),

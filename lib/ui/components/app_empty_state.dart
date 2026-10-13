@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../design/app_gradients.dart';
 import '../design/app_motion.dart';
+import '../design/app_shadows.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import 'category_glyph.dart';
@@ -27,7 +29,7 @@ class AppEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final medal = AppGradients.medal(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.s24),
@@ -35,7 +37,8 @@ class AppEmptyState extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Medali gradien aksen — wajah B2C tiap layar kosong.
+              // Medali gradien aksen — wajah tiap layar kosong.
+              // Identitas v1.28: gradient + glow dari token (satu sumber).
               Container(
                 width: 88,
                 height: 88,
@@ -43,20 +46,10 @@ class AppEmptyState extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      scheme.primary,
-                      Color.lerp(
-                          scheme.primary, scheme.primaryContainer, 0.45)!,
-                    ],
+                    colors: medal,
                   ),
                   shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: scheme.primary.withValues(alpha: 0.28),
-                      blurRadius: 24,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
+                  boxShadow: AppShadows.glow(context),
                 ),
                 alignment: Alignment.center,
                 child: Container(
@@ -81,10 +74,9 @@ class AppEmptyState extends StatelessWidget {
               const SizedBox(height: AppSpacing.s16),
               Text(
                 title,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.s4),

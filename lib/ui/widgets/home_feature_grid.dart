@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../design/app_colors.dart';
+import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../scan_flow.dart';
@@ -88,11 +89,7 @@ class HomeFeatureGrid extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.s12),
-        Divider(
-          height: 1,
-          thickness: 0.5,
-          color: AppColors.borderOf(context),
-        ),
+        Divider(height: 1, thickness: 0.5, color: AppColors.borderOf(context)),
         const SizedBox(height: AppSpacing.s12),
         _GroupLabel(label: 'Lihat'),
         const SizedBox(height: AppSpacing.s8),
@@ -166,7 +163,7 @@ class _ActionTile extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppRadius.mdAll,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: AppSpacing.touchMin),
         child: Column(
@@ -175,18 +172,15 @@ class _ActionTile extends StatelessWidget {
             Container(
               width: 52,
               height: 52,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               child: Icon(icon, color: scheme.onPrimary, size: 24),
             ),
             const SizedBox(height: AppSpacing.s4),
             Text(
               label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -213,7 +207,7 @@ class _LinkTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppRadius.mdAll,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: AppSpacing.touchMin),
         child: Column(

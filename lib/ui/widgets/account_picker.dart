@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../components/b2c_chip.dart';
+import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 
 /// Pemilih dompet Beranda (v1.25): strip chip horizontal di bawah hero.
@@ -99,14 +100,13 @@ class _ManageChip extends StatelessWidget {
           onTap();
         },
         child: Container(
-          constraints:
-              const BoxConstraints(minHeight: AppSpacing.touchMin),
+          constraints: const BoxConstraints(minHeight: AppSpacing.touchMin),
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.s16,
             vertical: 14,
           ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: AppRadius.pillAll,
             border: Border.all(color: scheme.outlineVariant, width: 1),
           ),
           child: Row(

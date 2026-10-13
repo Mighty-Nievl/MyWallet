@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../design/app_motion.dart';
+import '../design/app_radius.dart';
 
 /// Progress bar konsisten di seluruh aplikasi
 /// (Beranda kategori, Budget, Laporan).
@@ -31,7 +32,7 @@ class AppProgress extends StatelessWidget {
     final target = value.clamp(0.0, 1.0);
     if (AppMotion.animationsOff(context)) {
       return ClipRRect(
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: AppRadius.pillAll,
         child: LinearProgressIndicator(
           value: target,
           minHeight: height,
@@ -41,7 +42,7 @@ class AppProgress extends StatelessWidget {
       );
     }
     return ClipRRect(
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: AppRadius.pillAll,
       child: TweenAnimationBuilder<double>(
         tween: Tween<double>(begin: 0, end: target),
         duration: AppMotion.normal,

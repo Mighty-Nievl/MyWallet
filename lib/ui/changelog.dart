@@ -18,13 +18,24 @@
 ///   ambil teks dari sini, JANGAN hardcode lagi.
 /// - `docs/07-Rilis-dan-Obtainium.md` + README wajib diupdate bareng.
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
-const appChangelog = <({
-  String version,
-  String date,
-  String user,
-  String tech,
-  String? breaking,
-})>[
+const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
+  (
+    version: 'v1.28.0',
+    date: '13 Okt 2026',
+    user:
+        'Tampilan baru yang lebih hidup: kartu saldo kini bergradasi cair '
+        'mengikuti warna pilihanmu, tombol dan menu berbentuk kapsul yang '
+        'ramah, dan bilah bawah tampak melayang. Semua teks tetap jelas '
+        'dibaca di semua warna.',
+    tech:
+        'Identitas visual v1.28: MeshGradient hero + overview status '
+        '(hue-shift, putih >=4.5:1 terukur 6 aksen x 2 tema), AppShadows '
+        'lembut (tanpa hitam pekat), radius pill/kartu/thumb, bottom bar '
+        'melayang + tombol glow, gradient literal dilarang; '
+        'docs/08-Karakteristik-Tampilan.md + 4 test visual_identity; '
+        'golden regen; full 236/236.',
+    breaking: null,
+  ),
   (
     version: 'v1.27.1',
     date: '13 Okt 2026',
@@ -525,8 +536,7 @@ const appChangelog = <({
         '→ prefill nominal + tanggal + warung + saran kategori, user tetap cek '
         '& Simpan manual). Izin kamera baru. Logika simpan/transaksi tidak '
         'berubah.',
-    breaking:
-        'Butuh izin kamera baru saat pertama pakai scan struk.',
+    breaking: 'Butuh izin kamera baru saat pertama pakai scan struk.',
   ),
   (
     version: 'v1.13.1',
@@ -657,8 +667,7 @@ const appChangelog = <({
     date: '7 Okt 2026',
     user:
         'Perbaikan: budget yang baru disimpan sekarang langsung muncul di daftar.',
-    tech:
-        'Fix list budget tetap kosong setelah simpan + SnackBar tersimpan.',
+    tech: 'Fix list budget tetap kosong setelah simpan + SnackBar tersimpan.',
     breaking: null,
   ),
   (
@@ -682,8 +691,7 @@ const appChangelog = <({
     version: 'v1.6.0',
     date: '7 Okt 2026',
     user: 'Tampilan Riwayat dan Form Catat baru yang lebih nyaman dipakai.',
-    tech:
-        'Redesign STEP 2: Riwayat + Form Transaksi baru (visual saja).',
+    tech: 'Redesign STEP 2: Riwayat + Form Transaksi baru (visual saja).',
     breaking: null,
   ),
   (

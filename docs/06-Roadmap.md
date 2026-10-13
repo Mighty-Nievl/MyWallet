@@ -158,6 +158,7 @@ Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi 
 - [x] **Menu fitur + nav baru + scan (v1.26.0)**: grid 4x2 Beranda, nav Beranda/Catat/Scan, alur kamera/galeri → pratinjau → simpan. 10 regression test. Full 227/227.
 - [x] **Profil + Keluarga mandiri (v1.27.0)**: pohon akun Beranda → Profil → Keluarga; header avatar+sapaan kondisional login; nickname lokal editable; hub Pengaturan 4 grup. 5 regression test.
 - [x] **Tombol Masuk header (v1.27.1)**: personal + tombol teks Masuk → Profil; tutup lubang discoverability login. 2 assertion regression test.
+- [x] **Identitas visual mesh+floating+pill (v1.28.0)**: MeshGradient hero + overview status (hue-shift, kontras terukur), AppShadows lembut, radius pill/kartu/thumb, bottom bar melayang + glow, gradient literal dilarang, 4 test visual_identity, golden regen. Full 236/236.
 - [ ] Fase 3 — utang + budget ikut sync + uji 2 emulator bareng.
 - [ ] Fase 4 — hardening production-grade: RLS audit, hapus akun, kebijakan privasi (wajib Play Store), crash reporting.
 

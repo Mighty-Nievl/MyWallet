@@ -11,6 +11,7 @@
 5. [[05-Panduan-Pakai]] — cara memakai aplikasi sehari-hari.
 6. [[06-Roadmap]] — ide fitur lanjutan.
 7. [[07-Rilis-dan-Obtainium]] — signing, rilis GitHub, install via Obtainium.
+8. [[08-Karakteristik-Tampilan]] — identitas visual (mesh, floating, pill, kartu).
 
 ## Fakta kunci
 
@@ -18,11 +19,11 @@
 - **Penyimpanan:** 100% lokal, SQLite via Drift — tanpa login, tanpa server.
 - **State:** flutter_riverpod 3.x (`StreamProvider` auto-refresh, `StateProvider` via `legacy.dart`).
 - **File DB:** `mywallet.sqlite` di folder dokumen aplikasi.
-- **Status:** v1.27.1 — Tombol Masuk di Beranda sebelum login (pintu Profil).
+- **Status:** v1.28.0 — Identitas visual baru (mesh cair + floating + pill).
 
 ## Peta kode
 
 - `lib/main.dart` — entry point (`ProviderScope` + `MyWalletApp` + pulihkan jadwal pengingat)
-- `lib/ui/` — tema + design tokens (`design/`: warna/spacing/radius/tipografi) + komponen (`components/`: kartu, section, ikon kategori, header, month-nav, progress, empty-state), shell navigasi custom MyWallet, 12 layar (home + tx_form + history + budget + reports baru STEP 1-3, settings hub + 4 sub-halaman, categories, lock), widget, format rupiah/tanggal + formatter input nominal
+- `lib/ui/` — tema + design tokens (`design/`: warna/spacing/radius/tipografi/gradien/shadow) + komponen (`components/`: kartu, section, ikon kategori, header, month-nav, progress, empty-state, mesh-gradient), shell navigasi custom MyWallet, 12 layar (home + tx_form + history + budget + reports baru STEP 1-3, settings hub + 4 sub-halaman, categories, lock), widget, format rupiah/tanggal + formatter input nominal
 - `lib/data/` — `tables.dart` (skema), `database.dart` (query), `providers.dart`, `actions.dart`, `settings.dart` (semua pengaturan + providers tampilan), `lock_service.dart` (PIN/biometrik), `reminder_service.dart` (notifikasi harian), `backup_service.dart` (backup/restore/wipe)
 - `test/` — test helper format (27 test) + test CRUD budget (6 test, db in-memory)

@@ -13,6 +13,7 @@ import '../components/app_month_nav.dart';
 import '../components/app_progress.dart';
 import '../components/app_section.dart';
 import '../components/category_glyph.dart';
+import '../components/mesh_gradient.dart';
 import '../design/app_colors.dart';
 import '../design/app_motion.dart';
 import '../design/app_radius.dart';
@@ -593,33 +594,34 @@ class _OverviewCard extends ConsumerWidget {
     final warn = !over && pct >= _warnAt;
     final remain = totalLimit - totalSpent;
     final safe = list.where((e) => e.spent <= e.budget.limit).length;
-    // B2C v1.20: overview dibungkus gradasi status — aman = aksen,
-    // waspada/jebol = status (teks putih, kontras terjaga karena
-    // warna status digelapkan dulu). Gradien dari scheme langsung
-    // (bukan fungsi Home) agar transparan di semua tema.
-    final gradBase = over
-        ? HSLColor.fromColor(scheme.error).withLightness(0.38).toColor()
+    // Identitas v1.28: overview = MeshGradient status (aman = aksen,
+    // waspada/jebol = status). Teks putih, kontras dikunci test mesh.
+    final statusColor = over
+        ? scheme.error
         : warn
-        ? HSLColor.fromColor(scheme.tertiary).withLightness(0.42).toColor()
-        : HSLColor.fromColor(scheme.primary).withLightness(0.36).toColor();
+        ? scheme.tertiary
+        : scheme.primary;
+    final gradBase = HSLColor.fromColor(statusColor)
+        .withLightness(scheme.brightness == Brightness.dark ? 0.22 : 0.26)
+        .toColor();
+    Color blob(Color c, double deg) {
+      final hsl = HSLColor.fromColor(c);
+      final lift = scheme.brightness == Brightness.dark ? 0.08 : 0.04;
+      return hsl
+          .withHue(((hsl.hue + deg) % 360 + 360) % 360)
+          .withLightness((hsl.lightness + lift).clamp(0.0, 1.0))
+          .toColor();
+    }
+
     final white = Colors.white;
-    return Container(
+    return MeshGradient(
+      base: gradBase,
+      blobs: [
+        blob(statusColor, 30),
+        blob(statusColor, -35),
+        blob(statusColor, 60),
+      ],
       padding: AppSpacing.cardPadding,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [gradBase, Color.lerp(gradBase, Colors.black, 0.22)!],
-        ),
-        borderRadius: AppRadius.lgAll,
-        boxShadow: [
-          BoxShadow(
-            color: gradBase.withValues(alpha: 0.25),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

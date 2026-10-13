@@ -10,8 +10,8 @@ Tanpa login, tanpa server — semua data cuma tinggal di perangkatmu.
 ![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.12-0175C2?logo=dart&logoColor=white)
 ![Drift](https://img.shields.io/badge/Drift-2.35-EAECED?logo=sqlite&logoColor=black)
-![Version](https://img.shields.io/badge/version-1.27.1-6C5CE7)
-![Tests](https://img.shields.io/badge/tests-232%2F232-2ECC71)
+![Version](https://img.shields.io/badge/version-1.28.0-6C5CE7)
+![Tests](https://img.shields.io/badge/tests-236%2F236-2ECC71)
 [![Build](https://github.com/Mighty-Nievl/MyWallet/actions/workflows/build.yml/badge.svg)](https://github.com/Mighty-Nievl/MyWallet/actions/workflows/build.yml)
 
 [**Ringkasan**](#-ringkasan) · [**Fitur**](#-fitur) · [**Mulai Cepat**](#-mulai-cepat) · [**Dokumentasi**](#-dokumentasi) · [**Rilis**](#-instal-dan-rilis)
@@ -125,6 +125,7 @@ atau langsung dari GitHub:
 | [05 — Panduan Pakai](docs/05-Panduan-Pakai.md) | Cara pakai sehari-hari |
 | [06 — Roadmap](docs/06-Roadmap.md) | Rencana fitur lanjutan |
 | [07 — Rilis & Obtainium](docs/07-Rilis-dan-Obtainium.md) | Signing, rilis GitHub, auto-update |
+| [08 — Karakteristik Tampilan](docs/08-Karakteristik-Tampilan.md) | Identitas visual: mesh, floating, pill, kartu |
 
 ## 📦 Instal dan Rilis
 
@@ -174,7 +175,7 @@ Rincian lengkap: [docs/06-Roadmap.md](docs/06-Roadmap.md).
 | Pemeriksaan | Status |
 | :-- | :-- |
 | `flutter analyze` | No issues found |
-| `flutter test` | 39/39 passed |
+| `flutter test` | 236/236 passed |
 | CI *(push & PR ke `main`)* | Analyze & Test → Build APK & AAB |
 | Rilis *(tag `v*`)* | APK signed + AAB → GitHub Release otomatis |
 

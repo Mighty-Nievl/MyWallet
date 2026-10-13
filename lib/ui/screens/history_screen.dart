@@ -340,7 +340,7 @@ class _FilterButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s12),
           decoration: BoxDecoration(
             color: active ? scheme.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppRadius.pillAll,
             border: Border.all(
               color: active ? scheme.primary : scheme.outlineVariant,
               width: 1,
