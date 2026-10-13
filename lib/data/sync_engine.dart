@@ -45,6 +45,7 @@ typedef RemoteAccount = ({
   String uuid,
   String name,
   bool isArchived,
+  int sortOrder,
   DateTime updatedAt,
   DateTime? deletedAt,
 });
@@ -134,6 +135,7 @@ Map<String, dynamic> accountToMap(
     'uuid': a.uuid ?? '',
     'name': a.name,
     'isArchived': a.isArchived,
+    'sortOrder': a.sortOrder,
     'updatedAt': (a.updatedAt ?? t).millisecondsSinceEpoch,
     if (a.deletedAt != null) 'deletedAt': a.deletedAt!.millisecondsSinceEpoch,
     'updatedBy': uid,
@@ -169,6 +171,7 @@ RemoteAccount? parseRemoteAccount(Map<String, dynamic> m) {
     uuid: uuid,
     name: (m['name'] as String?) ?? '?',
     isArchived: (m['isArchived'] as bool?) ?? false,
+    sortOrder: (m['sortOrder'] as int?) ?? 0,
     updatedAt: _ms(m['updatedAt'] as int?, now),
     deletedAt: m['deletedAt'] == null
         ? null
@@ -267,6 +270,7 @@ Future<bool> upsertLocalAccount(
           AccountsCompanion.insert(
             name: r.name,
             isArchived: Value(r.isArchived),
+            sortOrder: Value(r.sortOrder),
             uuid: Value(r.uuid),
             updatedAt: Value(r.updatedAt),
             deletedAt: Value(r.deletedAt),
@@ -280,6 +284,7 @@ Future<bool> upsertLocalAccount(
     AccountsCompanion(
       name: Value(r.name),
       isArchived: Value(r.isArchived),
+      sortOrder: Value(r.sortOrder),
       updatedAt: Value(r.updatedAt),
       deletedAt: Value(r.deletedAt),
       householdId: Value(householdId),

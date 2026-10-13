@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mywallet/data/account_actions.dart';
 import 'package:mywallet/data/database.dart';
 import 'package:mywallet/data/sync_engine.dart';
+import 'package:mywallet/data/sync_meta.dart';
 
 Future<AppDatabase> _memDb() async {
   final db = AppDatabase(NativeDatabase.memory());
@@ -162,4 +163,33 @@ void main() {
       expect((await b.getTotals(epoch, jauh)).$2, 10000);
     },
   );
+
+  test('sortOrder ikut push + pull (reorder sync antar-HP, v1.29)', () async {
+    final a = await _memDb();
+    addTearDown(a.close);
+    final acc = (await a.select(a.accounts).get()).single;
+    await (a.update(
+      a.accounts,
+    )..where((t) => t.id.equals(acc.id))).write(
+      AccountsCompanion(
+        sortOrder: const Value(7),
+        updatedAt: Value(syncNow()),
+      ),
+    );
+    final fresh = await (a.select(
+      a.accounts,
+    )..where((t) => t.id.equals(acc.id))).getSingle();
+    final m = accountToMap(fresh, 'hid', 'uid');
+    expect(m['sortOrder'], 7);
+    final parsed = parseRemoteAccount(m);
+    expect(parsed, isNotNull);
+    expect(parsed!.sortOrder, 7);
+    // Pull ke DB kedua: sortOrder tersimpan lokal.
+    final b = await _memDb();
+    addTearDown(b.close);
+    await upsertLocalAccount(b, parsed, 'hid');
+    final rows = await b.select(b.accounts).get();
+    final got = rows.firstWhere((x) => x.uuid == fresh.uuid);
+    expect(got.sortOrder, 7);
+  });
 }
