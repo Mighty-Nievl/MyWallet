@@ -58,13 +58,24 @@ class AccountsScreen extends ConsumerWidget {
                           subtitle:
                               'Tambah dompet pertama lewat tombol di bawah.',
                         )
-                      : ListView.separated(
-                          itemCount: list.length,
-                          separatorBuilder: (_, _) => const SizedBox(
-                            height: AppSpacing.s8,
-                          ),
-                          itemBuilder: (_, i) =>
-                              _AccountCard(account: list[i]),
+                      : ReorderableListView(
+                          onReorderItem: (oldIndex, newIndex) =>
+                              _reorder(ref, list, oldIndex, newIndex),
+                          children: [
+                            for (var i = 0; i < list.length; i++)
+                              Padding(
+                                key: ValueKey('acct-${list[i].id}'),
+                                padding: EdgeInsets.only(
+                                  bottom: i < list.length - 1
+                                      ? AppSpacing.s8
+                                      : 0,
+                                ),
+                                child: _AccountCard(
+                                  account: list[i],
+                                  dragIndex: i,
+                                ),
+                              ),
+                          ],
                         ),
                 ),
               ),
@@ -109,13 +120,30 @@ class AccountsScreen extends ConsumerWidget {
           AccountsCompanion.insert(name: name.trim()),
         );
   }
+
+  /// Drag-reorder (v1.29): tulis sortOrder via [reorderAccounts] sesuai
+  /// urutan baru; haptic ikut pola layar ini.
+  /// ([onReorderItem] memberi newIndex final — tanpa koreksi manual.)
+  Future<void> _reorder(
+    WidgetRef ref,
+    List<Account> list,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    final ids = list.map((a) => a.id).toList();
+    final moved = ids.removeAt(oldIndex);
+    ids.insert(newIndex, moved);
+    HapticFeedback.selectionClick();
+    await reorderAccounts(ref.read(dbProvider), ids);
+  }
 }
 
-/// Satu baris dompet: nama + saldo + menu (transfer / arsip / hapus).
+/// Satu baris dompet: handle drag + nama + saldo + menu.
 class _AccountCard extends ConsumerWidget {
-  const _AccountCard({required this.account});
+  const _AccountCard({required this.account, required this.dragIndex});
 
   final Account account;
+  final int dragIndex;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -136,6 +164,15 @@ class _AccountCard extends ConsumerWidget {
       ),
       child: Row(
         children: [
+          // Handle drag (tahan-dulu → geser; anti konflik scroll).
+          ReorderableDelayedDragStartListener(
+            index: dragIndex,
+            child: Icon(
+              Icons.drag_handle,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.s8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
