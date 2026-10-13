@@ -13,7 +13,7 @@ import 'screens/tx_form_screen.dart';
 ///
 /// Beranda pensiun dari navbar (redundant: shell satu halaman, tap-nya
 /// no-op) → slot kiri jadi pintasan Riwayat (push, ikut pola grid
-/// Beranda). Tombol tengah = lingkaran solid primer ±64px overlap di
+/// Beranda). Tombol tengah = lingkaran solid primer 72px overlap di
 /// atas bar, buka form Catat (pintu tunggal).
 /// Scan = tab kanan, tap = alur [runScanFlow] (bukan halaman).
 ///
@@ -27,6 +27,10 @@ import 'screens/tx_form_screen.dart';
 /// rawan kepotong di GPU HP). Overlap dibangun via Stack
 /// (clipBehavior: none) + SafeArea (gesture-nav HP tak menempel pil
 /// sistem). Tampilan dipertahankan: lingkaran tetap menonjol ke atas.
+///
+/// v1.32 (request user "navbar terlalu lebar" + "tombol + kurang gede"):
+/// bar 72→60 (ramping), tombol 64→72 + ikon 28→32 (magnet lebih kuat).
+/// Overlap -16 tetap (kepala proporsional: 72/2+16 = 52 vs bar 60).
 class AppShell extends ConsumerWidget {
   const AppShell({super.key});
 
@@ -63,7 +67,8 @@ class AppShell extends ConsumerWidget {
             boxShadow: AppShadows.floating(context),
           ),
           child: SizedBox(
-            height: 72,
+            // v1.32: 72→60 (request user "navbar terlalu lebar").
+            height: 60,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -131,8 +136,10 @@ class AppShell extends ConsumerWidget {
                         button: true,
                         label: 'Catat transaksi',
                         child: Container(
-                          width: 64,
-                          height: 64,
+                          // v1.32: 64→72 + ikon 28→32 (request user
+                          // "tombol + kurang gede"); bar ikut ramping 60.
+                          width: 72,
+                          height: 72,
                           decoration: BoxDecoration(
                             color: scheme.primary,
                             shape: BoxShape.circle,
@@ -141,7 +148,7 @@ class AppShell extends ConsumerWidget {
                           child: Icon(
                             Icons.add,
                             color: scheme.onPrimary,
-                            size: 28,
+                            size: 32,
                           ),
                         ),
                       ),

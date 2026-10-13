@@ -162,6 +162,7 @@ Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi 
 - [x] **Navbar + kartu Kelola (v1.29.1)**: Beranda pensiun (no-op) → pintasan Riwayat; Kelola pindah ke kartu trailing bergambar gear; lingkaran + via Stack+SafeArea (transform melukis di luar clip); drag presisi −350.
 - [x] **Kartu jujur + label dompet + karakter (v1.30.0)**: kartu Kelola parity bingkai + dots halaman (+1 Kelola, tap lompat); label nama dompet di tile/judul/strip (>1 dompet); pill/kartu/thumb + mesh ringkasan utang + cicilan ellipsis; kontras mesh utang ≥4.5:1.
 - [x] **Lega + ramping + kembali polos (v1.30.1)**: jarak s8 antar kartu Terakhir dicatat (+test rect); token kartu 24→16 + thumb 16→12; tombol kembali BackHeader + AppHeader.onBack tanpa border (aksi form tetap kotak).
+- [x] **Riwayat bersih + detail dompet + catat-ke + navbar (v1.31.0)**: chevron off total (tap edit tetap); jarak s8 Riwayat; CTA kartu dihapus (viewport 188) + tap kartu → layar detail dompet baru (hero + 5 tx scoped + 8 pintasan); form catat field Catat ke + initialAccountId; bar 72→60, tombol + 64→72.
 - [ ] Fase 3 — utang + budget ikut sync + uji 2 emulator bareng.
 - [ ] Fase 4 — hardening production-grade: RLS audit, hapus akun, kebijakan privasi (wajib Play Store), crash reporting.
 

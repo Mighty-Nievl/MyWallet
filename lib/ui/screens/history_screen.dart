@@ -237,17 +237,28 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           ),
                         ),
                         for (final tx in entries[i].value)
-                          TxTile(
-                            tx: tx,
-                            showDate: false,
-                            // v1.24.9: arsip rapat (kritik L2).
-                            dense: true,
-                            // v1.30: label dompet (filter Semua + >1 dompet
-                            // = tiap baris sebut asalnya).
-                            showAccount: multiWallet,
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (ctx) => TxFormScreen(existing: tx),
+                          // Rapat kartu (v1.32, request user — pola sama
+                          // dgn _RecentList v1.30.1): tiap baris = kartu =>
+                          // butuh napas s8 antar kartu.
+                          Padding(
+                            padding: EdgeInsets.only(
+                              top: tx == entries[i].value.first
+                                  ? 0
+                                  : AppSpacing.s8,
+                            ),
+                            child: TxTile(
+                              tx: tx,
+                              showDate: false,
+                              // v1.24.9: arsip rapat (kritik L2).
+                              dense: true,
+                              // v1.30: label dompet (filter Semua + >1 dompet
+                              // = tiap baris sebut asalnya).
+                              showAccount: multiWallet,
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (ctx) =>
+                                      TxFormScreen(existing: tx),
+                                ),
                               ),
                             ),
                           ),

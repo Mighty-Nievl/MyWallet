@@ -32,6 +32,7 @@ class TxFormScreen extends ConsumerStatefulWidget {
     this.existing,
     this.startAsExpense,
     this.initialAmount,
+    this.initialAccountId,
   });
 
   final TxWithCategory? existing;
@@ -43,6 +44,12 @@ class TxFormScreen extends ConsumerStatefulWidget {
   /// Diabaikan saat edit ([existing] menang) — backward-compatible:
   /// semua pemanggil lama tanpa param ini tetap jalan.
   final int? initialAmount;
+
+  /// Dompet tujuan awal (v1.32 — request user "aksi catat belum
+  /// memperlihatkan dompet mana yg akan dicatat"): kartu/detail/grid
+  /// teruskan id dompetnya; null = ikut filter aktif/global.
+  /// Diabaikan saat edit (dompet ikut induk, aturan v1.25).
+  final int? initialAccountId;
 
   @override
   ConsumerState<TxFormScreen> createState() => _TxFormScreenState();
@@ -56,6 +63,9 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
   int? _categoryId;
   bool _saving = false;
   bool _scanning = false;
+  // Dompet tujuan catat (v1.32): eksplisit per-buka form (bukan baca
+  // filter global di _save — filter bisa berubah / null = Semua).
+  int? _accountId;
 
   @override
   void initState() {
@@ -73,6 +83,10 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
     _noteCtrl = TextEditingController(text: e?.note ?? '');
     _date = e?.date ?? DateTime.now();
     _categoryId = e?.categoryId;
+    // v1.32: dompet awal = param eksplisit > filter aktif (dulu diam-diam
+    // defaultAccountId di _save — user tak pernah tahu dompet mana).
+    _accountId =
+        widget.initialAccountId ?? ref.read(selectedAccountProvider);
   }
 
   @override
@@ -126,12 +140,14 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
           note: _noteCtrl.text,
         );
       } else {
-        // v1.25: transaksi baru masuk dompet aktif (bila "Semua" =
-        // dompet pertama). Tanpa dompet = mustahil pasca-migrasi v4.
-        final acct = await defaultAccountId(
-          ref.read(dbProvider),
-          ref.read(selectedAccountProvider),
-        );
+        // v1.32: dompet = pilihan user di form (state _accountId, terlihat
+        // di UI "Catat ke"). Fallback defaultAccountId bila null (mis.
+        // filter Semua + belum pilih). Tanpa dompet = mustahil pasca-v4.
+        final acct = _accountId ??
+            await defaultAccountId(
+              ref.read(dbProvider),
+              ref.read(selectedAccountProvider),
+            );
         if (acct == null) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -360,6 +376,17 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
                 _categoryId = null;
               }),
             ),
+            // v1.32 (request user): dompet tujuan TERLIHAT + bisa ganti
+            // (dulu diam-diam ikut filter). Edit = terkunci ikut induk.
+            if (!_editing) ...[
+              const SizedBox(height: AppSpacing.s20),
+              Text('Catat ke', style: AppType.labelMuted(context)),
+              const SizedBox(height: AppSpacing.s8),
+              _AccountField(
+                selectedId: _accountId,
+                onPick: (id) => setState(() => _accountId = id),
+              ),
+            ],
             const SizedBox(height: AppSpacing.sectionGap),
             Text('Nominal', style: AppType.labelMuted(context)),
             const SizedBox(height: AppSpacing.s8),
@@ -817,6 +844,104 @@ class _DateTile extends StatelessWidget {
                 size: 20,
                 color: AppColors.mutedOf(context),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Baris dompet tappable (v1.32) — bahasa yang sama dengan _CategoryTile:
+/// AppCard + glyph + nama + chevron, tap = sheet pilih dompet.
+/// null = belum pilih (ikut fallback defaultAccountId di _save).
+class _AccountField extends ConsumerWidget {
+  const _AccountField({required this.selectedId, required this.onPick});
+  final int? selectedId;
+  final ValueChanged<int> onPick;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final accounts = ref.watch(accountsProvider);
+    return accounts.when(
+      loading: () => const SizedBox(height: 56, child: AppSkeleton(lines: 1)),
+      error: (_, _) => const Text(
+        'Gagal memuat dompet.',
+        style: TextStyle(fontSize: 13),
+      ),
+      data: (list) {
+        Account? current;
+        for (final a in list) {
+          if (a.id == selectedId) current = a;
+        }
+        return AppCard(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s12,
+            vertical: AppSpacing.s8,
+          ),
+          child: InkWell(
+            onTap: () async {
+              final picked = await _pickAccount(context, list, selectedId);
+              if (picked != null) {
+                HapticFeedback.selectionClick();
+                onPick(picked);
+              }
+            },
+            borderRadius: AppRadius.mdAll,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
+              child: Row(
+                children: [
+                  const CategoryGlyph(emoji: '👛', size: 40, iconSize: 18),
+                  const SizedBox(width: AppSpacing.s12),
+                  Expanded(
+                    child: Text(
+                      current?.name ?? 'Pilih dompet',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 20,
+                    color: AppColors.mutedOf(context),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Sheet pilih dompet — daftar sama, hanya presentasi (pengganti
+  /// DropdownButtonFormField). Column-eager ikut sheet Riwayat (aturan
+  /// v1.24.10: ListView-lazy sembunyikan ekor di bawah lipatan).
+  Future<int?> _pickAccount(
+    BuildContext context,
+    List<Account> list,
+    int? current,
+  ) {
+    return showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final a in list)
+                _SheetRow(
+                  icon: '👛',
+                  name: a.name,
+                  selected: a.id == current,
+                  onTap: () => Navigator.pop(ctx, a.id),
+                ),
             ],
           ),
         ),

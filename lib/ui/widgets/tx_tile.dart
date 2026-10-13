@@ -55,7 +55,6 @@ class TxTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final display = ref.watch(displayPrefsProvider);
-    final scheme = Theme.of(context).colorScheme;
     // Semantik nominal satu sumber kebenaran (AppColors), sama dengan
     // hero Beranda dan strip "Hari ini".
     final amountColor = tx.isExpense
@@ -177,18 +176,9 @@ class TxTile extends ConsumerWidget {
                   ],
                 ),
               ),
-              // Seluruh baris tap → edit: chevron sebagai affordance.
-              // v1.24.5: chevron DIJANGKAR tepi layar (bukan nempel ujung
-              // teks) → kolom chevron stabil, tidak wobble ikut panjang
-              // nominal.
-              if (onTap != null) ...[
-                const SizedBox(width: AppSpacing.s4),
-                Icon(
-                  Icons.chevron_right,
-                  size: 20,
-                  color: scheme.onSurfaceVariant,
-                ),
-              ],
+              // Seluruh baris tap → edit: chevron DIHAPUS (v1.32,
+              // request user "card riwayat/terakhir dicatat gaperlu ada
+              // chevron"). Tap tetap jalan via InkWell di atas.
             ],
           ),
         ),

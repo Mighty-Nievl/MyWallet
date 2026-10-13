@@ -20,6 +20,30 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.31.0',
+    date: '14 Okt 2026',
+    user:
+        'Kartu riwayat kini bersih tanpa panah — seluruh baris tetap bisa '
+        'diketuk untuk ubah. Daftar Riwayat diberi jarak lega seperti '
+        'Beranda. Kartu saldo fokus ke angka saja (tombol catat pindah ke '
+        'tombol + dan menu). Ketuk kartu saldo untuk buka rincian dompet: '
+        'riwayat, budget, utang, pindah dana, laporan, dan pengaturan. '
+        'Form catat kini jelas menulis ke dompet mana. Tombol + bawah '
+        'diperbesar, bilah navigasi dibuat lebih ramping.',
+    tech:
+        'TxTile: chevron_right dihapus (tap → edit tetap via InkWell). '
+        'HistoryScreen: Padding top s8 antar kartu (pola _RecentList). '
+        'AccountCarousel: CTA + Catat keluar & Buka kelola dihapus, '
+        'viewport 264→188, tap kartu via Listener mentah (_TapToOpen, '
+        'tanpa gesture arena agar drag PageView bebas). Layar baru '
+        'AccountDetailScreen (hero mesh + 5 tx scoped + 8 pintasan, '
+        'override selectedAccountProvider). TxFormScreen: param '
+        'initialAccountId + field Catat ke + sheet pilih dompet. Shell: '
+        'bar 72→60, tombol 64→72 + ikon 28→32. Test: drag presisi → '
+        'fling -200/-350 1000 (snap-balik sejak kartu 188px).',
+    breaking: null,
+  ),
+  (
     version: 'v1.30.1',
     date: '14 Okt 2026',
     user:

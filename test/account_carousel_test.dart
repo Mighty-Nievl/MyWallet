@@ -14,6 +14,7 @@ import 'package:mywallet/data/database.dart';
 import 'package:mywallet/data/providers.dart';
 import 'package:mywallet/ui/app_theme.dart';
 import 'package:mywallet/ui/screens/accounts_screen.dart';
+import 'package:mywallet/ui/screens/account_detail_screen.dart';
 import 'package:mywallet/ui/screens/home_screen.dart';
 import 'package:mywallet/ui/screens/tx_form_screen.dart';
 import 'package:mywallet/ui/widgets/account_carousel.dart';
@@ -101,10 +102,13 @@ void main() {
     await _pumpCarousel(tester, db);
 
     // 1 dompet = 2 halaman (Utama + Kelola). Geser 1x → kartu Kelola.
-    // (drag presisi, bukan fling — fling 800px/s lompat 2 halaman.)
-    await tester.drag(
+    // v1.32: fling -200/1000 (drag presisi tanpa velocity tak lewati
+    // snap sejak kartu ramping 188px — terbukti probe: drag -200 snap
+    // balik, fling pindah 1 halaman).
+    await tester.fling(
       find.byKey(const ValueKey('home:carousel')),
       const Offset(-200, 0),
+      1000,
     );
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 50));
@@ -185,11 +189,12 @@ void main() {
     // Halaman 0 = Utama. Geser kiri → halaman 1 = Keluarga.
     // (PageView drop halaman offstage dari cache — setelah geser,
     // Utama hilang total dan Keluarga tepat 1, bukan findsWidgets.)
-    // NOTE: drag presisi −200 (bukan fling) — fling 800px/s punya
-    // energi 2 halaman dan kini mendarat di kartu Kelola trailing.
-    await tester.drag(
+    // v1.32: fling -200/1000 = 1 halaman (drag presisi snap-balik sejak
+    // kartu 188px; terbukti probe).
+    await tester.fling(
       find.byKey(const ValueKey('home:carousel')),
       const Offset(-200, 0),
+      1000,
     );
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 50));
@@ -202,22 +207,37 @@ void main() {
     await _flushDriftCloseTimer(tester);
   });
 
-  testWidgets('CTA kartu buka form catat (v1.29)', (tester) async {
+  // v1.32: CTA kartu DIHAPUS — tap kartu = detail dompet
+  // (AccountDetailScreen). Tanpa reorder, sortOrder sama → urut nama
+  // (Keluarga dulu, terbukti probe) — jadi reorder [Utama, Keluarga]
+  // dulu agar kartu tampil = Utama. Gotcha route-stack (v1.27): judul
+  // detail vs nama kartu di bawah → assert via key hero.
+  testWidgets('tap kartu buka detail dompet (v1.32)', (tester) async {
     final db = await _newDb(tester);
     await tester.runAsync(() async {
       await _loadFonts();
-      await db.into(db.accounts).insert(AccountsCompanion.insert(name: 'Keluarga'));
+      final utama = (await db.select(
+        db.accounts,
+      ).get()).firstWhere((a) => a.name == 'Utama');
+      final keluargaId = await db
+          .into(db.accounts)
+          .insert(AccountsCompanion.insert(name: 'Keluarga'));
+      await reorderAccounts(db, [utama.id, keluargaId]);
     });
     await _pumpCarousel(tester, db);
 
-    // Kartu pertama (Utama) tampil penuh — tap CTA-nya.
-    await tester.tap(find.widgetWithText(FilledButton, '+ Catat keluar').first);
+    // Kartu pertama (Utama) tampil penuh — tap kartunya.
+    final utamaId = (await tester.runAsync(
+      () => db.select(db.accounts).get(),
+    ))!.firstWhere((a) => a.name == 'Utama').id;
+    await tester.tap(find.byKey(ValueKey('home:card-$utamaId')));
     await tester.pump();
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
-    // Form catat terbuka.
-    expect(find.byType(TxFormScreen), findsOneWidget);
+    // Layar detail terbuka (hero + seksi recent scoped).
+    expect(find.byType(AccountDetailScreen), findsOneWidget);
+    expect(find.byKey(ValueKey('detail:hero-$utamaId')), findsOneWidget);
 
     await _flushDriftCloseTimer(tester);
   });
@@ -294,11 +314,13 @@ void main() {
     expect(find.byKey(const ValueKey('home:carousel')), findsOneWidget);
 
     // Geser ke Keluarga → selected berubah → kategori ikut.
-    // (drag −350: −200 tak lewati threshold snap di HomeScreen penuh;
-    // fling 800px/s lompat 2 halaman → kartu Kelola. Terbukti probe.)
-    await tester.drag(
+    // v1.32: fling -350/1000 (drag presisi snap-balik sejak kartu 188px;
+    // -350 di HomeScreen penuh agar lewati threshold; fling -200/1000 =
+    // 1 halaman, terbukti probe — tak lompat ke Kelola).
+    await tester.fling(
       find.byKey(const ValueKey('home:carousel')),
       const Offset(-350, 0),
+      1000,
     );
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 50));
@@ -336,23 +358,29 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
 
-    // Geser ke Keluarga dulu, lalu tap CTA kartu tampil.
-    // (drag −350: −200 tak lewati threshold snap di HomeScreen penuh;
-    // fling 800px/s lompat 2 halaman → kartu Kelola. Terbukti probe.)
-    await tester.drag(
+    // v1.32: CTA kartu DIHAPUS — pintu catat scoped = grid 'Catat
+    // keluar' (ikut filter Keluarga) + form tampilkan 'Catat ke'.
+    // (fling -350/1000: lewati threshold snap HomeScreen penuh; fling
+    // -200/1000 = 1 halaman, terbukti probe — tak lompat ke Kelola.)
+    await tester.fling(
       find.byKey(const ValueKey('home:carousel')),
       const Offset(-350, 0),
+      1000,
     );
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
     expect(find.text('Keluarga'), findsOneWidget);
-    await tester.tap(find.widgetWithText(FilledButton, '+ Catat keluar').last);
+    // Grid Beranda → Catat keluar (filter = Keluarga).
+    await tester.tap(find.text('Catat keluar'));
     await tester.pump();
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
     expect(find.byType(TxFormScreen), findsOneWidget);
+    // Form TERLIHAT catat ke dompet mana (v1.32, request user).
+    expect(find.text('Catat ke'), findsOneWidget);
+    expect(find.text('Keluarga'), findsWidgets);
     // Isi nominal + simpan (kategori default pertama).
     await tester.enterText(
       find.byType(TextField).first,

@@ -15,7 +15,7 @@ import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../display.dart';
 import '../screens/accounts_screen.dart';
-import '../screens/tx_form_screen.dart';
+import '../screens/account_detail_screen.dart';
 
 /// Carousel kartu dompet Beranda (v1.29): gantikan hero gabungan +
 /// strip chip. Satu halaman = satu kartu = satu dompet; kartu tampil
@@ -24,7 +24,7 @@ import '../screens/tx_form_screen.dart';
 /// Tiap kartu = mesh identitas v1.28 + label nama dompet + saldo
 /// per-dompet ([accountBalanceProvider]) + CTA catat. Dots = indikator
 /// halaman (v1.30): tiap dompet + kartu Kelola dapat 1 dot, tap dot =
-/// lompat halaman; halaman TERAKHIR = kartu Kelola (gear, tap → 
+/// lompat halaman; halaman TERAKHIR = kartu Kelola (gear, tap →
 /// AccountsScreen); kosong (semua arsip) = empty-state + Kelola.
 class AccountCarousel extends ConsumerStatefulWidget {
   const AccountCarousel({super.key});
@@ -92,8 +92,7 @@ class _AccountCarouselState extends ConsumerState<AccountCarousel> {
           index = 0;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
-              ref.read(selectedAccountProvider.notifier).state =
-                  list.first.id;
+              ref.read(selectedAccountProvider.notifier).state = list.first.id;
             }
           });
         }
@@ -115,7 +114,9 @@ class _AccountCarouselState extends ConsumerState<AccountCarousel> {
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
-              height: 264,
+              // v1.32: 264→188 (CTA 52 + spacer 24 hilang, kartu fokus
+              // saldo; audit ulang via rect bila disentuh lagi).
+              height: 188,
               child: PageView.builder(
                 key: const ValueKey('home:carousel'),
                 controller: _ctrl,
@@ -173,6 +174,9 @@ class _AccountCarouselState extends ConsumerState<AccountCarousel> {
 
 /// Satu kartu dompet: salin isi hero mesh (_HeroCard) + label nama.
 /// Saldo = [accountBalanceProvider] (per-dompet, bukan gabungan).
+/// v1.32: tap kartu → [AccountDetailScreen] (request user — detail
+/// dompet: saldo, riwayat, budget, utang, struk, pindah dana, laporan,
+/// pengaturan). Mata toggle tetap overlay (tap-nya tak buka detail).
 class _WalletCard extends ConsumerWidget {
   const _WalletCard({required this.account});
 
@@ -185,7 +189,15 @@ class _WalletCard extends ConsumerWidget {
     final balance = ref.watch(accountBalanceProvider(account.id));
     const white = Colors.white;
 
-    return MeshGradient(
+    // v1.32: tap kartu → detail dompet (request user). [_TapToOpen]
+    // pakai Listener mentah (tak ikut gesture arena) agar drag PageView
+    // bebas; tap = down+up dalam slop. Splash dikorbankan; haptic +
+    // navigasi langsung = feedback.
+    // Key di Container (bukan MeshGradient): PageView ikut hit-test ke
+    // key anak — key di MeshGradient membuat finder key mengembalikan
+    // PageView (rect viewport penuh) sehingga tap/test salah sasaran
+    // (terbukti probe rect: key di MeshGradient = rect 0,0,390,188).
+    return Container(
       key: ValueKey('home:card-${account.id}'),
       margin: const EdgeInsets.fromLTRB(
         AppSpacing.page,
@@ -193,108 +205,154 @@ class _WalletCard extends ConsumerWidget {
         AppSpacing.page,
         0,
       ),
-      padding: AppSpacing.cardPaddingLarge,
-      child: Stack(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Nama dompet (sisakan 48px kanan untuk mata overlay).
-              Padding(
-                padding: const EdgeInsets.only(right: 48),
-                child: Text(
-                  account.name,
-                  style: AppType.labelMuted(context).copyWith(
-                    letterSpacing: 0.8,
-                    color: white.withValues(alpha: 0.85),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+      child: Semantics(
+        button: true,
+        label: 'Detail dompet ${account.name}',
+        child: _TapToOpen(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => AccountDetailScreen(accountId: account.id),
               ),
-              Text(
-                'SALDO SAAT INI',
-                style: AppType.labelMuted(context).copyWith(
-                  letterSpacing: 0.8,
-                  color: white.withValues(alpha: 0.6),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-          const SizedBox(height: AppSpacing.s12),
-          balance.when(
-            loading: () => const AppSkeleton(lines: 1),
-            error: (_, _) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            );
+          },
+          child: MeshGradient(
+            padding: AppSpacing.cardPaddingLarge,
+            child: Stack(
               children: [
-                Text(
-                  'Saldo gagal dimuat.',
-                  style: AppType.balance(
-                    context,
-                  ).copyWith(fontSize: 20, color: white),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Nama dompet (sisakan 48px kanan untuk mata overlay).
+                    Padding(
+                      padding: const EdgeInsets.only(right: 48),
+                      child: Text(
+                        account.name,
+                        style: AppType.labelMuted(context).copyWith(
+                          letterSpacing: 0.8,
+                          color: white.withValues(alpha: 0.85),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      'SALDO SAAT INI',
+                      style: AppType.labelMuted(context).copyWith(
+                        letterSpacing: 0.8,
+                        color: white.withValues(alpha: 0.6),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: AppSpacing.s12),
+                    balance.when(
+                      loading: () => const AppSkeleton(lines: 1),
+                      error: (_, _) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Saldo gagal dimuat.',
+                            style: AppType.balance(
+                              context,
+                            ).copyWith(fontSize: 20, color: white),
+                          ),
+                          const SizedBox(height: AppSpacing.s8),
+                          TextButton(
+                            onPressed: () => ref.invalidate(
+                              accountBalanceProvider(account.id),
+                            ),
+                            child: const Text('Coba lagi'),
+                          ),
+                        ],
+                      ),
+                      data: (b) => FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          hide ? 'Rp••••••' : display.money(b),
+                          style: AppType.balanceHero(
+                            context,
+                          ).copyWith(color: white),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    // kartu fokus saldo; pintu catat = tombol + navbar, grid aksi,
+                    // scan). Spacer s24 ikut dibuang agar kartu ramping.
+                  ],
                 ),
-                const SizedBox(height: AppSpacing.s8),
-                TextButton(
-                  onPressed: () =>
-                      ref.invalidate(accountBalanceProvider(account.id)),
-                  child: const Text('Coba lagi'),
+                // Mata toggle overlay kanan-atas (bukan sebaris nama):
+                // hemat 33px tinggi baris → kartu muat viewport 188px.
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: AppIconButton(
+                    icon: hide
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    tooltip: hide ? 'Tampilkan saldo' : 'Sembunyikan saldo',
+                    color: white.withValues(alpha: 0.92),
+                    bordered: false,
+                    onPressed: () =>
+                        ref.read(settingsServiceProvider).setHideBalance(!hide),
+                  ),
                 ),
               ],
             ),
-            data: (b) => FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                hide ? 'Rp••••••' : display.money(b),
-                style: AppType.balanceHero(context).copyWith(color: white),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
           ),
-          const SizedBox(height: AppSpacing.s24),
-          SizedBox(
-            width: double.infinity,
-            height: AppSpacing.ctaHeight,
-            child: FilledButton(
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const TxFormScreen(startAsExpense: true),
-                  ),
-                );
-              },
-              style: FilledButton.styleFrom(
-                backgroundColor: white,
-                foregroundColor: Theme.of(context).colorScheme.primary,
-              ),
-              child: const Text(
-                '+ Catat keluar',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-          ],
-          ),
-          // Mata toggle overlay kanan-atas (bukan sebaris nama):
-          // hemat 33px tinggi baris → kartu muat viewport 264px.
-          Positioned(
-            top: 0,
-            right: 0,
-            child: AppIconButton(
-              icon: hide
-                  ? Icons.visibility_outlined
-                  : Icons.visibility_off_outlined,
-              tooltip: hide ? 'Tampilkan saldo' : 'Sembunyikan saldo',
-              color: white.withValues(alpha: 0.92),
-              bordered: false,
-              onPressed: () =>
-                  ref.read(settingsServiceProvider).setHideBalance(!hide),
-            ),
-          ),
-        ],
+        ),
       ),
+    );
+  }
+}
+
+/// Tap-tanpa-arena untuk kartu di dalam PageView (v1.32).
+///
+/// [Listener] mentah tak mendaftarkan recognizer → gesture arena
+/// PageView tak terganggu (drag bebas). Tap = down+up dalam slop 18px
+/// tanpa gerakan berlebih; geser = pointer bergerak jauh → onTap tak
+/// fire. Mata toggle (AppIconButton di dalam) tetap terima tap-nya
+/// sendiri karena hit-test anak lebih dulu; Listener induk hanya catat
+/// posisi.
+class _TapToOpen extends StatefulWidget {
+  const _TapToOpen({required this.onTap, required this.child});
+
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  State<_TapToOpen> createState() => _TapToOpenState();
+}
+
+class _TapToOpenState extends State<_TapToOpen> {
+  Offset? _down;
+
+  /// Batas gerak tap (= kTouchSlop 18 + 8 toleransi; konstanta lokal agar
+  /// tak tambah import gestures hanya untuk ini).
+  static const _slop = 26.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      onPointerDown: (e) => _down = e.position,
+      onPointerMove: (e) {
+        // Geser jauh = bukan tap (batalkan; PageView yang tangani).
+        if (_down != null && (e.position - _down!).distance > _slop) {
+          _down = null;
+        }
+      },
+      onPointerUp: (e) {
+        final d = _down;
+        _down = null;
+        if (d != null && (e.position - d).distance <= _slop) {
+          widget.onTap();
+        }
+      },
+      onPointerCancel: (_) => _down = null,
+      child: widget.child,
     );
   }
 }
@@ -313,96 +371,81 @@ class _ManageCard extends StatelessWidget {
     // Dua jalur tap alami (area kartu via InkWell + CTA via FilledButton);
     // tanpa Semantics luar agar CTA tetap terbaca screen reader.
     return Container(
-        key: const ValueKey('home:card-manage'),
-        margin: const EdgeInsets.fromLTRB(
-          AppSpacing.page,
-          AppSpacing.s24,
-          AppSpacing.page,
-          0,
-        ),
-        padding: AppSpacing.cardPaddingLarge,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceOf(context),
-          borderRadius: AppRadius.cardAll,
-          border: Border.all(color: AppColors.borderOf(context)),
-          boxShadow: AppShadows.card(context),
-        ),
-        child: InkWell(
-          onTap: () {
-            HapticFeedback.selectionClick();
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const AccountsScreen()),
-            );
-          },
-          borderRadius: AppRadius.cardAll,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: scheme.primary.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.settings_outlined,
-                      size: 28,
-                      color: scheme.primary,
-                    ),
+      key: const ValueKey('home:card-manage'),
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.page,
+        AppSpacing.s24,
+        AppSpacing.page,
+        0,
+      ),
+      padding: AppSpacing.cardPaddingLarge,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceOf(context),
+        borderRadius: AppRadius.cardAll,
+        border: Border.all(color: AppColors.borderOf(context)),
+        boxShadow: AppShadows.card(context),
+      ),
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const AccountsScreen()));
+        },
+        borderRadius: AppRadius.cardAll,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: scheme.primary.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(width: AppSpacing.s12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Kelola dompet',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: scheme.onSurface,
-                              ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: AppSpacing.s4),
-                        Text(
-                          'Tambah, susun, arsipkan',
-                          style: AppType.secondary(context),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                height: AppSpacing.ctaHeight,
-                child: FilledButton(
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const AccountsScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    'Buka kelola',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                  child: Icon(
+                    Icons.settings_outlined,
+                    size: 28,
+                    color: scheme.primary,
                   ),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: AppSpacing.s12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Kelola dompet',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: scheme.onSurface,
+                            ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: AppSpacing.s4),
+                      Text(
+                        'Tambah, susun, arsipkan',
+                        style: AppType.secondary(context),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            // v1.32: CTA "Buka kelola" DIHAPUS (konsisten dgn CTA kartu
+            // saldo; tap kartu = kelola, parity tinggi terjaga via
+            // mainAxisAlignment.center).
+          ],
         ),
-      );
+      ),
+    );
   }
 }
 

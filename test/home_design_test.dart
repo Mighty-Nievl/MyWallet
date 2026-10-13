@@ -24,6 +24,7 @@ import 'package:mywallet/ui/components/app_feedback.dart';
 import 'package:mywallet/ui/components/app_month_nav.dart';
 import 'package:mywallet/ui/components/setting_row.dart';
 import 'package:mywallet/ui/design/app_colors.dart';
+import 'package:mywallet/ui/screens/account_detail_screen.dart';
 import 'package:mywallet/ui/screens/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -169,8 +170,9 @@ void main() {
     expect(find.text('Sisa budget'), findsNothing);
     expect(find.textContaining('vs '), findsNothing);
     expect(find.textContaining('dari Rp'), findsNothing);
-    // Hero minimalis: CUMA saldo + 1 CTA "Catat keluar".
-    expect(find.text('+ Catat keluar'), findsOneWidget);
+    // v1.32: CTA "+ Catat keluar" DIHAPUS total (kartu fokus saldo).
+    // Pintu catat = tombol + navbar, grid aksi, scan.
+    expect(find.text('+ Catat keluar'), findsNothing);
     expect(find.text('+ Pemasukan'), findsNothing);
 
     if (_runGolden) {
@@ -182,18 +184,17 @@ void main() {
     await _flushDriftCloseTimer(tester);
   });
 
-  // Regresi kritik brutal v1.14.x (1): hero hanya punya DUA aksi
-  // pencatatan dengan tujuan berbeda — pill "Detail" (alias tab Laporan)
-  // dihapus; "+ Catat keluar" membuka form pengeluaran,
-  // "+ Pemasukan" membuka form pemasukan (v1.13.x keduanya membuka
-  // form pengeluaran yang sama).
-  testWidgets('hero: tombol catat keluar membuka form pengeluaran', (
-    tester,
-  ) async {
+  // v1.32: CTA kartu DIHAPUS — tap kartu = detail dompet
+  // (AccountDetailScreen), bukan form. Pintu catat = tombol + navbar,
+  // grid aksi, scan. Gotcha route-stack (v1.27): 'SALDO SAAT INI' hidup
+  // di DUA route → findsWidgets + tap via card-key.
+  testWidgets('kartu: tap kartu buka detail dompet (v1.32)', (tester) async {
     final db = await _newDb(tester);
+    int utamaId = 0;
     await tester.runAsync(() async {
       await _loadFonts();
       await _seed(db);
+      utamaId = await _utama(db);
     });
 
     await tester.pumpWidget(
@@ -209,8 +210,14 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
 
-    expect(find.text('+ Catat keluar'), findsOneWidget);
-    expect(find.text('+ Pemasukan'), findsNothing);
+    // Tap kartu saldo (key per-dompet) → layar detail terbuka.
+    await tester.tap(find.byKey(ValueKey('home:card-$utamaId')));
+    await tester.pump();
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(find.byType(AccountDetailScreen), findsOneWidget);
+    expect(find.text('Terakhir di dompet ini'), findsOneWidget);
 
     await _flushDriftCloseTimer(tester);
   });
