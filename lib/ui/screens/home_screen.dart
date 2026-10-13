@@ -12,7 +12,6 @@ import '../components/app_month_nav.dart';
 import '../components/app_progress.dart';
 import '../components/app_section.dart';
 import '../components/category_glyph.dart';
-import '../components/mesh_gradient.dart';
 import '../design/app_colors.dart';
 import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
@@ -20,10 +19,9 @@ import '../design/app_typography.dart';
 import '../display.dart';
 import '../format.dart';
 import '../greeting.dart';
-import '../widgets/account_picker.dart';
+import '../widgets/account_carousel.dart';
 import '../widgets/home_feature_grid.dart';
 import '../widgets/tx_tile.dart';
-import 'accounts_screen.dart';
 import 'history_screen.dart';
 import 'profile_screen.dart';
 import 'reports_screen.dart';
@@ -45,7 +43,9 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final month = ref.watch(selectedMonthProvider);
-    final balance = ref.watch(balanceProvider);
+    // v1.29: balanceProvider menganggur di Beranda (carousel pakai
+    // accountBalanceProvider per-dompet). Provider dipertahankan —
+    // dipakai debug + kontrak angka gabungan tetap ada.
     final dayTotals = ref.watch(dayTotalsProvider);
     final byCat = ref.watch(monthExpenseByCategoryProvider);
     final display = ref.watch(displayPrefsProvider);
@@ -94,26 +94,12 @@ class HomeScreen extends ConsumerWidget {
             Expanded(
               child: CustomScrollView(
                 slivers: [
-                  // Hero minimalis (redesign v1.24): kartu putih bersih,
-                  // saldo 48px + 1 CTA solid — elemen dominan pertama.
+                  // v1.29: carousel kartu per-dompet gantikan hero
+                  // gabungan + strip chip (satu kontrol: kartu tampil
+                  // = filter aktif).
                   SliverToBoxAdapter(
                     key: const ValueKey('home:hero-slot'),
-                    child: _HeroCard(balance: balance),
-                  ),
-                  // v1.25: pemilih dompet (Semua + chip + Kelola).
-                  // 1 baris ramping.
-                  SliverToBoxAdapter(
-                    key: const ValueKey('home:accounts'),
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.s12),
-                      child: AccountPicker(
-                        onManage: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const AccountsScreen(),
-                          ),
-                        ),
-                      ),
-                    ),
+                    child: const AccountCarousel(),
                   ),
                   // v1.26: menu fitur 4x2 (aksi + lihat) di bawah dompet,
                   // di atas nav bulan — Beranda jadi pintu masuk semua.
@@ -211,128 +197,6 @@ Widget _pad(Widget child, {double top = 0}) {
     padding: EdgeInsets.fromLTRB(AppSpacing.page, top, AppSpacing.page, 0),
     child: child,
   );
-}
-
-/// Hero mesh cair (identitas v1.28): MeshGradient ikut aksen + teks
-/// putih + CTA putih solid. CUMA saldo sebagai fokus tunggal + 1 CTA.
-/// Masuk/Keluar + budget ledger + tombol ganda DIHAPUS (tetap).
-///
-/// Kontrak test: key 'home:hero', 'SALDO SAAT INI' (1x), mata toggle,
-/// '+ Catat keluar' (1x). Kontras putih ≥4.5:1 di 6 aksen × 2 tema
-/// dikunci visual_identity_test (bukan eyeball).
-class _HeroCard extends ConsumerWidget {
-  const _HeroCard({required this.balance});
-  final AsyncValue<int> balance;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final hide = ref.watch(hideBalanceProvider).value ?? false;
-    final display = ref.watch(displayPrefsProvider);
-    const white = Colors.white;
-
-    return MeshGradient(
-      key: const ValueKey('home:hero'),
-      margin: const EdgeInsets.fromLTRB(
-        AppSpacing.page,
-        AppSpacing.s24,
-        AppSpacing.page,
-        0,
-      ),
-      padding: AppSpacing.cardPaddingLarge,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Label + mata toggle (putih di atas mesh).
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'SALDO SAAT INI',
-                  style: AppType.labelMuted(context).copyWith(
-                    letterSpacing: 0.8,
-                    color: white.withValues(alpha: 0.85),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              // v1.24.8: mata via AppIconButton polos (satu komponen,
-              // 48px token + haptic, bukan manual 44px).
-              AppIconButton(
-                icon: hide
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
-                tooltip: hide ? 'Tampilkan saldo' : 'Sembunyikan saldo',
-                color: white.withValues(alpha: 0.92),
-                bordered: false,
-                onPressed: () =>
-                    ref.read(settingsServiceProvider).setHideBalance(!hide),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.s12),
-          // Saldo RAKSASA dominan (48px, lebih besar dari v1.23 40px)
-          balance.when(
-            loading: () => const AppSkeleton(lines: 1),
-            error: (e, _) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Saldo gagal dimuat.',
-                  style: AppType.balance(
-                    context,
-                  ).copyWith(fontSize: 20, color: white),
-                ),
-                const SizedBox(height: AppSpacing.s8),
-                TextButton(
-                  onPressed: () => ref.invalidate(balanceProvider),
-                  child: const Text('Coba lagi'),
-                ),
-              ],
-            ),
-            data: (b) => FittedBox(
-              // v1.24.2: scaleDown agar nominal miliaran mengecil,
-              // bukan kepotong '...' (kritik brutal).
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                hide ? 'Rp••••••' : display.money(b),
-                style: AppType.balanceHero(context).copyWith(color: white),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.s24),
-          // CTA tunggal: Catat pengeluaran — kapsul PUTIH solid di atas
-          // mesh (identitas v1.28). Teks = primary gelap via colorScheme
-          // (bukan putih hardcode — kontras dikunci test semua aksen).
-          SizedBox(
-            width: double.infinity,
-            height: AppSpacing.ctaHeight,
-            child: FilledButton(
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const TxFormScreen(startAsExpense: true),
-                  ),
-                );
-              },
-              style: FilledButton.styleFrom(
-                backgroundColor: white,
-                foregroundColor: Theme.of(context).colorScheme.primary,
-              ),
-              child: const Text(
-                '+ Catat keluar',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// Top kategori PROPORSIONAL terhadap total (bukan terhadap maksimum):

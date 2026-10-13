@@ -430,7 +430,8 @@ void main() {
       };
       for (final t in temas.entries) {
         // Kontrak kode: bg = scheme.primary, fg = scheme.onPrimary
-        // (home_screen.dart _HeroCard). Ukur pasangan yang sama.
+        // (kartu carousel _WalletCard, pola salinan _HeroCard v1.28).
+        // Ukur pasangan yang sama.
         final r = ratio(
           t.value.colorScheme.onPrimary,
           t.value.colorScheme.primary,
@@ -763,9 +764,9 @@ void main() {
     );
   });
 
-  // v1.25: 1 dompet = strip penuh tapi ramping (Semua + Utama +
-  // Kelola, 1 baris horizontal). Konsisten + Kelola reachable.
-  testWidgets('pemilih dompet hilang bila 1 dompet (v1.25)', (tester) async {
+  // v1.29: carousel gantikan hero + chip. 1 dompet = 1 kartu (Utama),
+  // dots sembunyi, tombol Kelola reachable.
+  testWidgets('carousel 1 dompet: kartu + Kelola (v1.29)', (tester) async {
     final db = await _newDb(tester);
     await tester.runAsync(() async {
       await _loadFonts();
@@ -784,16 +785,18 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
     expect(find.text('SALDO SAAT INI'), findsOneWidget);
-    expect(find.byKey(const ValueKey('home:accounts')), findsOneWidget);
-    // Strip ramping 1 baris: Semua + Utama + Kelola.
-    expect(find.text('Semua'), findsOneWidget);
-    expect(find.text('Kelola'), findsOneWidget);
+    expect(find.byKey(const ValueKey('home:carousel')), findsOneWidget);
     expect(find.text('Utama'), findsOneWidget);
+    expect(find.text('Kelola dompet'), findsOneWidget);
+    // Chip era lama sudah tidak ada.
+    expect(find.text('Semua'), findsNothing);
+    expect(find.byKey(const ValueKey('home:accounts')), findsNothing);
     await _flushDriftCloseTimer(tester);
   });
 
-  // v1.25: 2 dompet = chip Semua + nama + Kelola; tap = filter jalan.
-  testWidgets('pemilih dompet 2 dompet: tap filter (v1.25)', (tester) async {
+  // v1.29: geser kartu = ganti filter (test geser standalone ada di
+  // account_carousel_test — di sini cukup presence 2 kartu + dots).
+  testWidgets('carousel 2 dompet: dots + nama kedua (v1.29)', (tester) async {
     final db = await _newDb(tester);
     await tester.runAsync(() async {
       await _loadFonts();
@@ -814,14 +817,10 @@ void main() {
     for (var i = 0; i < 60; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
-    expect(find.text('Semua'), findsOneWidget);
-    expect(find.text('Keluarga'), findsOneWidget);
-    expect(find.text('Kelola'), findsOneWidget);
-    // Tap Keluarga → chip terseleksi (filter global aktif).
-    await tester.tap(find.text('Keluarga'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
-    expect(find.text('Keluarga'), findsOneWidget);
+    expect(find.byKey(const ValueKey('home:carousel')), findsOneWidget);
+    expect(find.byKey(const ValueKey('home:dots-0')), findsOneWidget);
+    expect(find.byKey(const ValueKey('home:dots-1')), findsOneWidget);
+    expect(find.text('Semua'), findsNothing);
     await _flushDriftCloseTimer(tester);
   });
 }
