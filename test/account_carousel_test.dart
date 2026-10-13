@@ -282,9 +282,20 @@ void main() {
       '25000',
     );
     await tester.pump(const Duration(milliseconds: 200));
-    // CI Ubuntu (font DejaVu) menggeser layout → tombol bisa di bawah
-    // lipatan ListView form. Scroll ke tampil dulu (pola ensureVisible).
+    // Ekor form malas: tombol Simpan anak TERAKHIR ListView form
+    // (tx_form_screen.dart). Di font CI (DejaVu, lebih tinggi dari
+    // Segoe) ia belum di-build → finder nol. Gulir-cari sampai ketemu
+    // (maks 10 ayunan), baru tap. Terbukti via probe viewport-pendek.
+    final formList = find.descendant(
+      of: find.byType(TxFormScreen),
+      matching: find.byType(ListView),
+    );
     final saveBtn = find.text('Simpan Transaksi');
+    for (var i = 0; i < 10; i++) {
+      if (saveBtn.evaluate().isNotEmpty) break;
+      await tester.fling(formList, const Offset(0, -500), 1000);
+      await tester.pump(const Duration(milliseconds: 300));
+    }
     await tester.ensureVisible(saveBtn);
     await tester.pump(const Duration(milliseconds: 200));
     await tester.tap(saveBtn);
