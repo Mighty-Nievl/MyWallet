@@ -236,6 +236,7 @@ void main() {
   testWidgets('integrasi: CTA kartu kedua → tx dompet kedua (v1.29)',
       (tester) async {
     final db = await _newDb(tester);
+    try {
     await tester.runAsync(() async {
       await _loadFonts();
       final utama = (await db.select(
@@ -281,7 +282,12 @@ void main() {
       '25000',
     );
     await tester.pump(const Duration(milliseconds: 200));
-    await tester.tap(find.text('Simpan Transaksi'));
+    // CI Ubuntu (font DejaVu) menggeser layout → tombol bisa di bawah
+    // lipatan ListView form. Scroll ke tampil dulu (pola ensureVisible).
+    final saveBtn = find.text('Simpan Transaksi');
+    await tester.ensureVisible(saveBtn);
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(saveBtn);
     for (var i = 0; i < 30; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
@@ -297,7 +303,8 @@ void main() {
       txs.any((t) => t.accountId == keluarga.id && t.amount == 25000),
       isTrue,
     );
-
-    await _flushDriftCloseTimer(tester);
+    } finally {
+      await _flushDriftCloseTimer(tester);
+    }
   });
 }
