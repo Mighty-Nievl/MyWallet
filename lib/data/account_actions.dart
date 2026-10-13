@@ -152,6 +152,27 @@ Future<void> deleteAccount(AppDatabase db, int accountId) async {
   await (db.delete(db.accounts)..where((a) => a.id.equals(accountId))).go();
 }
 
+// ---------- Urutan dompet (v1.29, carousel) ----------
+
+/// Tulis ulang [sortOrder] sesuai urutan [orderedIds] (index 0 = pertama).
+/// Id tak dikenal diabaikan; [updatedAt] ikut naik agar urutan ikut sync.
+/// Dipakai drag-reorder layar Kelola.
+Future<void> reorderAccounts(AppDatabase db, List<int> orderedIds) async {
+  for (var i = 0; i < orderedIds.length; i++) {
+    final id = orderedIds[i];
+    final exists = await (db.select(
+      db.accounts,
+    )..where((a) => a.id.equals(id))).getSingleOrNull();
+    if (exists == null) continue;
+    await (db.update(db.accounts)..where((a) => a.id.equals(id))).write(
+      AccountsCompanion(
+        sortOrder: drift.Value(i),
+        updatedAt: drift.Value(syncNow()),
+      ),
+    );
+  }
+}
+
 // ---------- Wrapper WidgetRef (untuk UI) ----------
 
 Future<String> moveTransfer(
