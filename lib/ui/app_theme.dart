@@ -166,7 +166,7 @@ class AppTheme {
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.pillAll),
         ),
       ),
-      // Dialog + bottom sheet: kartu 24 ramah (v1.28).
+      // Dialog + bottom sheet: kartu 16 ramah (v1.30.1, dulu 24).
       dialogTheme: DialogThemeData(
         shape: const RoundedRectangleBorder(borderRadius: AppRadius.cardAll),
       ),

@@ -5,8 +5,8 @@ import '../design/app_radius.dart';
 import '../design/app_shadows.dart';
 import '../design/app_spacing.dart';
 
-/// Kartu melayang (identitas v1.28): permukaan + border tipis +
-/// bayangan lembut menyebar + radius 24 ramah.
+/// Kartu melayang (identitas v1.28, radius 16 sejak v1.30.1): permukaan +
+/// border tipis + bayangan lembut menyebar + radius ramah.
 /// Satu sentuh di sini = Budget/Reports/Utang/Kategori/Riwayat ikut
 /// premium. Public API TETAP: [child] + [padding] + [margin].
 class AppCard extends StatelessWidget {

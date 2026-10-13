@@ -202,11 +202,13 @@ class SettingsGroup extends StatelessWidget {
   }
 }
 
-/// Header sub-halaman: tombol kembali berboder + judul besar.
+/// Header sub-halaman: tombol kembali polos + judul besar.
 /// Bahasa yang sama dengan header custom STEP 1-3.
 ///
 /// v1.24.7: tombol kembali via AppIconButton shared (48px + haptic,
 /// bukan manual 40px) — satu keluarga dengan AppHeader.
+/// v1.30.1: kembali = polos tanpa border (permintaan user 2026-10-13) —
+/// samakan dengan tombol header lain (gear/chevron/mata).
 /// [actions]: tombol aksi trailing opsional (form Catat: scan + hapus).
 class BackHeader extends StatelessWidget {
   const BackHeader({super.key, required this.title, this.actions = const []});
@@ -222,6 +224,9 @@ class BackHeader extends StatelessWidget {
           icon: Icons.arrow_back,
           tooltip: 'Kembali',
           onPressed: () => Navigator.maybePop(context),
+          // v1.30.1: tombol kembali polos (tanpa border) — permintaan
+          // user 2026-10-13, samakan dgn tombol header lain.
+          bordered: false,
         ),
         const SizedBox(width: AppSpacing.s12),
         Expanded(

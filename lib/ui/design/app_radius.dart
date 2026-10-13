@@ -11,12 +11,14 @@ abstract final class AppRadius {
   static const double xl = 16;
   static const double xxl = 20;
 
-  /// Kartu melayang identitas baru (v1.28): 24 — lega + modern.
+  /// Kartu melayang identitas baru (v1.28, dirampingkan v1.30.1): 16 —
+  /// tetap ramah tapi tak "kegedean" (keluhan user 2026-10-13).
   /// Token BARU (nilai lama tak diubah agar tak bocor ke 10+ layar).
-  static const double card = 24;
+  static const double card = 16;
 
-  /// Thumbnail konsisten (v1.28): 16 di semua list.
-  static const double thumb = 16;
+  /// Thumbnail konsisten (v1.28, dirampingkan v1.30.1): 12 di semua
+  /// list (keluhan rounded global kegedean 2026-10-13).
+  static const double thumb = 12;
 
   /// Bentuk kapsul penuh — tombol, search, chip, tag (v1.28).
   static const double pill = 999;

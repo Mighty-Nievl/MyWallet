@@ -156,17 +156,20 @@ void main() {
 
   // Audit: token pill + kartu + thumb ada dan bernilai benar.
   // Menangkap regresi "token diubah diam-diam".
+  // v1.30.1: kartu 24→16, thumb 16→12 (keluhan rounded kegedean).
   test('audit: token radius pill + kartu + thumb terkunci', () {
     expect(AppRadius.pill, 999);
-    expect(AppRadius.card, 24);
-    expect(AppRadius.thumb, 16);
+    expect(AppRadius.card, 16);
+    expect(AppRadius.thumb, 12);
   });
 
   // Mesh utang (v1.30): putih vs base status + blend blob >= 4.5:1.
   // Base = lightness 0.26 (light) / 0.22 (dark) dari statusColor —
   // cermin formula _OverviewCard Budget. Status utang = error bila ada
   // sisa utang aktif, selain itu primary. Ukur keduanya (terburuk menang).
-  testWidgets('mesh utang: putih vs base status + blend >= 4.5:1', (tester) async {
+  testWidgets('mesh utang: putih vs base status + blend >= 4.5:1', (
+    tester,
+  ) async {
     Color gradBase(Color status, bool dark) {
       return HSLColor.fromColor(
         status,

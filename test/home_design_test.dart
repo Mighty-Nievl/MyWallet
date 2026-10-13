@@ -594,10 +594,7 @@ void main() {
     // v1.26: grid menu mendorong seksi recent ke bawah lipatan
     // (CustomScrollView lazy) → seret dulu sebelum assert.
     for (var i = 0; i < 5; i++) {
-      await tester.drag(
-        find.byType(CustomScrollView),
-        const Offset(0, -400),
-      );
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -400));
       await tester.pump(const Duration(milliseconds: 100));
     }
 
@@ -640,10 +637,7 @@ void main() {
     // menjamin sejajar (toleransi 1px render).
     // v1.26: seret dulu (tile recent di bawah lipatan grid menu).
     for (var i = 0; i < 5; i++) {
-      await tester.drag(
-        find.byType(CustomScrollView),
-        const Offset(0, -400),
-      );
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -400));
       await tester.pump(const Duration(milliseconds: 100));
     }
     final r45 = tester.getRect(find.text('-Rp45.000'));
@@ -681,10 +675,7 @@ void main() {
     // Baris ringkasan baru: "Masuk ... · Keluar ..." (kapital, 1 baris).
     // v1.26: seret dulu (strip recent di bawah lipatan grid menu).
     for (var i = 0; i < 5; i++) {
-      await tester.drag(
-        find.byType(CustomScrollView),
-        const Offset(0, -400),
-      );
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -400));
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(find.textContaining('Masuk +Rp'), findsOneWidget);
@@ -730,11 +721,9 @@ void main() {
     await _flushDriftCloseTimer(tester);
   });
 
-  // v1.24.8: tombol header polos — gear + chevron + mata tanpa kotak,
-  // tombol kembali tetap berboder (butuh body navigasi).
-  testWidgets('tombol header polos, tombol kembali berboder (v1.24.8)', (
-    tester,
-  ) async {
+  // v1.24.8: tombol header polos — gear + chevron + mata tanpa kotak.
+  // v1.30.1: tombol kembali IKUT polos (permintaan user 2026-10-13).
+  testWidgets('tombol header polos termasuk kembali (v1.30.1)', (tester) async {
     // Gear (AppHeader via Beranda) = polos.
     final gear = AppIconButton(
       icon: Icons.settings_outlined,
@@ -742,7 +731,7 @@ void main() {
       tooltip: 'Pengaturan',
       bordered: false,
     );
-    // Kembali (BackHeader) = default berboder.
+    // Kembali (BackHeader) = polos sejak v1.30.1.
     const back = BackHeader(title: 'Kembali');
     await tester.pumpWidget(
       MaterialApp(
@@ -755,12 +744,28 @@ void main() {
     // Polos: tidak ada Container berboder di atas IconButton gear.
     final gearBtn = find.byTooltip('Pengaturan');
     expect(gearBtn, findsOneWidget);
-    // Berboder: BackHeader masih pakai AppIconButton default (kotak ada).
+    // Kembali polos: BackHeader pakai AppIconButton bordered:false.
     expect(find.text('Kembali'), findsOneWidget);
-    // Default flag tetap true — pemakai lama tidak berubah visual.
+    // Default flag tetap true — pemakai lama (aksi form) tak berubah.
     expect(
       const AppIconButton(icon: Icons.add, onPressed: null).bordered,
       isTrue,
+    );
+    // Kembali tanpa kotak: hanya 1 IconButton arrow_back, tanpa
+    // Container border di atasnya (polos = IconButton langsung).
+    final backBtn = find.byTooltip('Kembali');
+    expect(backBtn, findsOneWidget);
+    expect(
+      find.ancestor(
+        of: backBtn,
+        matching: find.byWidgetPredicate(
+          (w) =>
+              w is Container &&
+              w.decoration is BoxDecoration &&
+              (w.decoration as BoxDecoration).border != null,
+        ),
+      ),
+      findsNothing,
     );
   });
 
@@ -827,17 +832,50 @@ void main() {
     // v1.30: 2 dompet + auto-select kartu pertama (Keluarga, alfabetis) =
     // judul seksi sebut scope. Pola gulir ikut test kategori-ganda
     // (grid v1.26 mendorong judul ke bawah lipatan).
-    await tester.ensureVisible(
-      find.text('Pengeluaran bulan ini · Keluarga'),
-    );
+    await tester.ensureVisible(find.text('Pengeluaran bulan ini · Keluarga'));
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
-    expect(
-      find.text('Pengeluaran bulan ini · Keluarga'),
-      findsOneWidget,
-    );
+    expect(find.text('Pengeluaran bulan ini · Keluarga'), findsOneWidget);
     expect(find.text('Pengeluaran bulan ini'), findsNothing);
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // Rapat kartu (keluhan 2026-10-13, v1.30.1): tiap baris Terakhir
+  // dicatat = AppCard → antar kartu wajib napas >= 8px (s8).
+  // Seed: 'Makan siang' + 'Ojek', keduanya hari ini (satu grup).
+  testWidgets('jarak antar kartu Terakhir dicatat lega s8 (v1.30.1)', (
+    tester,
+  ) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(() async {
+      await _loadFonts();
+      await _seed(db);
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    // v1.26: seret dulu (tile recent di bawah lipatan grid menu).
+    for (var i = 0; i < 5; i++) {
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -400));
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    final rMkn = tester.getRect(find.text('Makan siang'));
+    final rOjk = tester.getRect(find.text('Ojek'));
+    final atas = rMkn.top < rOjk.top ? rMkn : rOjk;
+    final bawah = rMkn.top < rOjk.top ? rOjk : rMkn;
+    expect(bawah.top - atas.bottom, greaterThanOrEqualTo(8.0));
+
     await _flushDriftCloseTimer(tester);
   });
 }

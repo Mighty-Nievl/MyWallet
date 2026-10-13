@@ -20,6 +20,20 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.30.1',
+    date: '14 Okt 2026',
+    user:
+        'Daftar "Terakhir dicatat" kini lebih lega dibaca — tiap kartu '
+        'diberi jarak. Bentuk kartu dan gambar ikon di seluruh aplikasi '
+        'dibuat lebih ramping agar tidak terlalu membulat. Tombol kembali '
+        'di semua halaman kini tampil polos tanpa kotak.',
+    tech:
+        'RecentList Padding s8 antar-TxTile + test rect >=8px; token card '
+        '24→16 + thumb 16→12; BackHeader + AppHeader.onBack bordered:false '
+        '(aksi form scan/hapus tetap kotak); golden regen.',
+    breaking: null,
+  ),
+  (
     version: 'v1.30.0',
     date: '14 Okt 2026',
     user:

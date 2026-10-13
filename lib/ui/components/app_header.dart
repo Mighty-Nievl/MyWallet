@@ -4,10 +4,11 @@ import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import 'app_feedback.dart';
 
-/// Header layar: judul besar + tombol aksi kotak.
+/// Header layar: judul besar + tombol aksi polos.
 ///
 /// Bahasa yang sama di Beranda (pinned), Riwayat, Budget, Laporan.
 /// Tombol aksi via [AppIconButton] — radius ikut token, sentuh 48px.
+/// v1.30.1: kembali juga polos (permintaan user 2026-10-13).
 class AppHeader extends StatelessWidget {
   const AppHeader({
     super.key,
@@ -41,7 +42,9 @@ class AppHeader extends StatelessWidget {
             icon: Icons.arrow_back,
             onPressed: onBack,
             tooltip: 'Kembali',
-            bordered: true,
+            // v1.30.1: tombol kembali polos (tanpa border) — permintaan
+            // user 2026-10-13, samakan dgn tombol header lain.
+            bordered: false,
           ),
         if (onBack != null) const SizedBox(width: AppSpacing.s8),
         Expanded(

@@ -468,8 +468,7 @@ class _RecentList extends ConsumerWidget {
     final display = ref.watch(displayPrefsProvider);
     // Label dompet hanya bermakna bila >1 dompet (1 dompet = semua baris
     // miliknya, suffix cuma noise).
-    final multiWallet =
-        (ref.watch(accountsProvider).value?.length ?? 0) > 1;
+    final multiWallet = (ref.watch(accountsProvider).value?.length ?? 0) > 1;
     return StreamBuilder<List<TxWithCategory>>(
       stream: db.watchHistory(
         limit: count,
@@ -516,21 +515,29 @@ class _RecentList extends ConsumerWidget {
                   style: AppType.sectionTitle(context).copyWith(fontSize: 14),
                 ),
               ),
-              for (final tx in entries[i].value)
-                TxTile(
-                  tx: tx,
-                  // v1.24.4: tanggal sudah di header grup → sembunyikan
-                  // di tiap baris (rapikan "Ke..." kepotong).
-                  showDate: false,
-                  // v1.30: label dompet (Riwayat & Terakhir catat wajib
-                  // sebut dompet asal bila >1).
-                  showAccount: multiWallet,
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => TxFormScreen(existing: tx),
+              for (final tx in entries[i].value) ...[
+                // Rapat kartu (v1.30.1): tiap baris = kartu => butuh napas
+                // s8 antar kartu (atas kartu kecuali yg pertama di grup).
+                Padding(
+                  padding: EdgeInsets.only(
+                    top: tx == entries[i].value.first ? 0 : AppSpacing.s8,
+                  ),
+                  child: TxTile(
+                    tx: tx,
+                    // v1.24.4: tanggal sudah di header grup → sembunyikan
+                    // di tiap baris (rapikan "Ke..." kepotong).
+                    showDate: false,
+                    // v1.30: label dompet (Riwayat & Terakhir catat wajib
+                    // sebut dompet asal bila >1).
+                    showAccount: multiWallet,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => TxFormScreen(existing: tx),
+                      ),
                     ),
                   ),
                 ),
+              ],
             ],
           ],
         );

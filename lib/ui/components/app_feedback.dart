@@ -30,8 +30,9 @@ class AppIconButton extends StatelessWidget {
   final bool filled;
 
   /// `false` = ikon polos tanpa kotak (tombol header: gear, chevron,
-  /// mata). Tombol kembali + aksi form tetap berboder (butuh body
-  /// karena fungsinya navigasi/aksi, bukan ornamen header).
+  /// mata, kembali). Tombol aksi form (scan/hapus) tetap berboder
+  /// (butuh body karena fungsinya aksi, bukan ornamen header).
+  /// v1.30.1: kembali ikut polos (permintaan user 2026-10-13).
   final bool bordered;
 
   @override
