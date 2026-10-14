@@ -65,24 +65,25 @@ class AppShell extends ConsumerWidget {
       // Tombol Catat menonjol: lingkaran solid overlap di atas bar.
       bottomNavigationBar: SafeArea(
         top: false,
-        // v1.32.1 (koreksi audit UI/UX: "lebar" = bentang HORIZONTAL,
-        // bukan tinggi): full-width 358px → dock kompak 232px centered.
-        // Isi cuma 3 slot (slot tengah = udara) → 70% bar adalah bingkai
-        // kosong. Dock = chrome ringan, + tetap hero 72, target 84×56
-        // >> touchMin 48. Tinggi 48→56: lingkaran overlap -16 jadi FLUSH
-        // bawah (=56) + 16 kepala di atas — rapi.
-        child: Center(
-          child: Container(
-            key: const ValueKey('home:navbar'),
-            width: 232,
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: scheme.surface,
-              borderRadius: AppRadius.cardAll,
-              border: Border.all(color: scheme.outlineVariant),
-              boxShadow: AppShadows.floating(context),
-            ),
-            child: SizedBox(
+        // v1.32.2 (fix blank-screen: Center/Align di bottomNavigationBar
+        // mengembang penuhi slot vertikal Scaffold → body height = 0
+        // (bukti probe: dock tengah 387-457 + body kosong walau header
+        // ada di tree). Row-centered HANYA bungkus horizontal — tinggi
+        // slot = tinggi dock (56+12), body dapat sisa layar.)
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              key: const ValueKey('home:navbar'),
+              width: 232,
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: scheme.surface,
+                borderRadius: AppRadius.cardAll,
+                border: Border.all(color: scheme.outlineVariant),
+                boxShadow: AppShadows.floating(context),
+              ),
+              child: SizedBox(
               height: 56,
               child: Stack(
                 clipBehavior: Clip.none,
@@ -174,8 +175,9 @@ class AppShell extends ConsumerWidget {
               ),
             ),
           ),
-        ),
+        ],
       ),
+    ),
     );
   }
 }

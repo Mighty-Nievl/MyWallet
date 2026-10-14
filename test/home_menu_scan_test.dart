@@ -261,6 +261,14 @@ void main() {
         find.byKey(const ValueKey('home:navbar')),
       );
       expect(barRect.width, lessThanOrEqualTo(232.0));
+      // v1.32.2 (regresi blank-screen: Center/Align di bottomNavigationBar
+      // mengembang penuhi slot vertikal Scaffold → body height = 0.
+      // Bukti probe: dock tengah 387-457 + body kosong walau header ada
+      // di tree. Row-centered hanya bungkus horizontal. Kunci: body ada
+      // + dock di bawah + centered.)
+      expect(find.byKey(const ValueKey('home:header')), findsOneWidget);
+      expect(barRect.bottom, greaterThan(750.0));
+      expect(barRect.center.dx, closeTo(195.0, 2.0));
       // Beranda pensiun dari navbar (redundant: tap-nya dulu no-op).
       expect(find.text('Beranda'), findsNothing);
       // Tab lama + FAB gone (pintu catat tunggal = tombol tengah).

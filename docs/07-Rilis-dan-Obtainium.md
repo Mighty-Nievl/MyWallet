@@ -11,6 +11,7 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 - **v1.31.0** (14 Okt 2026): Kartu riwayat tanpa panah + jarak lega. Kartu saldo fokus angka, ketuk untuk rincian dompet (riwayat, budget, utang, pindah dana, laporan, pengaturan). Form catat jelas ke dompet mana. Tombol + diperbesar, bilah navigasi ramping.
 - **v1.32.0** (14 Okt 2026): Bilah bawah lebih ramping, tombol catat rincian dompet melayang. Rincian dompet punya pengaturan sendiri: ganti nama, saldo awal, arsip, dan tombol dompet dikelola keluarga atau pribadi.
 - **v1.32.1** (14 Okt 2026): Bilah bawah kini dock kompak di tengah (tidak selebar layar), tombol + tetap besar menonjol.
+- **v1.32.2** (14 Okt 2026): Perbaiki layar Beranda yang sempat kosong — konten tampil lagi, bilah bawah tetap ramping di tengah.
 - **v1.28.0** (13 Okt 2026): Identitas visual baru — hero mesh cair ikut aksen, bottom bar melayang, tombol/chip pill, kartu + shadow lembut, overview Budget status mesh. Kontras putih ≥4.5:1 terukur 6 aksen × 2 tema. Logika/provider/query tidak berubah.
 - **v1.27.1** (13 Okt 2026): Tombol Masuk di Beranda sebelum login — ketuk untuk buka Profil lalu masuk Google. Perbaiki jalan login yang tak terlihat saat logged-out.
 - **v1.27.0** (13 Okt 2026): Profil + Keluarga mandiri — pohon akun Beranda → Profil → Keluarga; header avatar + sapaan setelah login (belum login = wordmark tetap); nama panggilan bisa diubah di Profil; Pengaturan jadi 4 grup. 5 regression test.
