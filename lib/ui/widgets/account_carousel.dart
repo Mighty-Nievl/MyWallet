@@ -197,6 +197,15 @@ class _WalletCard extends ConsumerWidget {
     // key anak — key di MeshGradient membuat finder key mengembalikan
     // PageView (rect viewport penuh) sehingga tap/test salah sasaran
     // (terbukti probe rect: key di MeshGradient = rect 0,0,390,188).
+    //
+    // v1.32.3: mata toggle = SIBLING kartu (bukan anak) — Stack luar
+    // selebar kartu penuh. Dulu mata Positioned di Stack DALAM yang
+    // selebar kolom isi: saat saldo sempit (Rp0) kolom cuma 179px →
+    // mata mendarat di tengah kartu menimpa 'SALDO SAAT INI' (probe:
+    // eye 171-219 = label 40-219, OVERLAP true). Di sini Stack selebar
+    // kartu penuh → right:24 selalu pojok kanan kartu. Bonus: tap mata
+    // tak pernah masuk path hit-test Listener kartu → tak ada fire
+    // ganda toggle+detail (probe R7: PREF true + DETAIL true).
     return Container(
       key: ValueKey('home:card-${account.id}'),
       margin: const EdgeInsets.fromLTRB(
@@ -205,105 +214,108 @@ class _WalletCard extends ConsumerWidget {
         AppSpacing.page,
         0,
       ),
-      child: Semantics(
-        button: true,
-        label: 'Detail dompet ${account.name}',
-        child: _TapToOpen(
-          onTap: () {
-            HapticFeedback.selectionClick();
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => AccountDetailScreen(accountId: account.id),
-              ),
-            );
-          },
-          child: MeshGradient(
-            padding: AppSpacing.cardPaddingLarge,
-            child: Stack(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Nama dompet (sisakan 48px kanan untuk mata overlay).
-                    Padding(
-                      padding: const EdgeInsets.only(right: 48),
-                      child: Text(
-                        account.name,
-                        style: AppType.labelMuted(context).copyWith(
-                          letterSpacing: 0.8,
-                          color: white.withValues(alpha: 0.85),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Semantics(
+              button: true,
+              label: 'Detail dompet ${account.name}',
+              child: _TapToOpen(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          AccountDetailScreen(accountId: account.id),
                     ),
-                    Text(
-                      'SALDO SAAT INI',
-                      style: AppType.labelMuted(context).copyWith(
-                        letterSpacing: 0.8,
-                        color: white.withValues(alpha: 0.6),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: AppSpacing.s12),
-                    balance.when(
-                      loading: () => const AppSkeleton(lines: 1),
-                      error: (_, _) => Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Saldo gagal dimuat.',
-                            style: AppType.balance(
-                              context,
-                            ).copyWith(fontSize: 20, color: white),
-                          ),
-                          const SizedBox(height: AppSpacing.s8),
-                          TextButton(
-                            onPressed: () => ref.invalidate(
-                              accountBalanceProvider(account.id),
-                            ),
-                            child: const Text('Coba lagi'),
-                          ),
-                        ],
-                      ),
-                      data: (b) => FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
+                  );
+                },
+                child: MeshGradient(
+                  padding: AppSpacing.cardPaddingLarge,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Nama dompet (sisakan 48px kanan untuk mata overlay).
+                      Padding(
+                        padding: const EdgeInsets.only(right: 48),
                         child: Text(
-                          hide ? 'Rp••••••' : display.money(b),
-                          style: AppType.balanceHero(
-                            context,
-                          ).copyWith(color: white),
+                          account.name,
+                          style: AppType.labelMuted(context).copyWith(
+                            letterSpacing: 0.8,
+                            color: white.withValues(alpha: 0.85),
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ),
-                    // kartu fokus saldo; pintu catat = tombol + navbar, grid aksi,
-                    // scan). Spacer s24 ikut dibuang agar kartu ramping.
-                  ],
-                ),
-                // Mata toggle overlay kanan-atas (bukan sebaris nama):
-                // hemat 33px tinggi baris → kartu muat viewport 188px.
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: AppIconButton(
-                    icon: hide
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
-                    tooltip: hide ? 'Tampilkan saldo' : 'Sembunyikan saldo',
-                    color: white.withValues(alpha: 0.92),
-                    bordered: false,
-                    onPressed: () =>
-                        ref.read(settingsServiceProvider).setHideBalance(!hide),
+                      Text(
+                        'SALDO SAAT INI',
+                        style: AppType.labelMuted(context).copyWith(
+                          letterSpacing: 0.8,
+                          color: white.withValues(alpha: 0.6),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: AppSpacing.s12),
+                      balance.when(
+                        loading: () => const AppSkeleton(lines: 1),
+                        error: (_, _) => Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Saldo gagal dimuat.',
+                              style: AppType.balance(
+                                context,
+                              ).copyWith(fontSize: 20, color: white),
+                            ),
+                            const SizedBox(height: AppSpacing.s8),
+                            TextButton(
+                              onPressed: () => ref.invalidate(
+                                accountBalanceProvider(account.id),
+                              ),
+                              child: const Text('Coba lagi'),
+                            ),
+                          ],
+                        ),
+                        data: (b) => FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            hide ? 'Rp••••••' : display.money(b),
+                            style: AppType.balanceHero(
+                              context,
+                            ).copyWith(color: white),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                      // kartu fokus saldo; pintu catat = tombol + navbar, grid aksi,
+                      // scan). Spacer s24 ikut dibuang agar kartu ramping.
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+          // Mata toggle overlay pojok kanan-atas kartu (inset 24 = padding
+          // isi, posisi visual sama seperti dulu saat kolom lebar).
+          Positioned(
+            top: AppSpacing.s24,
+            right: AppSpacing.s24,
+            child: AppIconButton(
+              icon: hide
+                  ? Icons.visibility_outlined
+                  : Icons.visibility_off_outlined,
+              tooltip: hide ? 'Tampilkan saldo' : 'Sembunyikan saldo',
+              color: white.withValues(alpha: 0.92),
+              bordered: false,
+              onPressed: () =>
+                  ref.read(settingsServiceProvider).setHideBalance(!hide),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -314,9 +326,11 @@ class _WalletCard extends ConsumerWidget {
 /// [Listener] mentah tak mendaftarkan recognizer → gesture arena
 /// PageView tak terganggu (drag bebas). Tap = down+up dalam slop 18px
 /// tanpa gerakan berlebih; geser = pointer bergerak jauh → onTap tak
-/// fire. Mata toggle (AppIconButton di dalam) tetap terima tap-nya
-/// sendiri karena hit-test anak lebih dulu; Listener induk hanya catat
-/// posisi.
+/// fire.
+///
+/// v1.32.3: mata toggle KELUAR dari subtree ini (sibling di Stack luar
+/// kartu) — tap mata tak pernah masuk path hit-test Listener, jadi tak
+/// ada fire ganda toggle+detail. Listener polos lagi (tanpa zona svc).
 class _TapToOpen extends StatefulWidget {
   const _TapToOpen({required this.onTap, required this.child});
 

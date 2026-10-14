@@ -514,4 +514,64 @@ void main() {
       await _flushDriftCloseTimer(tester);
     }
   });
+
+  // v1.32.3: tap mata = toggle privacy SAJA — kartu tak boleh ikut buka
+  // detail. Mata = SIBLING kartu di Stack luar (bukan anak Listener),
+  // jadi tap-nya tak pernah fire onTap kartu (probe R7 sebelum fix:
+  // PREF true + DETAIL true = fire ganda).
+  testWidgets('mata saldo toggle tanpa buka detail (v1.32.3)', (tester) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(_loadFonts);
+    await _pumpCarousel(tester, db);
+
+    final eyeHide = find.byTooltip('Sembunyikan saldo');
+    expect(eyeHide, findsOneWidget);
+    await tester.tap(eyeHide);
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    // Toggle jalan (tooltip ganti; prefs ikut tertulis)...
+    expect(find.byTooltip('Tampilkan saldo'), findsOneWidget);
+    final prefs = (await tester.runAsync(
+      () => SharedPreferences.getInstance(),
+    ))!;
+    expect(prefs.getBool('hide_balance'), isTrue);
+    // ...tapi layar detail TIDAK ikut terbuka.
+    expect(find.byType(AccountDetailScreen), findsNothing);
+
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // v1.32.3: mata nempel pojok kanan kartu walau saldo sempit (Rp0).
+  // Dulu Positioned(right:0) mengacu Stack selebar kolom isi (label
+  // 179px) → mata mendarat di tengah kartu menimpa 'SALDO SAAT INI'
+  // (probe KOSONG: eye 171-219 = label 40-219, OVERLAP true; SEED di
+  // kanan 302-350 karena kolom lebar).
+  testWidgets('mata di pojok kanan kartu saat saldo Rp0 (v1.32.3)', (
+    tester,
+  ) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(_loadFonts);
+    await _pumpCarousel(tester, db);
+
+    final utamaId = (await tester.runAsync(
+      () => db.select(db.accounts).get(),
+    ))!.firstWhere((a) => a.name == 'Utama').id;
+    final eye = find.byTooltip('Sembunyikan saldo');
+    expect(eye, findsOneWidget);
+    final eyeRect = tester.getRect(eye);
+    final cardRect = tester.getRect(
+      find.byKey(ValueKey('home:card-$utamaId')),
+    );
+    // Pojok kanan kartu: tengah mata di sepertiga kanan + tepi kanan
+    // sejajar isi kartu + tak menimpa label.
+    expect(eyeRect.center.dx, greaterThan(300.0));
+    expect(eyeRect.right, lessThanOrEqualTo(cardRect.right - 16.0));
+    expect(
+      eyeRect.overlaps(tester.getRect(find.text('SALDO SAAT INI'))),
+      isFalse,
+    );
+
+    await _flushDriftCloseTimer(tester);
+  });
 }

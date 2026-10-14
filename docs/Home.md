@@ -19,7 +19,7 @@
 - **Penyimpanan:** 100% lokal, SQLite via Drift — tanpa login, tanpa server.
 - **State:** flutter_riverpod 3.x (`StreamProvider` auto-refresh, `StateProvider` via `legacy.dart`).
 - **File DB:** `mywallet.sqlite` di folder dokumen aplikasi.
-- **Status:** v1.32.2 — Perbaiki Beranda kosong (Center → Row-centered di bilah bawah); dock kompak centered 232px tetap.
+- **Status:** v1.32.3 — Tombol mata kartu saldo normal (toggle saja, pojok kanan rapi).
 
 ## Peta kode
 

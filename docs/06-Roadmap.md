@@ -166,6 +166,7 @@ Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi 
 - [x] **Bar 48 + FAB detail + pengaturan dompet (v1.32.0)**: bar 60→48 (batas touchMin, test rect); Catat detail = FAB scoped; seksi Pengaturan per-dompet (rename + openingBalance + arsip + Switch isShared, skema v5 + sync LWW).
 - [x] **Dock kompak centered (v1.32.1)**: koreksi "lebar" = bentang horizontal — full-width 358px → dock 232×56 centered, lingkaran 72 flush, spacer tengah pensiun (test rect lebar + tinggi).
 - [x] **Fix Beranda kosong (v1.32.2)**: Center di bottomNavigationBar mengembang penuhi slot vertikal → body 0px (probe: dock tengah + body kosong); Row-centered hanya bungkus horizontal (dock 79,774-311,844, header 64px ada).
+- [x] **Fix mata kartu (v1.32.3)**: mata keluar dari subtree Listener jadi sibling di Stack selebar kartu (pojok kanan tetap saat Rp0; tap tak fire ganda toggle+detail); 2 regression test.
 - [ ] Fase 3 — utang + budget ikut sync + uji 2 emulator bareng.
 - [ ] Fase 4 — hardening production-grade: RLS audit, hapus akun, kebijakan privasi (wajib Play Store), crash reporting.
 

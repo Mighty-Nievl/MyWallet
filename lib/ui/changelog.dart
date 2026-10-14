@@ -20,6 +20,20 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.32.3',
+    date: '14 Okt 2026',
+    user:
+        'Tombol mata di kartu saldo kini berfungsi normal: ketuk untuk '
+        'sembunyikan/tampilkan saldo tanpa membuka halaman lain, dan '
+        'posisinya rapi di pojok kanan kartu.',
+    tech:
+        'Carousel: mata toggle keluar dari subtree Listener kartu jadi '
+        'sibling di Stack selebar kartu (posisi pojok kanan tetap saat '
+        'saldo sempit; tap tak fire ganda toggle+detail). 2 regression '
+        'test (toggle-only + posisi Rp0).',
+    breaking: null,
+  ),
+  (
     version: 'v1.32.2',
     date: '14 Okt 2026',
     user:
