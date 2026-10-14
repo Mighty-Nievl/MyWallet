@@ -182,8 +182,18 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
                   ],
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: AppSpacing.bottomPad),
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      // v1.32.6: clearance adaptif = bottomPad + safeBottom
+                      // aktual. Rumus: dockSlot 68 + safe + breath 44.
+                      // Emulator safe=0 → 112; HP gesture-nav ≈16-24 →
+                      // 128-136. Beranda satu-satunya body shell → cuma
+                      // ekor ini yang adaptif (9 layar lain Scaffold
+                      // sendiri, dock tak tampil saat push).
+                      height:
+                          AppSpacing.bottomPad +
+                          MediaQuery.paddingOf(context).bottom,
+                    ),
                   ),
                 ],
               ),

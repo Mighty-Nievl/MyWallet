@@ -15,6 +15,7 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 - **v1.32.3** (14 Okt 2026): Tombol mata di kartu saldo berfungsi normal (toggle saja, posisi rapi di pojok kanan).
 - **v1.32.4** (14 Okt 2026): Tombol + duduk rapi di dalam kapsul bilah bawah — teks layar tidak lagi tertutup.
 - **v1.32.5** (14 Okt 2026): Bayangan bilah bawah lebih ramping — teks tetap jernih dibaca.
+- **v1.32.6** (14 Okt 2026): Konten paling bawah terlihat sepenuhnya — adaptif navigasi gestur.
 - **v1.28.0** (13 Okt 2026): Identitas visual baru — hero mesh cair ikut aksen, bottom bar melayang, tombol/chip pill, kartu + shadow lembut, overview Budget status mesh. Kontras putih ≥4.5:1 terukur 6 aksen × 2 tema. Logika/provider/query tidak berubah.
 - **v1.27.1** (13 Okt 2026): Tombol Masuk di Beranda sebelum login — ketuk untuk buka Profil lalu masuk Google. Perbaiki jalan login yang tak terlihat saat logged-out.
 - **v1.27.0** (13 Okt 2026): Profil + Keluarga mandiri — pohon akun Beranda → Profil → Keluarga; header avatar + sapaan setelah login (belum login = wordmark tetap); nama panggilan bisa diubah di Profil; Pengaturan jadi 4 grup. 5 regression test.

@@ -21,6 +21,7 @@ import 'package:mywallet/data/providers.dart';
 import 'package:mywallet/data/receipt_parse.dart';
 import 'package:mywallet/ui/app_theme.dart';
 import 'package:mywallet/ui/design/app_colors.dart';
+import 'package:mywallet/ui/design/app_spacing.dart';
 import 'package:mywallet/ui/scan_flow.dart';
 import 'package:mywallet/ui/screens/accounts_screen.dart';
 import 'package:mywallet/ui/screens/budget_screen.dart';
@@ -533,6 +534,75 @@ void main() {
         if (r.overlaps(shadowZone) && r.height < 8.0) clipped.add(s);
       }
       expect(clipped, isEmpty, reason: 'terpotong di zona blur: $clipped');
+    } finally {
+      await _cleanup(tester, db);
+    }
+  });
+
+  // v1.32.6 (prioritas user): konten TERAKHIR bisa digulir melewati dock
+  // dan terlihat SEPENUHNYA. Rumus: clearance = dockSlot 68 + safeBottom
+  // aktual + breath 44. Emulator safe=0 → bottomPad 112; HP gesture-nav
+  // ≈16-24 → ekor Beranda adaptif (+MediaQuery bottom). Kunci DUA arah:
+  // (a) maxScrollExtent CUKUP (konten terakhir seluruhnya di atas dock
+  // saat mentok, bukan pas-pasan); (b) token konsisten
+  // (dockSlot + breath == bottomPad).
+  testWidgets('konten terakhir lewat dock terlihat penuh (v1.32.6)',
+      (tester) async {
+    // Rumus token konsisten — gagal di sini = angka tak sinkron.
+    expect(
+      AppSpacing.dockSlot + AppSpacing.dockBreath,
+      AppSpacing.bottomPad,
+    );
+    expect(AppSpacing.dockSlot, 68.0);
+    final db = await _newDb(tester);
+    try {
+      await tester.runAsync(() async {
+        final utama = (await db.select(db.accounts).get())
+            .firstWhere((a) => a.name == 'Utama')
+            .id;
+        final now = DateTime.now();
+        for (var i = 0; i < 12; i++) {
+          await db
+              .into(db.transactions)
+              .insert(
+                TransactionsCompanion.insert(
+                  amount: 8925000 - i * 15000,
+                  isExpense: Value(i.isEven),
+                  categoryId: Value((i % 8) + 1),
+                  date: DateTime(now.year, now.month, now.day - (i ~/ 4)),
+                  note: Value('Jajan $i'),
+                  accountId: Value(utama),
+                ),
+              );
+        }
+      });
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [dbProvider.overrideWithValue(db)],
+          child: MaterialApp(theme: AppTheme.light(), home: const AppShell()),
+        ),
+      );
+      await _pump(tester);
+      final barRect = tester.getRect(
+        find.byKey(const ValueKey('home:navbar')),
+      );
+      final scrollables = find.descendant(
+        of: find.byType(CustomScrollView),
+        matching: find.byType(Scrollable),
+      );
+      final st = tester.state<ScrollableState>(scrollables.first);
+      st.position.jumpTo(st.position.maxScrollExtent);
+      for (var k = 0; k < 6; k++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      // Kartu transaksi terakhir (Jajan 7/Kemarin) SELURUHNYA di atas
+      // dock + ada napas lega (bottom kartu ≥24px di atas dock, bukan
+      // pas-pasan 1px) — bisa dilihat + dijangkau jempol.
+      final lastCard = find.text('Jajan 7');
+      expect(lastCard, findsOneWidget);
+      final lastRect = tester.getRect(lastCard);
+      expect(lastRect.bottom, lessThan(barRect.top));
+      expect(barRect.top - lastRect.bottom, greaterThanOrEqualTo(24.0));
     } finally {
       await _cleanup(tester, db);
     }

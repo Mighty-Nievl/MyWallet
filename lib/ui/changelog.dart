@@ -20,6 +20,18 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.32.6',
+    date: '14 Okt 2026',
+    user:
+        'Konten paling bawah kini bisa digulir sampai terlihat sepenuhnya '
+        'di atas bilah bawah — termasuk di HP dengan navigasi gestur.',
+    tech:
+        'Clearance adaptif: ekor Beranda = bottomPad + safeBottom aktual '
+        '(rumus dockSlot 68 + safe + breath 44); token dockSlot/dockBreath '
+        'baru; 9 layar lain tetap statis. Regression test clearance.',
+    breaking: null,
+  ),
+  (
     version: 'v1.32.5',
     date: '14 Okt 2026',
     user:

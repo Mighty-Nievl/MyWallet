@@ -44,12 +44,22 @@ abstract final class AppSpacing {
   static const double navBarHeight = 56;
 
   /// Ruang napas bawah agar konten terakhir tidak tertutup FAB + bar.
-  /// v1.32.4 (audit foto user): lingkaran 72 top -16 (kepala 15px + glow)
-  /// mengiris teks body; fix = lingkaran 56 flush dalam kapsul +
-  /// extendBody false (body berhenti di atas slot dock). bottomPad 112
-  /// = slot dock 68 + napas 44 — konten mentok-bawah aman, tanpa ruang
-  /// mati berlebih.
+  /// RUMUS (v1.32.6, audit prinsipil): clearance = dockSlot (68) +
+  /// safeBottom aktual + dockBreath (44). dockSlot = isi 56 + margin
+  /// bawah 12 (terukur: bar 79..311/774..844). safeBottom emulator = 0
+  /// → 112 pas; HP gesture-nav ≈ 16-24 → butuh 128-136. Karena itu
+  /// Beranda (satu-satunya body shell) memakai
+  /// `bottomPad + MediaQuery.paddingOf(context).bottom`; 9 layar lain
+  /// (Scaffold sendiri, dock tak tampil saat push) tetap token statis.
   static const double bottomPad = 112;
+
+  /// Slot vertikal dock: isi kapsul 56 + margin bawah 12 (terukur,
+  /// bukan tebakan; border 2 di dalam isi).
+  static const double dockSlot = 68;
+
+  /// Napas lega di atas dock agar konten terakhir terlihat penuh +
+  /// terjangkau jempol (B2C, bukan angka arbitrer).
+  static const double dockBreath = 44;
 
   /// Target sentuh minimum Material (48×48).
   static const double touchMin = 48;
