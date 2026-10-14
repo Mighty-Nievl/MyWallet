@@ -168,6 +168,7 @@ Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi 
 - [x] **Fix Beranda kosong (v1.32.2)**: Center di bottomNavigationBar mengembang penuhi slot vertikal → body 0px (probe: dock tengah + body kosong); Row-centered hanya bungkus horizontal (dock 79,774-311,844, header 64px ada).
 - [x] **Fix mata kartu (v1.32.3)**: mata keluar dari subtree Listener jadi sibling di Stack selebar kartu (pojok kanan tetap saat Rp0; tap tak fire ganda toggle+detail); 2 regression test.
 - [x] **Fix dock tutup body (v1.32.4)**: lingkaran 72 top -16 (kepala 15px + glow, 5 hits probe, 'Makan & Minu[m]' ketutup di foto user) → 56 flush dalam kapsul + extendBody false + bottomPad 96→112; piksel 765-773 bersih; regression test dock.
+- [x] **Bayangan dock ramping (v1.32.5)**: token scoped dock() blur 20/offset 4 ganti floating() blur 32/offset 12 khusus kapsul (piksel: tak ada gradasi di atas dock, kabut bawah menyusut); viewport berhenti pas tepi dock; bottomPad tetap 112; regression test keterbacaan.
 - [ ] Fase 3 — utang + budget ikut sync + uji 2 emulator bareng.
 - [ ] Fase 4 — hardening production-grade: RLS audit, hapus akun, kebijakan privasi (wajib Play Store), crash reporting.
 

@@ -85,7 +85,9 @@ class AppShell extends ConsumerWidget {
                 color: scheme.surface,
                 borderRadius: AppRadius.cardAll,
                 border: Border.all(color: scheme.outlineVariant),
-                boxShadow: AppShadows.floating(context),
+                // v1.32.5: dock() ramping (blur 20/offset 4), bukan
+                // floating() (blur 32/offset 12) — proporsional kapsul 56.
+                boxShadow: AppShadows.dock(context),
               ),
               child: SizedBox(
               height: 56,

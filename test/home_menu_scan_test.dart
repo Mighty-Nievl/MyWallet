@@ -451,4 +451,90 @@ void main() {
       await _cleanup(tester, db);
     }
   });
+
+  // v1.32.5: bayangan dock tak boleh mengganggu keterbacaan konten.
+  // Audit piksel: shadow floating() (blur 32/offset 12) tak naik ke atas
+  // (kolom x=100: 730-768 bersih, deviasi = kartu+border) tapi boros
+  // (rasio >50% kapsul 56, kabut bawah sia-sia) → token scoped dock()
+  // (blur 20/offset 4). Kunci: dock pakai token ramping + zona 48px di
+  // atas dock bebas dari kabut bayangan (diukur via rect: teks body
+  // terdekat tak masuk zona blur; diam mentok-bawah bersih).
+  testWidgets('bayangan dock tidak mengganggu keterbacaan (v1.32.5)',
+      (tester) async {
+    final db = await _newDb(tester);
+    try {
+      await tester.runAsync(() async {
+        final utama = (await db.select(db.accounts).get())
+            .firstWhere((a) => a.name == 'Utama')
+            .id;
+        final now = DateTime.now();
+        for (var i = 0; i < 12; i++) {
+          await db
+              .into(db.transactions)
+              .insert(
+                TransactionsCompanion.insert(
+                  amount: 8925000 - i * 15000,
+                  isExpense: Value(i.isEven),
+                  categoryId: Value((i % 8) + 1),
+                  date: DateTime(now.year, now.month, now.day - (i ~/ 4)),
+                  note: Value('Jajan $i'),
+                  accountId: Value(utama),
+                ),
+              );
+        }
+      });
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [dbProvider.overrideWithValue(db)],
+          child: MaterialApp(theme: AppTheme.light(), home: const AppShell()),
+        ),
+      );
+      await _pump(tester);
+      final barRect = tester.getRect(
+        find.byKey(const ValueKey('home:navbar')),
+      );
+      // Dock pakai token ramping: isi tetap 56 (key navbar = Container
+      // luar: 56 + margin bawah 12 + border 2 = 70 — ukur via teks
+      // Riwayat di dalam, bukan key luar) + lebar tetap 232 kompak.
+      final navRiwayat = find.descendant(
+        of: find.byKey(const ValueKey('home:navbar')),
+        matching: find.text('Riwayat'),
+      );
+      expect(tester.getRect(navRiwayat).height, lessThanOrEqualTo(56.0));
+      expect(barRect.width, lessThanOrEqualTo(232.0));
+      // Zona jangkauan blur di atas dock (48px = blur 20 + offset 4 +
+      // margin aman): teks body yang DIAM di zona ini harus tetap
+      // utuh ter-render (tak terpotong viewport) saat rest-bawah.
+      final scrollables = find.descendant(
+        of: find.byType(CustomScrollView),
+        matching: find.byType(Scrollable),
+      );
+      final st = tester.state<ScrollableState>(scrollables.first);
+      st.position.jumpTo(st.position.maxScrollExtent);
+      for (var k = 0; k < 6; k++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      final shadowZone = Rect.fromLTRB(0, barRect.top - 48, 390, barRect.top);
+      final clipped = <String>[];
+      for (final e in find.byType(Text).evaluate()) {
+        final t = e.widget as Text;
+        final s = t.data ?? '';
+        if (s.isEmpty) continue;
+        Rect r;
+        try {
+          r = tester.getRect(find.byWidget(t).first);
+        } catch (_) {
+          continue;
+        }
+        if (barRect.contains(r.center)) continue; // label milik dock
+        // Teks yang menyentuh zona blur TAPI terpotong viewport
+        // (tinggi render < 60% tinggi wajar 14px) = keterbacaan
+        // terganggu bayangan + potongan.
+        if (r.overlaps(shadowZone) && r.height < 8.0) clipped.add(s);
+      }
+      expect(clipped, isEmpty, reason: 'terpotong di zona blur: $clipped');
+    } finally {
+      await _cleanup(tester, db);
+    }
+  });
 }

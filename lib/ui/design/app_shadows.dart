@@ -52,4 +52,29 @@ abstract final class AppShadows {
       ),
     ];
   }
+
+  // Dock navigasi bawah (kapsul 232x56) — bayangan RAMPING khusus dock.
+  // v1.32.5: floating() (blur 32, offset 12) boros untuk kapsul 56
+  // (rasio >50%, kabut ke bawah tak terlihat gunanya, audit piksel:
+  // tak ada gradasi di atas dock tapi bobot render sia-sia). blur 20 +
+  // offset 4 = angkat lembut proporsional, SCOPED (jangan ubah
+  // floating(): dipakai hero saldo + MeshGradient default).
+  static List<BoxShadow> dock(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
+    return [
+      BoxShadow(
+        color: scheme.primary.withValues(alpha: isDark ? 0.30 : 0.22),
+        blurRadius: 20,
+        offset: const Offset(0, 4),
+        spreadRadius: 0,
+      ),
+      BoxShadow(
+        color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.06),
+        blurRadius: 16,
+        offset: const Offset(0, 3),
+        spreadRadius: 0,
+      ),
+    ];
+  }
 }

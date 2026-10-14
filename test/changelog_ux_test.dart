@@ -83,8 +83,8 @@ void main() {
         return <String, dynamic>{
           'appName': 'MyWallet',
           'packageName': 'com.rezal.mywallet',
-          'version': '1.32.4',
-          'buildNumber': '69',
+          'version': '1.32.5',
+          'buildNumber': '70',
         };
       }
       return null;
