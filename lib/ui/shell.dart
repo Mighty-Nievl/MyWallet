@@ -32,10 +32,13 @@ import 'screens/tx_form_screen.dart';
 /// bar 72→60 (ramping), tombol 64→72 + ikon 28→32 (magnet lebih kuat).
 /// Overlap -16 tetap (kepala proporsional: 72/2+16 = 52 vs bar 60).
 ///
-/// v1.32.1 (request susulan "bar masih lebar"): bar 60→48 = batas
-/// sentuh minimum (touchMin 48, kolom ikon+label center muat 36px).
-/// Kepala tombol di atas bar tetap 16 (overlap -16 tak berubah); ekor
-/// 8px lingkaran jatuh ke margin bawah 12 (Stack clip none, aman).
+/// v1.32.1 (request user: "lebar" = bentang HORIZONTAL, bukan tinggi —
+/// audit UI/UX: bar full-width 358px = strip berat saingan konten;
+/// dock kompak 232px = chrome ringan, + tetap hero, jempol tetap
+/// sampai (target 116×56 >> touchMin 48). Tinggi 48→56: lingkaran 72
+/// overlap -16 jadi FLUSH bawah (=56) + 16 kepala di atas — rapi,
+/// bukan nongol 8px seperti di bar 48. Spacer tengah pensiun (Riwayat
+/// + Scan langsung mengapit lingkaran).
 class AppShell extends ConsumerWidget {
   const AppShell({super.key});
 
@@ -62,106 +65,113 @@ class AppShell extends ConsumerWidget {
       // Tombol Catat menonjol: lingkaran solid overlap di atas bar.
       bottomNavigationBar: SafeArea(
         top: false,
-        child: Container(
-          key: const ValueKey('home:navbar'),
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          decoration: BoxDecoration(
-            color: scheme.surface,
-            borderRadius: AppRadius.cardAll,
-            border: Border.all(color: scheme.outlineVariant),
-            boxShadow: AppShadows.floating(context),
-          ),
-          child: SizedBox(
-            // v1.32.1: 60→48 (request susulan "bar masih lebar"; batas
-            // bawah = touchMin 48 agar target sentuh tetap lolos).
-            height: 48,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Riwayat: pintasan layar paling sering dibuka
-                    // (pengganti Beranda yang no-op).
-                    Expanded(
-                      child: InkWell(
-                        onTap: () => _riwayat(context),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.receipt_long_outlined,
-                              color: scheme.onSurfaceVariant,
-                            ),
-                            Text(
-                              'Riwayat',
-                              style: labels?.copyWith(
+        // v1.32.1 (koreksi audit UI/UX: "lebar" = bentang HORIZONTAL,
+        // bukan tinggi): full-width 358px → dock kompak 232px centered.
+        // Isi cuma 3 slot (slot tengah = udara) → 70% bar adalah bingkai
+        // kosong. Dock = chrome ringan, + tetap hero 72, target 84×56
+        // >> touchMin 48. Tinggi 48→56: lingkaran overlap -16 jadi FLUSH
+        // bawah (=56) + 16 kepala di atas — rapi.
+        child: Center(
+          child: Container(
+            key: const ValueKey('home:navbar'),
+            width: 232,
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              borderRadius: AppRadius.cardAll,
+              border: Border.all(color: scheme.outlineVariant),
+              boxShadow: AppShadows.floating(context),
+            ),
+            child: SizedBox(
+              height: 56,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Riwayat: pintasan layar paling sering dibuka
+                      // (pengganti Beranda yang no-op).
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => _riwayat(context),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.receipt_long_outlined,
                                 color: scheme.onSurfaceVariant,
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    // Ruang tengah untuk lingkaran overlap.
-                    const Expanded(child: SizedBox()),
-                    // Scan: alur kamera/galeri → pratinjau → simpan.
-                    Expanded(
-                      child: InkWell(
-                        onTap: () => runScanFlow(context, ref),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.document_scanner_outlined,
-                              color: scheme.onSurfaceVariant,
-                            ),
-                            Text(
-                              'Scan',
-                              style: labels?.copyWith(
-                                color: scheme.onSurfaceVariant,
+                              Text(
+                                'Riwayat',
+                                style: labels?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                // Tombol tengah: magnet mata, satu-satunya pintu catat.
-                // Posisi via Stack (bukan transform) → tak ada piksel
-                // di luar clip; 16px kepala di atas bar = overlap resmi.
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: -16,
-                  child: Center(
-                    child: GestureDetector(
-                      onTap: () => _catat(context),
-                      child: Semantics(
-                        button: true,
-                        label: 'Catat transaksi',
-                        child: Container(
-                          // v1.32: 64→72 + ikon 28→32 (request user
-                          // "tombol + kurang gede"); bar ikut ramping 60.
-                          width: 72,
-                          height: 72,
-                          decoration: BoxDecoration(
-                            color: scheme.primary,
-                            shape: BoxShape.circle,
-                            boxShadow: AppShadows.glow(context),
+                            ],
                           ),
-                          child: Icon(
-                            Icons.add,
-                            color: scheme.onPrimary,
-                            size: 32,
+                        ),
+                      ),
+                      // Ruang tengah untuk lingkaran overlap.
+                      const Expanded(child: SizedBox()),
+                      // Scan: alur kamera/galeri → pratinjau → simpan.
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => runScanFlow(context, ref),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.document_scanner_outlined,
+                                color: scheme.onSurfaceVariant,
+                              ),
+                              Text(
+                                'Scan',
+                                style: labels?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Tombol tengah: magnet mata, satu-satunya pintu catat.
+                  // Posisi via Stack (bukan transform) → tak ada piksel
+                  // di luar clip; 16px kepala di atas bar = overlap resmi.
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    top: -16,
+                    child: Center(
+                      child: GestureDetector(
+                        onTap: () => _catat(context),
+                        child: Semantics(
+                          button: true,
+                          label: 'Catat transaksi',
+                          child: Container(
+                            // v1.32: 64→72 + ikon 28→32 (request user
+                            // "tombol + kurang gede"); bar ikut ramping 60.
+                            width: 72,
+                            height: 72,
+                            decoration: BoxDecoration(
+                              color: scheme.primary,
+                              shape: BoxShape.circle,
+                              boxShadow: AppShadows.glow(context),
+                            ),
+                            child: Icon(
+                              Icons.add,
+                              color: scheme.onPrimary,
+                              size: 32,
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

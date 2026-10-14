@@ -249,12 +249,18 @@ void main() {
         find.bySemanticsLabel('Catat transaksi'),
         findsOneWidget,
       );
-      // v1.32.1: bar ramping 48 = batas sentuh minimum (request susulan
-      // "bar masih lebar"; jangan turun lagi tanpa revisi touchMin).
-      // Key navbar di Container (rect ikut margin bawah 12 + border 2)
-      // → ukur SizedBox isi via teks Riwayat (pusat bar).
-      final riwayatRect = tester.getRect(navRiwayat);
-      expect(riwayatRect.height, lessThanOrEqualTo(48.0));
+      // v1.32.1: dock kompak 232×56 centered (koreksi "lebar" =
+      // bentang horizontal, bukan tinggi). Target slot 116×56 >>
+      // touchMin 48; + tetap hero 72. Ukur isi via teks Riwayat
+      // (key navbar = Container, rect ikut margin bawah 12 + border).
+      final navRect = tester.getRect(navRiwayat);
+      expect(navRect.height, lessThanOrEqualTo(56.0));
+      // Dock centered: lebar bar 232 (bukan full-width 358) — kunci
+      // horizontal via key navbar.
+      final barRect = tester.getRect(
+        find.byKey(const ValueKey('home:navbar')),
+      );
+      expect(barRect.width, lessThanOrEqualTo(232.0));
       // Beranda pensiun dari navbar (redundant: tap-nya dulu no-op).
       expect(find.text('Beranda'), findsNothing);
       // Tab lama + FAB gone (pintu catat tunggal = tombol tengah).

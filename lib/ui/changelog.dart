@@ -20,6 +20,18 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.32.1',
+    date: '14 Okt 2026',
+    user:
+        'Bilah bawah kini ramping dan-centered: tidak lagi selebar layar, '
+        'tombol + tetap besar menonjol di tengah.',
+    tech:
+        'Shell: full-width 358px → dock kompak 232×56 centered (Center + '
+        'width 232); tinggi 48→56 agar lingkaran 72 overlap -16 flush; '
+        'spacer tengah pensiun; test rect lebar + tinggi.',
+    breaking: null,
+  ),
+  (
     version: 'v1.32.0',
     date: '14 Okt 2026',
     user:

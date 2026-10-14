@@ -164,6 +164,7 @@ Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi 
 - [x] **Lega + ramping + kembali polos (v1.30.1)**: jarak s8 antar kartu Terakhir dicatat (+test rect); token kartu 24→16 + thumb 16→12; tombol kembali BackHeader + AppHeader.onBack tanpa border (aksi form tetap kotak).
 - [x] **Riwayat bersih + detail dompet + catat-ke + navbar (v1.31.0)**: chevron off total (tap edit tetap); jarak s8 Riwayat; CTA kartu dihapus (viewport 188) + tap kartu → layar detail dompet baru (hero + 5 tx scoped + 8 pintasan); form catat field Catat ke + initialAccountId; bar 72→60, tombol + 64→72.
 - [x] **Bar 48 + FAB detail + pengaturan dompet (v1.32.0)**: bar 60→48 (batas touchMin, test rect); Catat detail = FAB scoped; seksi Pengaturan per-dompet (rename + openingBalance + arsip + Switch isShared, skema v5 + sync LWW).
+- [x] **Dock kompak centered (v1.32.1)**: koreksi "lebar" = bentang horizontal — full-width 358px → dock 232×56 centered, lingkaran 72 flush, spacer tengah pensiun (test rect lebar + tinggi).
 - [ ] Fase 3 — utang + budget ikut sync + uji 2 emulator bareng.
 - [ ] Fase 4 — hardening production-grade: RLS audit, hapus akun, kebijakan privasi (wajib Play Store), crash reporting.
 
