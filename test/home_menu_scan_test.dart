@@ -9,6 +9,7 @@
 // - Layar push (Riwayat/Budget/Laporan/Utang) punya tombol Kembali.
 import 'dart:math';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -369,6 +370,83 @@ void main() {
       await tester.tap(find.text('Lihat teks struk'));
       await _pump(tester);
       expect(find.textContaining('TOKO ABC'), findsOneWidget);
+    } finally {
+      await _cleanup(tester, db);
+    }
+  });
+
+  // v1.32.4 (audit foto user): lingkaran 72 top -16 = 15px kepala + glow
+  // di atas kapsul mengiris teks body ('Makan & Minu[m]', persen,
+  // nominal — 5 hits probe). Fix: lingkaran 56 flush DALAM kapsul
+  // (tak ada piksel di atas dock) + extendBody false (body berhenti di
+  // atas slot) + bottomPad 112. Kunci REALISTIS floating dock: lingkaran
+  // tak nongol + diam mentok-bawah bersih (tengah scroll konten lewat =
+  // wajar, bukan bug).
+  testWidgets('lingkaran + tidak menutupi teks body (v1.32.4)', (tester) async {
+    final db = await _newDb(tester);
+    try {
+      await tester.runAsync(() async {
+        final utama = (await db.select(db.accounts).get())
+            .firstWhere((a) => a.name == 'Utama')
+            .id;
+        final now = DateTime.now();
+        for (var i = 0; i < 12; i++) {
+          await db
+              .into(db.transactions)
+              .insert(
+                TransactionsCompanion.insert(
+                  amount: 8925000 - i * 15000,
+                  isExpense: Value(i.isEven),
+                  categoryId: Value((i % 8) + 1),
+                  date: DateTime(now.year, now.month, now.day - (i ~/ 4)),
+                  note: Value('Jajan $i'),
+                  accountId: Value(utama),
+                ),
+              );
+        }
+      });
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [dbProvider.overrideWithValue(db)],
+          child: MaterialApp(theme: AppTheme.light(), home: const AppShell()),
+        ),
+      );
+      await _pump(tester);
+      final barRect = tester.getRect(
+        find.byKey(const ValueKey('home:navbar')),
+      );
+      final catatRect = tester.getRect(
+        find.bySemanticsLabel('Catat transaksi'),
+      );
+      // Lingkaran duduk DALAM kapsul: tak nongol di atas dock.
+      expect(catatRect.top, greaterThanOrEqualTo(barRect.top - 1.0));
+      expect(catatRect.height, lessThanOrEqualTo(56.0));
+      // Diam mentok-bawah: tak ada teks body diiris lingkaran/dock.
+      final scrollables = find.descendant(
+        of: find.byType(CustomScrollView),
+        matching: find.byType(Scrollable),
+      );
+      final st = tester.state<ScrollableState>(scrollables.first);
+      st.position.jumpTo(st.position.maxScrollExtent);
+      for (var k = 0; k < 6; k++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      final catat = tester.getRect(find.bySemanticsLabel('Catat transaksi'));
+      final covered = <String>[];
+      for (final e in find.byType(Text).evaluate()) {
+        final t = e.widget as Text;
+        final s = t.data ?? '';
+        if (s.isEmpty) continue;
+        Rect r;
+        try {
+          r = tester.getRect(find.byWidget(t).first);
+        } catch (_) {
+          continue;
+        }
+        if (barRect.contains(r.center)) continue; // label milik dock
+        if (r.overlaps(catat) || r.overlaps(barRect)) covered.add(s);
+      }
+      expect(covered, isEmpty, reason: 'tertutup: $covered');
     } finally {
       await _cleanup(tester, db);
     }

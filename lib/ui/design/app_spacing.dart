@@ -44,7 +44,12 @@ abstract final class AppSpacing {
   static const double navBarHeight = 56;
 
   /// Ruang napas bawah agar konten terakhir tidak tertutup FAB + bar.
-  static const double bottomPad = 96;
+  /// v1.32.4 (audit foto user): lingkaran 72 top -16 (kepala 15px + glow)
+  /// mengiris teks body; fix = lingkaran 56 flush dalam kapsul +
+  /// extendBody false (body berhenti di atas slot dock). bottomPad 112
+  /// = slot dock 68 + napas 44 — konten mentok-bawah aman, tanpa ruang
+  /// mati berlebih.
+  static const double bottomPad = 112;
 
   /// Target sentuh minimum Material (48×48).
   static const double touchMin = 48;

@@ -61,6 +61,10 @@ class AppShell extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final labels = Theme.of(context).textTheme.labelSmall;
     return Scaffold(
+      // v1.32.4 (audit foto user): floating dock = overlay di atas body.
+      // extendBody FALSE (default): body berhenti di atas slot dock —
+      // konten tak merembes ke belakang kapsul. Lingkaran flush di
+      // dalam kapsul (bukan nongol) + bottomPad 112 = konten aman.
       body: const HomeScreen(),
       // Tombol Catat menonjol: lingkaran solid overlap di atas bar.
       bottomNavigationBar: SafeArea(
@@ -139,12 +143,17 @@ class AppShell extends ConsumerWidget {
                     ],
                   ),
                   // Tombol tengah: magnet mata, satu-satunya pintu catat.
-                  // Posisi via Stack (bukan transform) → tak ada piksel
-                  // di luar clip; 16px kepala di atas bar = overlap resmi.
+                  // v1.32.4 (audit foto user): lingkaran 72 top -16 = 15px
+                  // kepala + glow 16px di atas kapsul mengiris teks body
+                  // ('Makan & Minu[m]', persen, nominal — 5 hits probe).
+                  // Fix: lingkaran 56 + ikon 28, FLUSH (top 0) duduk di
+                  // DALAM kapsul — tak ada piksel di atas dock. 48 gagal
+                  // (Center menengahkan ulang, rect Semantics tetap 56);
+                  // top 8 gagal (makan body bawah). 56 = magnet + aman.
                   Positioned(
                     left: 0,
                     right: 0,
-                    top: -16,
+                    top: 0,
                     child: Center(
                       child: GestureDetector(
                         onTap: () => _catat(context),
@@ -152,10 +161,8 @@ class AppShell extends ConsumerWidget {
                           button: true,
                           label: 'Catat transaksi',
                           child: Container(
-                            // v1.32: 64→72 + ikon 28→32 (request user
-                            // "tombol + kurang gede"); bar ikut ramping 60.
-                            width: 72,
-                            height: 72,
+                            width: 56,
+                            height: 56,
                             decoration: BoxDecoration(
                               color: scheme.primary,
                               shape: BoxShape.circle,
@@ -164,7 +171,7 @@ class AppShell extends ConsumerWidget {
                             child: Icon(
                               Icons.add,
                               color: scheme.onPrimary,
-                              size: 32,
+                              size: 28,
                             ),
                           ),
                         ),
