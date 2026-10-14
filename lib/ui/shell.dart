@@ -31,6 +31,11 @@ import 'screens/tx_form_screen.dart';
 /// v1.32 (request user "navbar terlalu lebar" + "tombol + kurang gede"):
 /// bar 72→60 (ramping), tombol 64→72 + ikon 28→32 (magnet lebih kuat).
 /// Overlap -16 tetap (kepala proporsional: 72/2+16 = 52 vs bar 60).
+///
+/// v1.32.1 (request susulan "bar masih lebar"): bar 60→48 = batas
+/// sentuh minimum (touchMin 48, kolom ikon+label center muat 36px).
+/// Kepala tombol di atas bar tetap 16 (overlap -16 tak berubah); ekor
+/// 8px lingkaran jatuh ke margin bawah 12 (Stack clip none, aman).
 class AppShell extends ConsumerWidget {
   const AppShell({super.key});
 
@@ -67,8 +72,9 @@ class AppShell extends ConsumerWidget {
             boxShadow: AppShadows.floating(context),
           ),
           child: SizedBox(
-            // v1.32: 72→60 (request user "navbar terlalu lebar").
-            height: 60,
+            // v1.32.1: 60→48 (request susulan "bar masih lebar"; batas
+            // bawah = touchMin 48 agar target sentuh tetap lolos).
+            height: 48,
             child: Stack(
               clipBehavior: Clip.none,
               children: [

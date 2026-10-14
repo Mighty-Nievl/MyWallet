@@ -3435,6 +3435,21 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _isSharedMeta = const VerificationMeta(
+    'isShared',
+  );
+  @override
+  late final GeneratedColumn<bool> isShared = GeneratedColumn<bool>(
+    'is_shared',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_shared" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _uuidMeta = const VerificationMeta('uuid');
   @override
   late final GeneratedColumn<String> uuid = GeneratedColumn<String>(
@@ -3487,6 +3502,7 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     openingBalance,
     sortOrder,
     isArchived,
+    isShared,
     uuid,
     updatedAt,
     deletedAt,
@@ -3540,6 +3556,12 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
       context.handle(
         _isArchivedMeta,
         isArchived.isAcceptableOrUnknown(data['is_archived']!, _isArchivedMeta),
+      );
+    }
+    if (data.containsKey('is_shared')) {
+      context.handle(
+        _isSharedMeta,
+        isShared.isAcceptableOrUnknown(data['is_shared']!, _isSharedMeta),
       );
     }
     if (data.containsKey('uuid')) {
@@ -3602,6 +3624,10 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
         DriftSqlType.bool,
         data['${effectivePrefix}is_archived'],
       )!,
+      isShared: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_shared'],
+      )!,
       uuid: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}uuid'],
@@ -3634,6 +3660,7 @@ class Account extends DataClass implements Insertable<Account> {
   final int openingBalance;
   final int sortOrder;
   final bool isArchived;
+  final bool isShared;
   final String? uuid;
   final DateTime? updatedAt;
   final DateTime? deletedAt;
@@ -3645,6 +3672,7 @@ class Account extends DataClass implements Insertable<Account> {
     required this.openingBalance,
     required this.sortOrder,
     required this.isArchived,
+    required this.isShared,
     this.uuid,
     this.updatedAt,
     this.deletedAt,
@@ -3659,6 +3687,7 @@ class Account extends DataClass implements Insertable<Account> {
     map['opening_balance'] = Variable<int>(openingBalance);
     map['sort_order'] = Variable<int>(sortOrder);
     map['is_archived'] = Variable<bool>(isArchived);
+    map['is_shared'] = Variable<bool>(isShared);
     if (!nullToAbsent || uuid != null) {
       map['uuid'] = Variable<String>(uuid);
     }
@@ -3682,6 +3711,7 @@ class Account extends DataClass implements Insertable<Account> {
       openingBalance: Value(openingBalance),
       sortOrder: Value(sortOrder),
       isArchived: Value(isArchived),
+      isShared: Value(isShared),
       uuid: uuid == null && nullToAbsent ? const Value.absent() : Value(uuid),
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
@@ -3707,6 +3737,7 @@ class Account extends DataClass implements Insertable<Account> {
       openingBalance: serializer.fromJson<int>(json['openingBalance']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       isArchived: serializer.fromJson<bool>(json['isArchived']),
+      isShared: serializer.fromJson<bool>(json['isShared']),
       uuid: serializer.fromJson<String?>(json['uuid']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
@@ -3723,6 +3754,7 @@ class Account extends DataClass implements Insertable<Account> {
       'openingBalance': serializer.toJson<int>(openingBalance),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'isArchived': serializer.toJson<bool>(isArchived),
+      'isShared': serializer.toJson<bool>(isShared),
       'uuid': serializer.toJson<String?>(uuid),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
@@ -3737,6 +3769,7 @@ class Account extends DataClass implements Insertable<Account> {
     int? openingBalance,
     int? sortOrder,
     bool? isArchived,
+    bool? isShared,
     Value<String?> uuid = const Value.absent(),
     Value<DateTime?> updatedAt = const Value.absent(),
     Value<DateTime?> deletedAt = const Value.absent(),
@@ -3748,6 +3781,7 @@ class Account extends DataClass implements Insertable<Account> {
     openingBalance: openingBalance ?? this.openingBalance,
     sortOrder: sortOrder ?? this.sortOrder,
     isArchived: isArchived ?? this.isArchived,
+    isShared: isShared ?? this.isShared,
     uuid: uuid.present ? uuid.value : this.uuid,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
@@ -3765,6 +3799,7 @@ class Account extends DataClass implements Insertable<Account> {
       isArchived: data.isArchived.present
           ? data.isArchived.value
           : this.isArchived,
+      isShared: data.isShared.present ? data.isShared.value : this.isShared,
       uuid: data.uuid.present ? data.uuid.value : this.uuid,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -3783,6 +3818,7 @@ class Account extends DataClass implements Insertable<Account> {
           ..write('openingBalance: $openingBalance, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('isArchived: $isArchived, ')
+          ..write('isShared: $isShared, ')
           ..write('uuid: $uuid, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -3799,6 +3835,7 @@ class Account extends DataClass implements Insertable<Account> {
     openingBalance,
     sortOrder,
     isArchived,
+    isShared,
     uuid,
     updatedAt,
     deletedAt,
@@ -3814,6 +3851,7 @@ class Account extends DataClass implements Insertable<Account> {
           other.openingBalance == this.openingBalance &&
           other.sortOrder == this.sortOrder &&
           other.isArchived == this.isArchived &&
+          other.isShared == this.isShared &&
           other.uuid == this.uuid &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt &&
@@ -3827,6 +3865,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   final Value<int> openingBalance;
   final Value<int> sortOrder;
   final Value<bool> isArchived;
+  final Value<bool> isShared;
   final Value<String?> uuid;
   final Value<DateTime?> updatedAt;
   final Value<DateTime?> deletedAt;
@@ -3838,6 +3877,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     this.openingBalance = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.isArchived = const Value.absent(),
+    this.isShared = const Value.absent(),
     this.uuid = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -3850,6 +3890,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     this.openingBalance = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.isArchived = const Value.absent(),
+    this.isShared = const Value.absent(),
     this.uuid = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -3862,6 +3903,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     Expression<int>? openingBalance,
     Expression<int>? sortOrder,
     Expression<bool>? isArchived,
+    Expression<bool>? isShared,
     Expression<String>? uuid,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
@@ -3874,6 +3916,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
       if (openingBalance != null) 'opening_balance': openingBalance,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (isArchived != null) 'is_archived': isArchived,
+      if (isShared != null) 'is_shared': isShared,
       if (uuid != null) 'uuid': uuid,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -3888,6 +3931,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     Value<int>? openingBalance,
     Value<int>? sortOrder,
     Value<bool>? isArchived,
+    Value<bool>? isShared,
     Value<String?>? uuid,
     Value<DateTime?>? updatedAt,
     Value<DateTime?>? deletedAt,
@@ -3900,6 +3944,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
       openingBalance: openingBalance ?? this.openingBalance,
       sortOrder: sortOrder ?? this.sortOrder,
       isArchived: isArchived ?? this.isArchived,
+      isShared: isShared ?? this.isShared,
       uuid: uuid ?? this.uuid,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -3928,6 +3973,9 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     if (isArchived.present) {
       map['is_archived'] = Variable<bool>(isArchived.value);
     }
+    if (isShared.present) {
+      map['is_shared'] = Variable<bool>(isShared.value);
+    }
     if (uuid.present) {
       map['uuid'] = Variable<String>(uuid.value);
     }
@@ -3952,6 +4000,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
           ..write('openingBalance: $openingBalance, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('isArchived: $isArchived, ')
+          ..write('isShared: $isShared, ')
           ..write('uuid: $uuid, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -6255,6 +6304,7 @@ typedef $$AccountsTableCreateCompanionBuilder =
       Value<int> openingBalance,
       Value<int> sortOrder,
       Value<bool> isArchived,
+      Value<bool> isShared,
       Value<String?> uuid,
       Value<DateTime?> updatedAt,
       Value<DateTime?> deletedAt,
@@ -6268,6 +6318,7 @@ typedef $$AccountsTableUpdateCompanionBuilder =
       Value<int> openingBalance,
       Value<int> sortOrder,
       Value<bool> isArchived,
+      Value<bool> isShared,
       Value<String?> uuid,
       Value<DateTime?> updatedAt,
       Value<DateTime?> deletedAt,
@@ -6310,6 +6361,11 @@ class $$AccountsTableFilterComposer
 
   ColumnFilters<bool> get isArchived => $composableBuilder(
     column: $table.isArchived,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isShared => $composableBuilder(
+    column: $table.isShared,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6373,6 +6429,11 @@ class $$AccountsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isShared => $composableBuilder(
+    column: $table.isShared,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get uuid => $composableBuilder(
     column: $table.uuid,
     builder: (column) => ColumnOrderings(column),
@@ -6425,6 +6486,9 @@ class $$AccountsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get isShared =>
+      $composableBuilder(column: $table.isShared, builder: (column) => column);
+
   GeneratedColumn<String> get uuid =>
       $composableBuilder(column: $table.uuid, builder: (column) => column);
 
@@ -6474,6 +6538,7 @@ class $$AccountsTableTableManager
                 Value<int> openingBalance = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<bool> isArchived = const Value.absent(),
+                Value<bool> isShared = const Value.absent(),
                 Value<String?> uuid = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -6485,6 +6550,7 @@ class $$AccountsTableTableManager
                 openingBalance: openingBalance,
                 sortOrder: sortOrder,
                 isArchived: isArchived,
+                isShared: isShared,
                 uuid: uuid,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -6498,6 +6564,7 @@ class $$AccountsTableTableManager
                 Value<int> openingBalance = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<bool> isArchived = const Value.absent(),
+                Value<bool> isShared = const Value.absent(),
                 Value<String?> uuid = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -6509,6 +6576,7 @@ class $$AccountsTableTableManager
                 openingBalance: openingBalance,
                 sortOrder: sortOrder,
                 isArchived: isArchived,
+                isShared: isShared,
                 uuid: uuid,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,

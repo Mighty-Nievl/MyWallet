@@ -19,7 +19,7 @@
 - **Penyimpanan:** 100% lokal, SQLite via Drift — tanpa login, tanpa server.
 - **State:** flutter_riverpod 3.x (`StreamProvider` auto-refresh, `StateProvider` via `legacy.dart`).
 - **File DB:** `mywallet.sqlite` di folder dokumen aplikasi.
-- **Status:** v1.31.0 — Riwayat bersih tanpa panah + lega; kartu saldo fokus angka (ketuk = rincian dompet); form catat tulis dompet tujuan; tombol + besar, bar ramping.
+- **Status:** v1.32.0 — Bar ramping 48; FAB catat di rincian dompet; pengaturan per-dompet (nama, saldo awal, arsip, toggle keluarga).
 
 ## Peta kode
 

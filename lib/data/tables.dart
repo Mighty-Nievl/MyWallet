@@ -48,9 +48,12 @@ class Accounts extends Table {
   IntColumn get openingBalance => integer().withDefault(const Constant(0))();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   BoolColumn get isArchived => boolean().withDefault(const Constant(false))();
+  // Dompet ikut sync keluarga? (v1.32) false = pribadi (hanya HP ini),
+  // true = dishare ke rumah tangga. Default false: privasi aman bila user
+  // belum memutuskan; konflik antar-HP = LWW via updatedAt.
+  BoolColumn get isShared => boolean().withDefault(const Constant(false))();
   // --- Sync-ready (lihat catatan file) ---
-  TextColumn get uuid =>
-      text().clientDefault(() => newSyncUuid()).nullable()();
+  TextColumn get uuid => text().clientDefault(() => newSyncUuid()).nullable()();
   DateTimeColumn get updatedAt =>
       dateTime().clientDefault(() => syncNow()).nullable()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
@@ -65,8 +68,7 @@ class Categories extends Table {
   // 1 = pengeluaran, 0 = pemasukan (bool SQLite disimpan sebagai int).
   BoolColumn get isExpense => boolean().withDefault(const Constant(true))();
   // --- Sync-ready (lihat catatan file) ---
-  TextColumn get uuid =>
-      text().clientDefault(() => newSyncUuid()).nullable()();
+  TextColumn get uuid => text().clientDefault(() => newSyncUuid()).nullable()();
   DateTimeColumn get updatedAt =>
       dateTime().clientDefault(() => syncNow()).nullable()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
@@ -79,8 +81,9 @@ class Transactions extends Table {
   // Nominal dalam rupiah (bilangan bulat, tanpa desimal).
   IntColumn get amount => integer()();
   BoolColumn get isExpense => boolean().withDefault(const Constant(true))();
-  IntColumn get categoryId =>
-      integer().references(Categories, #id, onDelete: KeyAction.setNull).nullable()();
+  IntColumn get categoryId => integer()
+      .references(Categories, #id, onDelete: KeyAction.setNull)
+      .nullable()();
   DateTimeColumn get date => dateTime()();
   TextColumn get note => text().withDefault(const Constant(''))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -110,8 +113,7 @@ class Transactions extends Table {
   // saldo per dompet. Aman di-sync mentah (uuid global-unik).
   TextColumn get transferId => text().nullable()();
   // --- Sync-ready (lihat catatan file) ---
-  TextColumn get uuid =>
-      text().clientDefault(() => newSyncUuid()).nullable()();
+  TextColumn get uuid => text().clientDefault(() => newSyncUuid()).nullable()();
   DateTimeColumn get updatedAt =>
       dateTime().clientDefault(() => syncNow()).nullable()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
@@ -129,8 +131,7 @@ class Budgets extends Table {
   TextColumn get month => text()();
   // --- Sync-ready (lihat catatan file) ---
   // Budgets tidak punya createdAt → backfill updatedAt = jam migrasi.
-  TextColumn get uuid =>
-      text().clientDefault(() => newSyncUuid()).nullable()();
+  TextColumn get uuid => text().clientDefault(() => newSyncUuid()).nullable()();
   DateTimeColumn get updatedAt =>
       dateTime().clientDefault(() => syncNow()).nullable()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
@@ -161,8 +162,7 @@ class Debts extends Table {
   // saat insert. Nullable demi migrasi aman (baris lama → Utama).
   IntColumn get accountId => integer().nullable()();
   // --- Sync-ready (lihat catatan file) ---
-  TextColumn get uuid =>
-      text().clientDefault(() => newSyncUuid()).nullable()();
+  TextColumn get uuid => text().clientDefault(() => newSyncUuid()).nullable()();
   DateTimeColumn get updatedAt =>
       dateTime().clientDefault(() => syncNow()).nullable()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
@@ -184,8 +184,7 @@ class DebtPayments extends Table {
   // murah. Nullable demi migrasi aman (baris lama → dompet Utama).
   IntColumn get accountId => integer().nullable()();
   // --- Sync-ready (lihat catatan file) ---
-  TextColumn get uuid =>
-      text().clientDefault(() => newSyncUuid()).nullable()();
+  TextColumn get uuid => text().clientDefault(() => newSyncUuid()).nullable()();
   DateTimeColumn get updatedAt =>
       dateTime().clientDefault(() => syncNow()).nullable()();
   DateTimeColumn get deletedAt => dateTime().nullable()();

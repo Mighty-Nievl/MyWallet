@@ -41,11 +41,13 @@ typedef RemoteCat = ({
 /// Dokumen dompet jarak-jauh (v1.25).
 /// Saldo TIDAK ikut (dihitung per-HP dari transaksi); yang sync hanya
 /// identitas + arsip (keputusan plan — anti konflik angka).
+/// v1.32: + isShared (toggle keluarga per-dompet).
 typedef RemoteAccount = ({
   String uuid,
   String name,
   bool isArchived,
   int sortOrder,
+  bool isShared,
   DateTime updatedAt,
   DateTime? deletedAt,
 });
@@ -136,6 +138,8 @@ Map<String, dynamic> accountToMap(
     'name': a.name,
     'isArchived': a.isArchived,
     'sortOrder': a.sortOrder,
+    // v1.32: toggle keluarga ikut push (LWW di HP lain via upsert).
+    'isShared': a.isShared,
     'updatedAt': (a.updatedAt ?? t).millisecondsSinceEpoch,
     if (a.deletedAt != null) 'deletedAt': a.deletedAt!.millisecondsSinceEpoch,
     'updatedBy': uid,
@@ -172,6 +176,8 @@ RemoteAccount? parseRemoteAccount(Map<String, dynamic> m) {
     name: (m['name'] as String?) ?? '?',
     isArchived: (m['isArchived'] as bool?) ?? false,
     sortOrder: (m['sortOrder'] as int?) ?? 0,
+    // v1.32: HP lama tanpa flag = pribadi (aman, bukan dishare diam2).
+    isShared: (m['isShared'] as bool?) ?? false,
     updatedAt: _ms(m['updatedAt'] as int?, now),
     deletedAt: m['deletedAt'] == null
         ? null
@@ -271,6 +277,7 @@ Future<bool> upsertLocalAccount(
             name: r.name,
             isArchived: Value(r.isArchived),
             sortOrder: Value(r.sortOrder),
+            isShared: Value(r.isShared),
             uuid: Value(r.uuid),
             updatedAt: Value(r.updatedAt),
             deletedAt: Value(r.deletedAt),
@@ -285,6 +292,7 @@ Future<bool> upsertLocalAccount(
       name: Value(r.name),
       isArchived: Value(r.isArchived),
       sortOrder: Value(r.sortOrder),
+      isShared: Value(r.isShared),
       updatedAt: Value(r.updatedAt),
       deletedAt: Value(r.deletedAt),
       householdId: Value(householdId),

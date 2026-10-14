@@ -249,6 +249,12 @@ void main() {
         find.bySemanticsLabel('Catat transaksi'),
         findsOneWidget,
       );
+      // v1.32.1: bar ramping 48 = batas sentuh minimum (request susulan
+      // "bar masih lebar"; jangan turun lagi tanpa revisi touchMin).
+      // Key navbar di Container (rect ikut margin bawah 12 + border 2)
+      // → ukur SizedBox isi via teks Riwayat (pusat bar).
+      final riwayatRect = tester.getRect(navRiwayat);
+      expect(riwayatRect.height, lessThanOrEqualTo(48.0));
       // Beranda pensiun dari navbar (redundant: tap-nya dulu no-op).
       expect(find.text('Beranda'), findsNothing);
       // Tab lama + FAB gone (pintu catat tunggal = tombol tengah).

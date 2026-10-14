@@ -20,6 +20,24 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.32.0',
+    date: '14 Okt 2026',
+    user:
+        'Bilah bawah dibuat lebih ramping (tombol + tetap besar). Tombol '
+        'catat di rincian dompet kini melayang agar selalu terlihat. Rincian '
+        'dompet kini punya pengaturan sendiri: ganti nama, saldo awal, '
+        'arsip, dan tombol atur dompet ini dikelola keluarga atau tetap '
+        'pribadi.',
+    tech:
+        'Shell: bar 60→48 (batas touchMin, overlap -16 tetap) + test rect. '
+        'Detail: SettingRow Catat → FAB (detail:fab) buka form scoped. '
+        'Seksi Pengaturan per-dompet: rename + openingBalance + arsip + '
+        'Switch isShared (skema v5, migrasi addColumn default false, sync '
+        'LWW via RemoteAccount/accountToMap/upsertLocalAccount). Test: '
+        'FAB→form Catat ke, seksi pengaturan, toggle persist + sync map.',
+    breaking: null,
+  ),
+  (
     version: 'v1.31.0',
     date: '14 Okt 2026',
     user:

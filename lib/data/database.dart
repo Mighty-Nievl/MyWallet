@@ -29,7 +29,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -99,6 +99,12 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(debts, debts.accountId);
         await m.addColumn(debtPayments, debtPayments.accountId);
         await backfillAccounts();
+      }
+      // v4 → v5 (toggle keluarga v1.32): kolom isShared di accounts.
+      // withDefault(false) → baris lama otomatis pribadi (aman); tanpa
+      // backfill Dart (nullable-free + default = migrasi murni).
+      if (from < 5) {
+        await m.addColumn(accounts, accounts.isShared);
       }
     },
   );
