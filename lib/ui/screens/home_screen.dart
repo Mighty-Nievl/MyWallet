@@ -189,7 +189,9 @@ class HomeScreen extends ConsumerWidget {
                       // Emulator safe=0 → 112; HP gesture-nav ≈16-24 →
                       // 128-136. Beranda satu-satunya body shell → cuma
                       // ekor ini yang adaptif (9 layar lain Scaffold
-                      // sendiri, dock tak tampil saat push).
+                      // sendiri, kapsul FAB tak tampil saat push).
+                      // v1.33.0: kapsul = FAB overlay → body penuh, jadi
+                      // ekor inilah satu-satunya penjaga kartu terakhir.
                       height:
                           AppSpacing.bottomPad +
                           MediaQuery.paddingOf(context).bottom,

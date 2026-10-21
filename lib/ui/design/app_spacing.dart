@@ -43,18 +43,26 @@ abstract final class AppSpacing {
   /// Tinggi bar navigasi custom legacy (M3 NavigationBar atur sendiri).
   static const double navBarHeight = 56;
 
-  /// Ruang napas bawah agar konten terakhir tidak tertutup FAB + bar.
+  /// Ruang napas bawah agar konten terakhir tidak tertutup kapsul FAB.
   /// RUMUS (v1.32.6, audit prinsipil): clearance = dockSlot (68) +
-  /// safeBottom aktual + dockBreath (44). dockSlot = isi 56 + margin
-  /// bawah 12 (terukur: bar 79..311/774..844). safeBottom emulator = 0
+  /// safeBottom aktual + dockBreath (44). dockSlot = isi 56 + celah
+  /// bawah (dulu margin 12; sejak v1.33.0 kFloatingActionButtonMargin
+  /// 16 — nilainya SENGAJA tidak diubah supaya clearance 112 tetap
+  /// konsisten, breath efektif jadi 40). safeBottom emulator = 0
   /// → 112 pas; HP gesture-nav ≈ 16-24 → butuh 128-136. Karena itu
   /// Beranda (satu-satunya body shell) memakai
   /// `bottomPad + MediaQuery.paddingOf(context).bottom`; 9 layar lain
-  /// (Scaffold sendiri, dock tak tampil saat push) tetap token statis.
+  /// (Scaffold sendiri, kapsul tak tampil saat push) tetap token statis.
+  /// v1.33.0: kapsul pindah ke slot FAB → body penuh (konten boleh lewat
+  /// di belakang kapsul), jadi ekor ini satu-satunya penjaga kartu
+  /// terakhir saat scroll mentok.
   static const double bottomPad = 112;
 
-  /// Slot vertikal dock: isi kapsul 56 + margin bawah 12 (terukur,
-  /// bukan tebakan; border 2 di dalam isi).
+  /// Slot vertikal kapsul FAB: isi kapsul 56 + celah bawah 12 (terukur,
+  /// bukan tebakan; border 2 di dalam isi). v1.33.0: kapsul pindah ke
+  /// slot FAB, Scaffold menambah kFloatingActionButtonMargin 16 sendiri
+  /// — nilai 68 SENGAJA tidak diubah (breath efektif 40, clearance 112
+  /// sudah lolos probe & regression test).
   static const double dockSlot = 68;
 
   /// Napas lega di atas dock agar konten terakhir terlihat penuh +

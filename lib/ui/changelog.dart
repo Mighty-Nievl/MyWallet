@@ -20,6 +20,22 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.33.0',
+    date: '21 Okt 2026',
+    user:
+        'Bilah bawah kini benar-benar melayang di atas layar — konten '
+        'tergulir di belakangnya, dan posisinya tetap rapi di HP dengan '
+        'navigasi gestur.',
+    tech:
+        'Shell: kapsul 232×56 yang sama dipindah dari bottomNavigationBar '
+        'ke slot floatingActionButton + centerFloat. Viewport body naik '
+        '776→844 (konten lewat di belakang kapsul); jarak bawah 12 → '
+        'kFloatingActionButtonMargin 16 + SafeArea dalam slot. Token '
+        'clearance/bottomPad 112 tak berubah; key home:navbar '
+        'dipertahankan → regression shell lama tetap berlaku.',
+    breaking: null,
+  ),
+  (
     version: 'v1.32.6',
     date: '14 Okt 2026',
     user:

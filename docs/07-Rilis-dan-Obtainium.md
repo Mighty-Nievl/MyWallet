@@ -4,6 +4,7 @@
 Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, bukan Actions artifacts. Jadi tiap versi stabil diterbitkan sebagai Release berisi APK bertanda tangan → HP dapat notifikasi update otomatis.
 
 ## Riwayat rilis
+- **v1.33.0** (21 Okt 2026): Bilah bawah kini benar-benar melayang di atas layar — konten tergulir di belakangnya, posisinya tetap rapi di HP dengan navigasi gestur.
 - **v1.29.0** (13 Okt 2026): Tiap dompet punya kartu saldonya sendiri di Beranda — geser untuk pindah dompet (kartu tampil = filter aktif). Urutan kartu diatur drag dari Kelola dompet (tersinkron antar-HP).
 - **v1.29.1** (14 Okt 2026): Tombol Beranda di bawah jadi pintasan Riwayat. Kelola dompet pindah ke kartu bergambar gear di ujung kartu saldo. Lingkaran + tengah diperbaiki agar tampil utuh di semua HP.
 - **v1.30.0** (14 Okt 2026): Kartu Kelola sejajar kartu saldo + titik halaman sampai kartu terakhir. Transaksi dan judul menyebut nama dompet (bila lebih dari satu). Tombol/kartu lebih membulat dan lembut di seluruh aplikasi.

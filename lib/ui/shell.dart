@@ -13,8 +13,8 @@ import 'screens/tx_form_screen.dart';
 ///
 /// Beranda pensiun dari navbar (redundant: shell satu halaman, tap-nya
 /// no-op) → slot kiri jadi pintasan Riwayat (push, ikut pola grid
-/// Beranda). Tombol tengah = lingkaran solid primer 72px overlap di
-/// atas bar, buka form Catat (pintu tunggal).
+/// Beranda). Tombol tengah = lingkaran solid primer yang duduk flush di
+/// dalam kapsul, buka form Catat (pintu tunggal).
 /// Scan = tab kanan, tap = alur [runScanFlow] (bukan halaman).
 ///
 /// Pengaturan tetap di gear header Beranda (bukan tab).
@@ -26,19 +26,26 @@ import 'screens/tx_form_screen.dart';
 /// melukis di luar batas ClipRRect bar (12px kepala di luar clip,
 /// rawan kepotong di GPU HP). Overlap dibangun via Stack
 /// (clipBehavior: none) + SafeArea (gesture-nav HP tak menempel pil
-/// sistem). Tampilan dipertahankan: lingkaran tetap menonjol ke atas.
+/// sistem).
 ///
-/// v1.32 (request user "navbar terlalu lebar" + "tombol + kurang gede"):
-/// bar 72→60 (ramping), tombol 64→72 + ikon 28→32 (magnet lebih kuat).
-/// Overlap -16 tetap (kepala proporsional: 72/2+16 = 52 vs bar 60).
+/// v1.32.1 (request user: "lebar" = bentang HORIZONTAL): dock kompak
+/// 232px, tinggi 56, lingkaran 56 FLUSH dalam kapsul (v1.32.4).
 ///
-/// v1.32.1 (request user: "lebar" = bentang HORIZONTAL, bukan tinggi —
-/// audit UI/UX: bar full-width 358px = strip berat saingan konten;
-/// dock kompak 232px = chrome ringan, + tetap hero, jempol tetap
-/// sampai (target 116×56 >> touchMin 48). Tinggi 48→56: lingkaran 72
-/// overlap -16 jadi FLUSH bawah (=56) + 16 kepala di atas — rapi,
-/// bukan nongol 8px seperti di bar 48. Spacer tengah pensiun (Riwayat
-/// + Scan langsung mengapit lingkaran).
+/// v1.33.0 (request user "dock-nya jadi FAB, tapi bentuknya tetap
+/// dock"): kapsul yang SAMA dipindah dari `bottomNavigationBar` ke slot
+/// `floatingActionButton` + `centerFloat`. Bedanya nyata: slot bottom
+/// NavigationBar memotong body setinggi dirinya (viewport 844→776),
+/// sedangkan slot FAB melayang DI ATAS body — kapsul benar-benar
+/// mengambang dan konten boleh lewat di belakangnya.
+///
+/// Konsekuensi yang disengaja: viewport body kini penuh. Clearance ekor
+/// Beranda (`AppSpacing.bottomPad` = dockSlot 68 + breath 44 +
+/// safeBottom) tetap menjaga konten terakhir berhenti bersih di atas
+/// kapsul saat scroll mentok.
+///
+/// Jarak bawah: kFloatingActionButtonMargin (16) dari Scaffold
+/// menggantikan `margin: bottom 12` milik bar lama; SafeArea(top:
+/// false) di DALAM slot menjaga kapsul tetap di atas pil gestur HP.
 class AppShell extends ConsumerWidget {
   const AppShell({super.key});
 
@@ -61,132 +68,117 @@ class AppShell extends ConsumerWidget {
     final scheme = Theme.of(context).colorScheme;
     final labels = Theme.of(context).textTheme.labelSmall;
     return Scaffold(
-      // v1.32.4 (audit foto user): floating dock = overlay di atas body.
-      // extendBody FALSE (default): body berhenti di atas slot dock —
-      // konten tak merembes ke belakang kapsul. Lingkaran flush di
-      // dalam kapsul (bukan nongol) + bottomPad 112 = konten aman.
       body: const HomeScreen(),
-      // Tombol Catat menonjol: lingkaran solid overlap di atas bar.
-      bottomNavigationBar: SafeArea(
+      // v1.33.0: kapsul = FAB. Jangan dibungkus Center/Align — slot FAB
+      // sudah menghitung ukuran child-nya sendiri, dan Center di slot
+      // lama pernah bikin body 0px (regresi v1.32.2).
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: SafeArea(
         top: false,
-        // v1.32.2 (fix blank-screen: Center/Align di bottomNavigationBar
-        // mengembang penuhi slot vertikal Scaffold → body height = 0
-        // (bukti probe: dock tengah 387-457 + body kosong walau header
-        // ada di tree). Row-centered HANYA bungkus horizontal — tinggi
-        // slot = tinggi dock (56+12), body dapat sisa layar.)
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              key: const ValueKey('home:navbar'),
-              width: 232,
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: scheme.surface,
-                borderRadius: AppRadius.cardAll,
-                border: Border.all(color: scheme.outlineVariant),
-                // v1.32.5: dock() ramping (blur 20/offset 4), bukan
-                // floating() (blur 32/offset 12) — proporsional kapsul 56.
-                boxShadow: AppShadows.dock(context),
-              ),
-              child: SizedBox(
-              height: 56,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Riwayat: pintasan layar paling sering dibuka
-                      // (pengganti Beranda yang no-op).
-                      Expanded(
-                        child: InkWell(
-                          onTap: () => _riwayat(context),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.receipt_long_outlined,
+        child: Container(
+          key: const ValueKey('home:navbar'),
+          width: 232,
+          decoration: BoxDecoration(
+            color: scheme.surface,
+            borderRadius: AppRadius.cardAll,
+            border: Border.all(color: scheme.outlineVariant),
+            // v1.32.5: dock() ramping (blur 20/offset 4), bukan
+            // floating() (blur 32/offset 12) — proporsional kapsul 56.
+            boxShadow: AppShadows.dock(context),
+          ),
+          child: SizedBox(
+            height: 56,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Riwayat: pintasan layar paling sering dibuka
+                    // (pengganti Beranda yang no-op).
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => _riwayat(context),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.receipt_long_outlined,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                            Text(
+                              'Riwayat',
+                              style: labels?.copyWith(
                                 color: scheme.onSurfaceVariant,
                               ),
-                              Text(
-                                'Riwayat',
-                                style: labels?.copyWith(
-                                  color: scheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
-                      // Ruang tengah untuk lingkaran overlap.
-                      const Expanded(child: SizedBox()),
-                      // Scan: alur kamera/galeri → pratinjau → simpan.
-                      Expanded(
-                        child: InkWell(
-                          onTap: () => runScanFlow(context, ref),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.document_scanner_outlined,
+                    ),
+                    // Ruang tengah untuk lingkaran.
+                    const Expanded(child: SizedBox()),
+                    // Scan: alur kamera/galeri → pratinjau → simpan.
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => runScanFlow(context, ref),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.document_scanner_outlined,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                            Text(
+                              'Scan',
+                              style: labels?.copyWith(
                                 color: scheme.onSurfaceVariant,
                               ),
-                              Text(
-                                'Scan',
-                                style: labels?.copyWith(
-                                  color: scheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                  // Tombol tengah: magnet mata, satu-satunya pintu catat.
-                  // v1.32.4 (audit foto user): lingkaran 72 top -16 = 15px
-                  // kepala + glow 16px di atas kapsul mengiris teks body
-                  // ('Makan & Minu[m]', persen, nominal — 5 hits probe).
-                  // Fix: lingkaran 56 + ikon 28, FLUSH (top 0) duduk di
-                  // DALAM kapsul — tak ada piksel di atas dock. 48 gagal
-                  // (Center menengahkan ulang, rect Semantics tetap 56);
-                  // top 8 gagal (makan body bawah). 56 = magnet + aman.
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    top: 0,
-                    child: Center(
-                      child: GestureDetector(
-                        onTap: () => _catat(context),
-                        child: Semantics(
-                          button: true,
-                          label: 'Catat transaksi',
-                          child: Container(
-                            width: 56,
-                            height: 56,
-                            decoration: BoxDecoration(
-                              color: scheme.primary,
-                              shape: BoxShape.circle,
-                              boxShadow: AppShadows.glow(context),
-                            ),
-                            child: Icon(
-                              Icons.add,
-                              color: scheme.onPrimary,
-                              size: 28,
-                            ),
+                    ),
+                  ],
+                ),
+                // Tombol tengah: magnet mata, satu-satunya pintu catat.
+                // v1.32.4: lingkaran 56 + ikon 28, FLUSH (top 0) duduk di
+                // DALAM kapsul — tak ada piksel di atas kapsul. 48 gagal
+                // (Center menengahkan ulang, rect Semantics tetap 56);
+                // top 8 gagal (makan body bawah). 56 = magnet + aman.
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: () => _catat(context),
+                      child: Semantics(
+                        button: true,
+                        label: 'Catat transaksi',
+                        child: Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: scheme.primary,
+                            shape: BoxShape.circle,
+                            boxShadow: AppShadows.glow(context),
+                          ),
+                          child: Icon(
+                            Icons.add,
+                            color: scheme.onPrimary,
+                            size: 28,
                           ),
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
-    ),
     );
   }
 }
