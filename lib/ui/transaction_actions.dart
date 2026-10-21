@@ -7,7 +7,7 @@ import '../data/providers.dart';
 import 'design/app_spacing.dart';
 import 'design/app_typography.dart';
 import 'format.dart';
-import 'tx_form_screen.dart';
+import 'screens/tx_form_screen.dart';
 
 /// Pintu aksi transaksi (v1.36.2).
 ///
