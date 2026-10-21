@@ -20,6 +20,25 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.33.1',
+    date: '21 Okt 2026',
+    user:
+        'Teks di dekat bilah bawah kini memudar halus sebelum menyentuh '
+        'bilah (tidak lagi terpotong garis), ketukan Riwayat/Scan terasa '
+        'balasannya, tulisan tetap rapi walau ukuran font HP diperbesar, '
+        'dan bilah bawah menyingkir sebentar saat kamu menggulir.',
+    tech:
+        'Audit UI/UX overlay kapsul: scrim gradient 96px (IgnorePointer) '
+        'di badan Beranda; kapsul jadi Material(color surface, shape, '
+        'clip antiAlias) sehingga ripple InkWell kelihatan (dulu '
+        'tertutup Container opaque di atas Material Scaffold); label '
+        'maxLines 1 + ellipsis + withClampedTextScaling 1.3; kapsul '
+        'tuck (AnimatedSlide 180ms) saat scroll turun, kembali di '
+        'ScrollEndNotification. 4 test baru. Radius 16 & susunan '
+        'Riwayat/+/Scan sengaja tidak diubah (bentuk v1.33.0).',
+    breaking: null,
+  ),
+  (
     version: 'v1.33.0',
     date: '21 Okt 2026',
     user:

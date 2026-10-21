@@ -171,6 +171,7 @@ Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi 
 - [x] **Bayangan dock ramping (v1.32.5)**: token scoped dock() blur 20/offset 4 ganti floating() blur 32/offset 12 khusus kapsul (piksel: tak ada gradasi di atas dock, kabut bawah menyusut); viewport berhenti pas tepi dock; bottomPad tetap 112; regression test keterbacaan.
 - [x] **Clearance adaptif (v1.32.6)**: ekor Beranda = bottomPad + safeBottom aktual (rumus dockSlot 68 + safe + breath 44; probe: safe 0→24, GAP tetap 152, MAX 928→952); token dockSlot/dockBreath; 9 layar lain statis (Scaffold sendiri).
 - [x] **Kapsul jadi FAB (v1.33.0)**: permintaan user "ubah dock jadi FAB, bentuknya tetap dock" → kapsul 232×56 identik dipindah dari bottomNavigationBar ke slot floatingActionButton + centerFloat (SafeArea dalam slot); body 776→844 (konten lewat di belakang kapsul), jarak bawah 12→kMargin 16, clearance 112 dipertahankan; key home:navbar tak berubah.
+- [x] **Audit kapsul FAB (v1.33.1)**: overlay opaque bikin teks hilang mendadak di tepi + ink tertutup → scrim gradient 96px (IgnorePointer) di body; kapsul jadi Material(color surface, shape, clip) host ripple; label maxLines 1 + clamp textScaler 1.3; tuck AnimatedSlide 180ms saat scroll turun, balik di ScrollEnd; 4 test baru `shell_chrome_test`.
 - [ ] Fase 3 — utang + budget ikut sync + uji 2 emulator bareng.
 - [ ] Fase 4 — hardening production-grade: RLS audit, hapus akun, kebijakan privasi (wajib Play Store), crash reporting.
 
