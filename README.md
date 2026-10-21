@@ -27,9 +27,9 @@ Datanya disimpan penuh di lokal (SQLite lewat Drift), jadi aman, cepat, dan bisa
 
 - **Offline-first** — tanpa akun, tanpa server, tanpa iklan.
 - **Privasi di depan** — kunci PIN/biometrik, sembunyikan nominal, mode privacy scale.
-- **Visual rapi** — tema Material 3, 6 warna aksen + Material You, mode gelap hitam pekat.
+- **Visual rapi** — tema Material 3, 6 warna aksen + Material You, mode gelap hitam pekat, bilah bawah melayang berbentuk kapsul.
 - **Siap pakai harian** — budget per kategori, laporan 6 bulan, export CSV, pengingat mencatat.
-- **Sehat secara teknis** — `flutter analyze` bersih, **163/163 test hijau**, CI jalan di tiap push/PR.
+- **Sehat secara teknis** — `flutter analyze` bersih, **258/258 test hijau**, CI jalan di tiap push/PR.
 
 ## 🧩 Fitur
 
@@ -41,7 +41,7 @@ Datanya disimpan penuh di lokal (SQLite lewat Drift), jadi aman, cepat, dan bisa
 | **Utang-piutang** | Tab Utang ke-5 + kartu Beranda · cicilan parsial + jatuh tempo + lunas otomatis · saldo ikut otomatis (cermin transaksi) |
 | **Laporan** | Ringkasan 6 bulan · bar chart + pie · rincian per kategori · export CSV · **export PDF offline** |
 | **Beranda Insight** | Sapaan + tanggal pinned · arus bulan semantik · delta vs bulan lalu · pacing budget · top kategori proporsional |
-| **Tampilan** | 6 warna aksen + Material You · hitam pekat · privacy semua nominal · nominal ringkas (`Rp1,5 jt`) · ukuran font · kustom isi Beranda |
+| **Tampilan** | 6 warna aksen + Material You · hitam pekat · privacy semua nominal · nominal ringkas (`Rp1,5 jt`) · ukuran font · kustom isi Beranda · **bilah bawah melayang (FAB kapsul: Riwayat · Catat · Scan)** |
 | **Privasi & data** | Kunci PIN/biometrik · backup/restore file `.sqlite` · hapus semua data |
 | **Lainnya** | Pengingat harian (notifikasi lokal) · skeleton shimmer + error ramah di semua layar |
 
@@ -89,7 +89,7 @@ MyWallet/
 ├── lib/
 │   ├── main.dart                 # ProviderScope + MyWalletApp
 │   ├── data/                     # lapisan data
-│   │   ├── tables.dart           #   skema SQLite (categories, transactions, budgets, debts, debt_payments)
+│   │   ├── tables.dart           #   skema SQLite (accounts, categories, transactions, budgets, debts, debt_payments) + kolom sync updatedAt/deletedAt
 │   │   ├── database.dart         #   query + database.g.dart (codegen Drift)
 │   │   ├── providers.dart        #   Riverpod providers
 │   │   ├── actions.dart          #   aksi CRUD transaksi
@@ -103,9 +103,9 @@ MyWallet/
 │       ├── screens/              #   12 layar (beranda, form, riwayat, budget, ...)
 │       ├── widgets/              #   TxTile dkk.
 │       ├── app_theme.dart        #   tema + Material You
-│       ├── shell.dart            #   navigasi 5 tab
+│       ├── shell.dart            #   shell + bilah bawah FAB kapsul (Riwayat · Catat · Scan)
 │       └── changelog.dart        #   sumber changelog in-app
-├── test/                         # 39 test (format + CRUD budget + golden Beranda + regresi overflow)
+├── test/                         # 258 test (unit + widget + golden Beranda + regresi shell/sync)
 ├── docs/                         # vault dokumentasi (Obsidian)
 └── .github/workflows/            # CI: build + release otomatis
 ```
@@ -142,12 +142,24 @@ atau langsung dari GitHub:
 
 ```bash
 # 1. Naikkan version: di pubspec.yaml  2. Tambah entri di lib/ui/changelog.dart
-git commit -am "v1.13.0: ..."
-git tag v1.13.0 && git push origin main v1.13.0
+git commit -am "v1.33.0: ..."
+git tag v1.33.0 && git push origin main v1.33.0
 # → workflow "Release MyWallet" otomatis: analyze → test → APK signed + AAB → GitHub Release
 ```
 
+**Yang jalan otomatis tiap push:**
+
+| Workflow | Trigger | Isi |
+| :-- | :-- | :-- |
+| `build.yml` · Build MyWallet | push/PR ke `main` | Analyze & Test → Build APK debug + AAB release (artifacts) |
+| `build-apk.yml` · Fast APK Build | push ke `main` | APK rilis **signed**, build-only (buat cek cepat di HP tanpa tag) |
+| `release.yml` · Release MyWallet | tag `v*` atau manual | Analyze → test → APK + AAB signed → publish GitHub Release |
+
 ## 🗺 Roadmap
+
+### Baru di v1.33.0 ✅
+
+- [x] Bilah bawah jadi **FAB kapsul** yang benar-benar melayang — konten tergulir di belakangnya, bentuk & isi (Riwayat · Catat · Scan) tidak berubah
 
 ### Berikutnya (v1.15)
 
@@ -175,7 +187,7 @@ Rincian lengkap: [docs/06-Roadmap.md](docs/06-Roadmap.md).
 | Pemeriksaan | Status |
 | :-- | :-- |
 | `flutter analyze` | No issues found |
-| `flutter test` | 236/236 passed |
+| `flutter test` | 258/258 passed |
 | CI *(push & PR ke `main`)* | Analyze & Test → Build APK & AAB |
 | Rilis *(tag `v*`)* | APK signed + AAB → GitHub Release otomatis |
 
