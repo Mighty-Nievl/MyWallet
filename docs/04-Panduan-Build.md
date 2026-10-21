@@ -1,12 +1,13 @@
 # 04 — Panduan Build
 
 ## Cara utama: GitHub Actions (cloud, tanpa makan RAM lokal)
-Repo: `Mighty-Nievl/MyWallet` (private). Workflow `.github/workflows/build.yml`:
+Repo: `Mighty-Nievl/MyWallet` (publik). Workflow `.github/workflows/build.yml`:
 - Tiap push / PR ke `main` (atau manual via **Actions → Build MyWallet → Run workflow**):
   1. `analyze-test`: pub get → build_runner → `flutter analyze` → `flutter test`
-  2. `build-android` (jalan kalau tahap 1 hijau): APK debug + AAB release → di-upload sebagai artifact.
-- **Ambil hasilnya:** tab Actions → klik run → bagian Artifacts → `mywallet-apk-debug` / `mywallet-aab-release`.
-- File AAB release = yang di-upload ke Play Console (bukan APK debug).
+  2. `build-debug-apk` (jalan kalau tahap 1 hijau): APK debug → di-upload sebagai artifact.
+- **Ambil hasilnya:** tab Actions → klik run → bagian Artifacts → `mywallet-apk-debug`.
+- AAB resmi (untuk Play Console) cuma dibuat saat rilis: lihat `release.yml`. Sejak v1.33.0 AAB tidak lagi dibangun tiap push (tanpa keystore rilis, AAB itu bertanda tangan debug dan tidak bisa dipakai).
+- Prep Android (disk, Java, Flutter, tuning Gradle, NDK anti-korup, keystore, `google-services.json`) ada di satu composite action: `.github/actions/android-prep` — dipakai ketiga workflow, jangan disalin lagi.
 - ✅ Build pertama (7 Okt 2026, run `37568474280`): hijau semua — `analyze-test` 42 dtk, `build-android` 10 mnt 46 dtk. Artifact: `app-release.aab` 58 MB, `app-debug.apk` 164 MB (tersimpan di `dist-cloud/`, di-ignore git).
 
 ## Rilis resmi ke GitHub Releases (untuk Obtainium)
@@ -57,6 +58,6 @@ flutter run                              # jalan + hot reload (Windows desktop j
 
 ## Kecepatan build (kenapa cloud ±10 menit, lokal bisa <30 detik?)
 Tiga jenis build yang beda obat:
-- **Cloud (GitHub Actions) = selalu dingin.** Tiap run sewa VM baru: unduh Flutter SDK + Gradle + dependencies Maven, compile Dart AOT + Kotlin + native (sqlite3), lalu bangun DUA artefak (APK + AAB). Normalnya 8–12 menit. Percepatan yang sudah dipasang di workflow: cache pub + cache Gradle, setting Gradle kencang khusus CI (`-Xmx4g`, 4 worker, parallel + caching + incremental — `android/gradle.properties` 2GB di repo di-timpa di CI karena itu yang bikin cloud ikut lambat), dan `cancel-in-progress` biar push baru membatalkan build basi. Ekspektasi realistis: run pertama setelah ini masih dingin (±10 menit, cache belum ada), run berikutnya ±5–7 menit. **30 detik tidak mungkin** untuk build rilis bersih di cloud.
+- **Cloud (GitHub Actions) = selalu dingin.** Tiap run sewa VM baru: unduh Flutter SDK + Gradle + dependencies Maven, compile Dart AOT + Kotlin + native (sqlite3), lalu build (push biasa = APK debug; rilis = APK + AAB). Normalnya 8–12 menit. Percepatan yang sudah dipasang di workflow: cache pub + cache Gradle, setting Gradle kencang khusus CI (`-Xmx4g`, 4 worker, parallel + caching + incremental — `android/gradle.properties` 2GB di repo di-timpa di CI karena itu yang bikin cloud ikut lambat), dan `cancel-in-progress` biar push baru membatalkan build basi. Ekspektasi realistis: run pertama setelah ini masih dingin (±10 menit, cache belum ada), run berikutnya ±5–7 menit. **30 detik tidak mungkin** untuk build rilis bersih di cloud.
 - **Lokal full build (`flutter build apk`) = menit.** Sama seperti cloud tapi cache panas (Gradle + pub sudah ada) → 1–3 menit. Setting 2GB di repo memang bikin ini lebih lambat demi RAM.
 - **Lokal dev (`flutter run` + hot reload) = detik.** Ini yang <30 detik: `flutter run -d windows` / ke HP, ubah kode, tekan `r` (reload) / `R` (restart). Full build ulang hanya saat butuh file APK/AAB — sehari-hari pakai Obtainium/cloud saja.

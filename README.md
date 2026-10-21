@@ -147,13 +147,15 @@ git tag v1.33.0 && git push origin main v1.33.0
 # → workflow "Release MyWallet" otomatis: analyze → test → APK signed + AAB → GitHub Release
 ```
 
-**Yang jalan otomatis tiap push:**
+**Alur CI:**
 
 | Workflow | Trigger | Isi |
 | :-- | :-- | :-- |
-| `build.yml` · Build MyWallet | push/PR ke `main` | Analyze & Test → Build APK debug + AAB release (artifacts) |
-| `build-apk.yml` · Fast APK Build | push ke `main` | APK rilis **signed**, build-only (buat cek cepat di HP tanpa tag) |
+| `build.yml` · Build MyWallet | push/PR ke `main` | Analyze & Test → Build APK debug (artifact) |
+| `build-apk.yml` · Fast APK Build | **manual** (`workflow_dispatch`) | APK rilis **signed**, build-only — buat cek cepat di HP tanpa nunggu tag |
 | `release.yml` · Release MyWallet | tag `v*` atau manual | Analyze → test → APK + AAB signed → publish GitHub Release |
+
+Prep Android (disk, Java, Flutter, tuning Gradle, NDK anti-korup, keystore, `google-services.json`) hidup di satu composite action: `.github/actions/android-prep`.
 
 ## 🗺 Roadmap
 

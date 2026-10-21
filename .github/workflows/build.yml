@@ -31,91 +31,30 @@ jobs:
       - run: flutter analyze
       - run: flutter test
 
-  build-android:
-    name: Build APK & AAB
+  build-debug-apk:
+    name: Build APK debug
     runs-on: ubuntu-latest
     needs: analyze-test
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
-      # Cegah "No space left on device" seperti di rilis v1.12.1.
-      - name: Bebaskan disk runner (anti penuh)
-        uses: jlumbroso/free-disk-space@main
+      # Disk, Java 17, Flutter, tuning Gradle, NDK anti-korup,
+      # google-services.json — dari composite action bersama. Keystore
+      # tidak diisi: APK debug memang bertanda tangan debug.
+      - uses: ./.github/actions/android-prep
         with:
-          tool-cache: false
-          android: false
-          dotnet: true
-          haskell: true
-          large-packages: false
-          docker-images: true
-          swap-storage: false
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-          cache: gradle
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: "3.44.4"
-          cache: true
-
-      # Runner cloud RAM 16GB: pakai setting kencang.
-      # (android/gradle.properties di repo diset hemat 2GB buat laptop RAM kecil —
-      #  setting itu yang bikin build cloud ikut lambat, jadi timpa di sini.)
-      - name: Tune Gradle for CI (fast)
-        run: |
-          cat > android/gradle.properties <<'EOF'
-          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8
-          org.gradle.workers.max=4
-          org.gradle.parallel=true
-          org.gradle.caching=true
-          kotlin.incremental=true
-          android.useAndroidX=true
-          android.newDsl=false
-          android.builtInKotlin=false
-          EOF
-
-      # NDK di runner sering korup saat diunduh (ZipException flaky).
-      # Pasang eksplisit dengan retry — asuransi yang sama seperti
-      # di release.yml, agar build debug/AAB tidak kena juga.
-      - name: Pasang NDK dengan retry (anti-korup)
-        run: |
-          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
-          NDK_VER="28.2.13676358"
-          MGR="$SDK/cmdline-tools/latest/bin/sdkmanager"
-          for i in 1 2 3 4 5; do
-            echo "== NDK attempt $i =="
-            rm -rf "$SDK/ndk/$NDK_VER" "$SDK/.temp"
-            if yes | "$MGR" --install "ndk;$NDK_VER"; then
-              break
-            fi
-            echo "NDK install gagal, coba lagi..."
-            sleep 15
-          done
-          test -f "$SDK/ndk/$NDK_VER/source.properties"
-
-      # Firebase (Fase 1): google-services.json di-gitignore, restore dari
-      # secret agar build cloud jalan. Gagal cepat bila secret belum diisi.
-      - name: Siapkan google-services.json (Firebase)
-        run: |
-          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > android/app/google-services.json
-          test -s android/app/google-services.json
+          google-services-base64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
 
       - run: flutter pub get
       - run: dart run build_runner build
       - run: flutter build apk --debug
-      - run: flutter build appbundle --release
 
       - uses: actions/upload-artifact@v4
         with:
           name: mywallet-apk-debug
           path: build/app/outputs/flutter-apk/app-debug.apk
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mywallet-aab-release
-          path: build/app/outputs/bundle/release/app-release.aab
+      # v1.33.0: AAB di sini DIHAPUS. Tanpa keystore rilis, AAB-nya
+      # bertanda tangan debug — tidak bisa diunggah ke Play Console dan
+      # tidak dipakai siapa pun. AAB resmi dibuat release.yml saat tag.

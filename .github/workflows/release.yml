@@ -22,67 +22,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Runner Ubuntu kehabisan disk saat assembleRelease (No space left).
-      # Bebaskan ~15GB dari tool preinstalled yang tidak dipakai
-      # (dotnet, haskell, docker images). Android SDK JANGAN dihapus.
-      - name: Bebaskan disk runner (anti penuh)
-        uses: jlumbroso/free-disk-space@main
+      # Disk, Java 17, Flutter, tuning Gradle, NDK anti-korup, keystore,
+      # google-services.json — semua dari composite action bersama
+      # (.github/actions/android-prep), biar tidak ada blok yang disalin
+      # ke tiga workflow.
+      # Catatan lama: runner Ubuntu kehabisan disk saat assembleRelease
+      # (No space left) → action ini membebaskan ~15GB tool preinstalled
+      # (dotnet, haskell, docker images); Android SDK JANGAN dihapus.
+      - uses: ./.github/actions/android-prep
         with:
-          tool-cache: false
-          android: false
-          dotnet: true
-          haskell: true
-          large-packages: false
-          docker-images: true
-          swap-storage: false
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-          cache: gradle
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: "3.44.4"
-          cache: true
-
-      # Runner cloud RAM 16GB: pakai setting kencang (lihat build.yml).
-      - name: Tune Gradle for CI (fast)
-        run: |
-          cat > android/gradle.properties <<'EOF'
-          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8
-          org.gradle.workers.max=4
-          org.gradle.parallel=true
-          org.gradle.caching=true
-          kotlin.incremental=true
-          android.useAndroidX=true
-          android.newDsl=false
-          android.builtInKotlin=false
-          EOF
-
-      # NDK di runner sering korup saat diunduh (ZipException flaky).
-      # Pasang eksplisit dengan retry agar Gradle tidak unduh dadakan
-      # dan gagal di tengah jalan. Versi NDK = flutter.ndkVersion
-      # untuk Flutter 3.44.4 (cek ulang saat bump Flutter).
-      # (Kejadian: rilis v1.8.0 lolos via rerun, v1.9.0 gagal lagi
-      #  dengan pola sama — murni infra, bukan kode.)
-      - name: Pasang NDK dengan retry (anti-korup)
-        run: |
-          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
-          NDK_VER="28.2.13676358"
-          MGR="$SDK/cmdline-tools/latest/bin/sdkmanager"
-          for i in 1 2 3 4 5; do
-            echo "== NDK attempt $i =="
-            rm -rf "$SDK/ndk/$NDK_VER" "$SDK/.temp"
-            if yes | "$MGR" --install "ndk;$NDK_VER"; then
-              break
-            fi
-            echo "NDK install gagal, coba lagi..."
-            sleep 15
-          done
-          test -f "$SDK/ndk/$NDK_VER/source.properties"
+          keystore-base64: ${{ secrets.KEYSTORE_BASE64 }}
+          keystore-password: ${{ secrets.KEYSTORE_PASSWORD }}
+          key-alias: ${{ secrets.KEY_ALIAS }}
+          key-password: ${{ secrets.KEY_PASSWORD }}
+          google-services-base64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
 
       - name: Tentukan tag rilis
         id: tag
@@ -92,24 +45,6 @@ jobs:
           else
             echo "value=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Siapkan keystore rilis
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/mywallet.keystore
-          {
-            echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}"
-            echo "keyPassword=${{ secrets.KEY_PASSWORD }}"
-            echo "keyAlias=${{ secrets.KEY_ALIAS }}"
-            echo "storeFile=app/mywallet.keystore"
-          } > android/key.properties
-
-      # Firebase (Fase 1): google-services.json di-gitignore, restore dari
-      # secret agar build cloud jalan (plugin google-services butuh file
-      # ini saat build). Gagal cepat bila secret belum diisi.
-      - name: Siapkan google-services.json (Firebase)
-        run: |
-          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > android/app/google-services.json
-          test -s android/app/google-services.json
 
       - run: flutter pub get
       - run: dart run build_runner build
