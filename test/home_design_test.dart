@@ -293,7 +293,7 @@ void main() {
     await tester.scrollUntilVisible(
       find.text('Pengeluaran bulan ini'),
       200,
-      scrollable: find.byType(CustomScrollView),
+      scrollable: _homeScrollable(),
     );
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 50));
@@ -850,7 +850,7 @@ void main() {
     await tester.scrollUntilVisible(
       find.text('Pengeluaran bulan ini · Keluarga'),
       200,
-      scrollable: find.byType(CustomScrollView),
+      scrollable: _homeScrollable(),
     );
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 50));
@@ -898,6 +898,20 @@ void main() {
     await _flushDriftCloseTimer(tester);
   });
 }
+
+/// Scrollable vertikal di dalam CustomScrollView Beranda.
+/// Parameter `scrollable` di [WidgetTester.scrollUntilVisible] di-cast
+/// ke widget `Scrollable`; `find.byType(CustomScrollView)` melempar
+/// TypeError karena CustomScrollView bukan Scrollable. Scrollable
+/// terluar = descendant pertama (ancestor selalu sebelum turunannya
+/// dalam urutan DFS), jadi `.first` aman meski carousel punya
+/// Scrollable horizontal sendiri.
+Finder _homeScrollable() => find
+    .descendant(
+      of: find.byType(CustomScrollView),
+      matching: find.byType(Scrollable),
+    )
+    .first;
 
 /// Lepas tree, lalu flush timer 0ms dari drift
 /// (StreamQueryStore.markAsClosed) — tanpa ini binding test gagal di

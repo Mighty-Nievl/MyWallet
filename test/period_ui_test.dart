@@ -91,6 +91,15 @@ Future<void> _pumpReports(WidgetTester tester, AppDatabase db) async {
   }
 }
 
+/// Lepas tree, lalu flush timer 0ms drift (StreamQueryStore.markAsClosed).
+/// Tanpa ini binding gagal invariant "A Timer is still pending" dan
+/// teardown `db.close` menggantung sampai timeout 10 menit — pola sama
+/// dengan test/reports_screen_test.dart & test/home_design_test.dart.
+Future<void> _flushDriftCloseTimer(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox());
+  await tester.pump(const Duration(milliseconds: 1));
+}
+
 void main() {
   // Provider + DB diuji sebagai `test` biasa (real async). Versi lama
   // memakai testWidgets + tester.runAsync untuk membaca `.future`;
@@ -158,6 +167,7 @@ void main() {
     expect(find.text('Ringkasan ${periodLabel(week)}'), findsOneWidget);
     // Judul lama tidak boleh tertinggal (dua konteks di satu layar = bohong).
     expect(find.text('Ringkasan $monthlyLabel'), findsNothing);
+    await _flushDriftCloseTimer(tester);
   });
 
   testWidgets('chevron menggeser satu unit periode (harian → kemarin)', (
@@ -185,6 +195,7 @@ void main() {
       find.text('Ringkasan ${periodLabel(todayP.previous)}'),
       findsOneWidget,
     );
+    await _flushDriftCloseTimer(tester);
   });
 
   testWidgets('bulanan ⇄ mingguan: bulan tidak ikut berubah', (tester) async {
@@ -201,5 +212,6 @@ void main() {
 
     // Kembali ke bulanan = kembali ke bulan yang sama, bukan bulan lain.
     expect(find.text('Ringkasan ${monthLabel(before)}'), findsOneWidget);
+    await _flushDriftCloseTimer(tester);
   });
 }
