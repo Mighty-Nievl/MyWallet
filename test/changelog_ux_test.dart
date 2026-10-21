@@ -75,16 +75,23 @@ void main() {
     });
     // Mock PackageInfo: di test env tidak ada platform channel, tanpa ini
     // future menggantung → halaman stuck di skeleton → kartu tak ketemu.
-    // Versi mock = versi pubspec saat ini (punya badge TERINSTALL).
+    //
+    // v1.34.0: versi mock diambil dari entri TERATAS changelog, bukan angka
+    // hardcode ('1.32.6'). Angka hardcode membuat test merah palsu tiap
+    // rilis baru: entri itu bergeser ke grup "Versi lama" yang belum
+    // dibangun ListView malas, jadi badge TERINSTALL tak pernah ada di tree.
+    // Yang diuji adalah "badge menempel di versi terinstall", bukan versi
+    // tertentu — jadi sumbernya harus ikut changelog.
     const channel = MethodChannel('dev.fluttercommunity.plus/package_info');
+    final installedVersion = appChangelog.first.version.replaceFirst('v', '');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
       if (call.method == 'getAll') {
         return <String, dynamic>{
           'appName': 'MyWallet',
           'packageName': 'com.rezal.mywallet',
-          'version': '1.32.6',
-          'buildNumber': '71',
+          'version': installedVersion,
+          'buildNumber': '74',
         };
       }
       return null;
