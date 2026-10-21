@@ -41,7 +41,7 @@ Datanya disimpan penuh di lokal (SQLite lewat Drift), jadi aman, cepat, dan bisa
 | **Utang-piutang** | Tab Utang ke-5 + kartu Beranda · cicilan parsial + jatuh tempo + lunas otomatis · saldo ikut otomatis (cermin transaksi) |
 | **Laporan** | Ringkasan 6 bulan · bar chart + pie · rincian per kategori · export CSV · **export PDF offline** |
 | **Beranda Insight** | Sapaan + tanggal pinned · arus bulan semantik · delta vs bulan lalu · pacing budget · top kategori proporsional |
-| **Tampilan** | 6 warna aksen + Material You · hitam pekat · privacy semua nominal · nominal ringkas (`Rp1,5 jt`) · ukuran font · kustom isi Beranda · **bilah bawah melayang (FAB kapsul: Riwayat · Catat · Scan)** |
+| **Tampilan** | 6 warna aksen + Material You · hitam pekat · privacy semua nominal · nominal ringkas (`Rp1,5 jt`) · ukuran font · kustom isi Beranda · **bilah bawah melayang berkapsul (Riwayat · Catat · Scan)** |
 | **Privasi & data** | Kunci PIN/biometrik · backup/restore file `.sqlite` · hapus semua data |
 | **Lainnya** | Pengingat harian (notifikasi lokal) · skeleton shimmer + error ramah di semua layar |
 

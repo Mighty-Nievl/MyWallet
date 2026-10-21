@@ -20,6 +20,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mywallet/data/database.dart';
 import 'package:mywallet/data/providers.dart';
 import 'package:mywallet/ui/app_theme.dart';
+import 'package:mywallet/ui/design/app_spacing.dart';
 import 'package:mywallet/ui/shell.dart';
 
 Future<AppDatabase> _newDb(WidgetTester tester) async {
@@ -105,6 +106,10 @@ void main() {
       final scrimRect = tester.getRect(scrim);
       expect(scrimRect.width, closeTo(390.0, 0.5));
       expect(scrimRect.bottom, closeTo(844.0, 0.5));
+      // Tinggi mengikuti token clearance (v1.33.1): bottomPad + safeBottom,
+      // bukan angka asal 96 — supaya ujung fade berakhir di atas kapsul
+      // di HP gesture-nav maupun HP tombol.
+      expect(scrimRect.height, AppSpacing.bottomPad);
       final guard = tester.widget<IgnorePointer>(
         find
             .ancestor(of: scrim, matching: find.byType(IgnorePointer))
@@ -133,9 +138,11 @@ void main() {
       // opaque di atasnya — kalau tidak, ripple tertutup.
       expect(host.color, AppTheme.light().colorScheme.surface);
       expect(host.clipBehavior, Clip.antiAlias);
+      // Riwayat, Scan, dan `+` (v1.33.1: lingkaran primer kini punya
+      // Material+InkWell sendiri, jadi ikut ber-ripple).
       expect(
         find.descendant(of: capsule, matching: find.byType(InkWell)),
-        findsNWidgets(2),
+        findsNWidgets(3),
       );
     } finally {
       await _cleanup(tester, db);

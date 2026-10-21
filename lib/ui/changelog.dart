@@ -28,14 +28,21 @@ const appChangelog = <({String version, String date, String user, String tech, S
         'balasannya, tulisan tetap rapi walau ukuran font HP diperbesar, '
         'dan bilah bawah menyingkir sebentar saat kamu menggulir.',
     tech:
-        'Audit UI/UX overlay kapsul: scrim gradient 96px (IgnorePointer) '
-        'di badan Beranda; kapsul jadi Material(color surface, shape, '
-        'clip antiAlias) sehingga ripple InkWell kelihatan (dulu '
-        'tertutup Container opaque di atas Material Scaffold); label '
-        'maxLines 1 + ellipsis + withClampedTextScaling 1.3; kapsul '
-        'tuck (AnimatedSlide 180ms) saat scroll turun, kembali di '
-        'ScrollEndNotification. 4 test baru. Radius 16 & susunan '
-        'Riwayat/+/Scan sengaja tidak diubah (bentuk v1.33.0).',
+        'Audit UI/UX overlay kapsul: scrim gradient setinggi bottomPad + '
+        'safeBottom (transparan→surface, IgnorePointer) yang ikut tuck; '
+        'kapsul jadi Material(color surface, shape, clip antiAlias) '
+        'sehingga ripple InkWell kelihatan (dulu tertutup Container '
+        'opaque di atas Material Scaffold); label maxLines 1 + ellipsis '
+        '+ withClampedTextScaling 1.3; kapsul tuck AnimatedSlide 180ms '
+        'saat scroll turun dan kembali saat ScrollEnd atau arah '
+        'berbalik (baseline reset di ScrollStart); lingkaran + pindah ke '
+        'Material(primary)+InkWell (satu-satunya kontrol tanpa ripple); '
+        'spacer tengah ikut men-tap Catat (hapus zona mati ±10px). '
+        'Slot: kapsul kembali ke bottomNavigationBar + extendBody true '
+        '(bukan floatingActionButton) — body tetap penuh 844, margin 12, '
+        'dan SnackBar/keyboard/safe-area/semantik kembali urusan '
+        'Scaffold. 4 test baru. Radius 16 & susunan Riwayat/+/Scan '
+        'sengaja tidak diubah (bentuk v1.33.0).',
     breaking: null,
   ),
   (
