@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 import 'database.dart';
+import 'period.dart';
 import 'settings.dart';
 
 /// Provider database (satu instance untuk seluruh aplikasi).
@@ -131,6 +132,57 @@ final selectedMonthProvider = StateProvider<String>((ref) {
 /// Batas awal-akhir bulan yang dipilih.
 final monthRangeProvider = Provider<(DateTime, DateTime)>((ref) {
   return monthRangeOf(ref.watch(selectedMonthProvider));
+});
+
+/// Periode analitik aktif (v1.35.0).
+///
+/// Sumber kebenaran BARU untuk Harian/Mingguan/Bulanan/Tahunan. `anchor`
+/// dipisah dari `selectedMonthProvider` supaya menggeser bulan di Beranda
+/// tidak merusak periode harian yang sedang dilihat — dua state ini
+/// disinkronkan hanya saat user memilih "Bulanan" (lihat PeriodSwitcher).
+final periodKindProvider = StateProvider<PeriodKind>(
+  (ref) => PeriodKind.bulanan,
+);
+
+/// Tanggal acuan periode (dinormalisasi oleh [Period.of]).
+final periodAnchorProvider = StateProvider<DateTime>((ref) {
+  final now = DateTime.now();
+  return DateTime(now.year, now.month, now.day);
+});
+
+final activePeriodProvider = Provider<Period>((ref) {
+  return Period.of(
+    ref.watch(periodKindProvider),
+    ref.watch(periodAnchorProvider),
+  );
+});
+
+/// Rentang periode aktif — pengganti `monthRangeProvider` untuk layar yang
+/// mengikuti switcher.
+final periodRangeProvider = Provider<(DateTime, DateTime)>((ref) {
+  return ref.watch(activePeriodProvider).range;
+});
+
+/// Total (masuk, keluar) pada periode aktif.
+final periodTotalsProvider = StreamProvider<(int, int)>((ref) {
+  final db = ref.watch(dbProvider);
+  final acct = ref.watch(selectedAccountProvider);
+  final (from, to) = ref.watch(periodRangeProvider);
+  return db
+      .select(db.transactions)
+      .watch()
+      .asyncMap((_) => db.getTotals(from, to, accountId: acct));
+});
+
+/// Total (masuk, keluar) periode SEBELUMNYA — pembanding delta.
+final prevPeriodTotalsProvider = StreamProvider<(int, int)>((ref) {
+  final db = ref.watch(dbProvider);
+  final acct = ref.watch(selectedAccountProvider);
+  final (from, to) = ref.watch(activePeriodProvider).previous.range;
+  return db
+      .select(db.transactions)
+      .watch()
+      .asyncMap((_) => db.getTotals(from, to, accountId: acct));
 });
 
 /// Total (pemasukan, pengeluaran) HARI INI. Auto-refresh tiap ada perubahan.
