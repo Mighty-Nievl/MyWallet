@@ -41,7 +41,7 @@ import 'screens/tx_form_screen.dart';
 /// Perbaikan perilaku di versi yang sama (bentuk & susunan TIDAK diubah):
 /// 1. P1 — teks yang lewat di belakang kapsul hilang mendadak di tepi.
 ///    Badan Beranda diberi scrim gradient (transparan → surface) yang
-///    tingginya mengikuti token, bukan angka asal: `bottomPad` (112) +
+///    tingginya mengikuti token, bukan angka asal: `bottomPad` (120) +
 ///    safeBottom — sama dengan clearance ekor Beranda. Scrim
 ///    `IgnorePointer` dan ikut menyingkir saat kapsul tuck.
 /// 2. P2 — `InkWell` di dalam `Container` opaque: splash digambar di
@@ -56,8 +56,12 @@ import 'screens/tx_form_screen.dart';
 /// 6. Zona mati dihapus: spacer tengah ikut men-tap Catat.
 ///
 /// Jarak bawah kembali 12 (`margin`), bukan kFloatingActionButtonMargin
-/// 16 — jadi rumus token pulih persis: bottomPad 112 = isi 56 + margin
-/// 12 + breath 44.
+/// 16 — jadi rumus token pulih persis: bottomPad 120 = FAB 64 + margin
+/// 12 + breath 44 (v1.36.0).
+///
+/// v1.36.0 (request user): `+` dibesarkan ke 64 dan menonjol 8px di atas
+/// kapsul. Kapsul tetap 56; lingkaran pindah ke Stack LUAR karena Material
+/// kapsul meng-clip anaknya. Slot jadi 76 (64 + margin 12), bottomPad 120.
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
@@ -98,16 +102,14 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   void _catat() {
     HapticFeedback.lightImpact();
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const TxFormScreen()));
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const TxFormScreen()));
   }
 
   void _riwayat() {
     HapticFeedback.selectionClick();
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const HistoryScreen()));
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const HistoryScreen()));
   }
 
   @override
@@ -167,204 +169,210 @@ class _AppShellState extends ConsumerState<AppShell> {
       // ini pernah mengembang penuhi slot vertikal (regresi v1.32.2).
       bottomNavigationBar: SafeArea(
         top: false,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            IgnorePointer(
-              ignoring: _tucked,
-              child: AnimatedSlide(
-                key: const ValueKey('home:fab-slide'),
-                offset: _tucked ? const Offset(0, 1.4) : Offset.zero,
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOut,
-                child: AnimatedOpacity(
-                  opacity: _tucked ? 0 : 1,
-                  duration: const Duration(milliseconds: 180),
-                  child: Semantics(
-                    container: true,
-                    explicitChildNodes: true,
-                    label: 'Navigasi utama',
-                    child: Container(
-                      key: const ValueKey('home:navbar'),
-                      width: 232,
-                      // v1.33.1: 12 lagi (bukan kMargin FAB 16) supaya
-                      // rumus token 112 = 56 + 12 + 44 pulih persis.
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        borderRadius: AppRadius.cardAll,
-                        // v1.32.5: dock() ramping (blur 20/offset 4) —
-                        // proporsional kapsul 56.
-                        boxShadow: AppShadows.dock(context),
-                      ),
-                      // P2: Material ini host ripple InkWell di dalamnya.
-                      // Dulu warna surface ada di Container DI ATAS
-                      // Material milik Scaffold → splash tak kelihatan.
-                      child: Material(
-                        color: scheme.surface,
-                        clipBehavior: Clip.antiAlias,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: AppRadius.cardAll,
-                          side: BorderSide(color: scheme.outlineVariant),
-                        ),
-                        child: SizedBox(
-                          height: 56,
-                          // P5: chrome 56px — clamp skala teks supaya
-                          // label tidak wrap lalu overflow di font besar.
-                          child: MediaQuery.withClampedTextScaling(
-                            maxScaleFactor: 1.3,
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                Row(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    // Riwayat: pintasan layar paling
-                                    // sering dibuka (pengganti Beranda
-                                    // yang dulu no-op).
-                                    Expanded(
-                                      child: InkWell(
-                                        customBorder:
-                                            const RoundedRectangleBorder(
-                                              borderRadius: AppRadius.cardAll,
-                                            ),
-                                        onTap: _riwayat,
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 4,
-                                          ),
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.receipt_long_outlined,
-                                                color:
-                                                    scheme.onSurfaceVariant,
-                                              ),
-                                              Text(
-                                                'Riwayat',
-                                                maxLines: 1,
-                                                softWrap: false,
-                                                overflow:
-                                                    TextOverflow.ellipsis,
-                                                style: labels?.copyWith(
-                                                  color:
-                                                      scheme.onSurfaceVariant,
+        child: IgnorePointer(
+          ignoring: _tucked,
+          child: AnimatedSlide(
+            key: const ValueKey('home:fab-slide'),
+            offset: _tucked ? const Offset(0, 1.4) : Offset.zero,
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            child: AnimatedOpacity(
+              opacity: _tucked ? 0 : 1,
+              duration: const Duration(milliseconds: 180),
+              child: Semantics(
+                container: true,
+                explicitChildNodes: true,
+                label: 'Navigasi utama',
+                // v1.36.0: slot setinggi FAB 64 + margin 12. Lingkaran
+                // duduk di Stack LUAR kapsul — Material kapsul meng-clip
+                // anaknya, jadi overlap 8px mustahil kalau tetap di dalam.
+                child: SizedBox(
+                  height: AppSpacing.dockSlot,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.bottomCenter,
+                    children: [
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 12,
+                        child: Center(
+                          child: Container(
+                            key: const ValueKey('home:navbar'),
+                            width: 232,
+                            decoration: BoxDecoration(
+                              borderRadius: AppRadius.cardAll,
+                              // v1.32.5: dock() ramping (blur 20/offset 4) —
+                              // proporsional kapsul 56.
+                              boxShadow: AppShadows.dock(context),
+                            ),
+                            // P2: Material ini host ripple InkWell di dalamnya.
+                            // Dulu warna surface ada di Container DI ATAS
+                            // Material milik Scaffold → splash tak kelihatan.
+                            child: Material(
+                              color: scheme.surface,
+                              clipBehavior: Clip.antiAlias,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AppRadius.cardAll,
+                                side: BorderSide(color: scheme.outlineVariant),
+                              ),
+                              child: SizedBox(
+                                height: 56,
+                                // P5: chrome 56px — clamp skala teks supaya
+                                // label tidak wrap lalu overflow di font besar.
+                                child: MediaQuery.withClampedTextScaling(
+                                  maxScaleFactor: 1.3,
+                                  child: Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: [
+                                          // Riwayat: pintasan layar paling
+                                          // sering dibuka (pengganti Beranda
+                                          // yang dulu no-op).
+                                          Expanded(
+                                            child: InkWell(
+                                              customBorder:
+                                                  const RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        AppRadius.cardAll,
+                                                  ),
+                                              onTap: _riwayat,
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 4,
+                                                    ),
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      Icons
+                                                          .receipt_long_outlined,
+                                                      color: scheme
+                                                          .onSurfaceVariant,
+                                                    ),
+                                                    Text(
+                                                      'Riwayat',
+                                                      maxLines: 1,
+                                                      softWrap: false,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: labels?.copyWith(
+                                                        color: scheme
+                                                            .onSurfaceVariant,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    // Ruang tengah untuk lingkaran. v1.33.1:
-                                    // area ini ikut men-tap Catat — dulu
-                                    // ±10px di kiri-kanan lingkaran adalah
-                                    // zona mati yang tidak melakukan apa pun.
-                                    Expanded(
-                                      child: GestureDetector(
-                                        behavior: HitTestBehavior.opaque,
-                                        onTap: _catat,
-                                        child: const SizedBox.expand(),
-                                      ),
-                                    ),
-                                    // Scan: alur kamera/galeri → pratinjau.
-                                    Expanded(
-                                      child: InkWell(
-                                        customBorder:
-                                            const RoundedRectangleBorder(
-                                              borderRadius: AppRadius.cardAll,
                                             ),
-                                        onTap: () =>
-                                            runScanFlow(context, ref),
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 4,
                                           ),
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons
-                                                    .document_scanner_outlined,
-                                                color:
-                                                    scheme.onSurfaceVariant,
-                                              ),
-                                              Text(
-                                                'Scan',
-                                                maxLines: 1,
-                                                softWrap: false,
-                                                overflow:
-                                                    TextOverflow.ellipsis,
-                                                style: labels?.copyWith(
-                                                  color:
-                                                      scheme.onSurfaceVariant,
+                                          // Ruang tengah untuk lingkaran. v1.33.1:
+                                          // area ini ikut men-tap Catat — dulu
+                                          // ±10px di kiri-kanan lingkaran adalah
+                                          // zona mati yang tidak melakukan apa pun.
+                                          Expanded(
+                                            child: GestureDetector(
+                                              behavior: HitTestBehavior.opaque,
+                                              onTap: _catat,
+                                              child: const SizedBox.expand(),
+                                            ),
+                                          ),
+                                          // Scan: alur kamera/galeri → pratinjau.
+                                          Expanded(
+                                            child: InkWell(
+                                              customBorder:
+                                                  const RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        AppRadius.cardAll,
+                                                  ),
+                                              onTap: () =>
+                                                  runScanFlow(context, ref),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 4,
+                                                    ),
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      Icons
+                                                          .document_scanner_outlined,
+                                                      color: scheme
+                                                          .onSurfaceVariant,
+                                                    ),
+                                                    Text(
+                                                      'Scan',
+                                                      maxLines: 1,
+                                                      softWrap: false,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: labels?.copyWith(
+                                                        color: scheme
+                                                            .onSurfaceVariant,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                // Tombol tengah: magnet mata, satu-satunya
-                                // pintu catat. 56 + ikon 28, FLUSH (top 0)
-                                // di DALAM kapsul.
-                                Positioned(
-                                  left: 0,
-                                  right: 0,
-                                  top: 0,
-                                  child: Center(
-                                    child: Semantics(
-                                      button: true,
-                                      label: 'Catat transaksi',
-                                      child: Container(
-                                        width: 56,
-                                        height: 56,
-                                        // Glow di Container tanpa warna,
-                                        // supaya bayangan lingkaran tetap
-                                        // dari token.
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          boxShadow:
-                                              AppShadows.glow(context),
-                                        ),
-                                        // v1.33.1: warna primer pindah ke
-                                        // Material + InkWell → `+` punya
-                                        // ripple seperti dua item lain.
-                                        child: Material(
-                                          color: scheme.primary,
-                                          shape: const CircleBorder(),
-                                          clipBehavior: Clip.antiAlias,
-                                          child: InkWell(
-                                            customBorder:
-                                                const CircleBorder(),
-                                            onTap: _catat,
-                                            child: Icon(
-                                              Icons.add,
-                                              color: scheme.onPrimary,
-                                              size: 28,
                                             ),
                                           ),
-                                        ),
+                                        ],
                                       ),
-                                    ),
+                                    ],
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
+                      // v1.36.0: lingkaran 64 di LUAR Material kapsul.
+                      // Bottom 12 = sejajar dasar kapsul; tinggi 64 → 8px
+                      // menonjol ke atas (fabOverlap), 56px duduk di dalam.
+                      Positioned(
+                        bottom: 12,
+                        child: Semantics(
+                          button: true,
+                          label: 'Catat transaksi',
+                          child: Container(
+                            width: AppSpacing.fabSize,
+                            height: AppSpacing.fabSize,
+                            // Glow di Container tanpa warna, supaya bayangan
+                            // lingkaran tetap dari token.
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: AppShadows.glow(context),
+                            ),
+                            child: Material(
+                              color: scheme.primary,
+                              shape: const CircleBorder(),
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                customBorder: const CircleBorder(),
+                                onTap: _catat,
+                                child: Icon(
+                                  Icons.add,
+                                  color: scheme.onPrimary,
+                                  size: 30,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

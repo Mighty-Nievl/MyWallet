@@ -255,6 +255,22 @@ final periodExpenseByCategoryProvider = StreamProvider<List<CategoryTotal>>((
       .asyncMap((_) => db.totalsByCategory(from, to, true, accountId: acct));
 });
 
+/// Total per hari untuk satu bulan kalender ("yyyy-MM").
+///
+/// v1.36.0: keluarga provider ini sengaja TIDAK mengikuti periode aktif —
+/// kalender butuh seluruh bulan walau user sedang melihat minggu/tahun.
+/// Filter dompet tetap ikut `selectedAccountProvider`.
+final calendarDailyTotalsProvider =
+    StreamProvider.family<Map<DateTime, (int, int)>, String>((ref, month) {
+      final db = ref.watch(dbProvider);
+      final acct = ref.watch(selectedAccountProvider);
+      final (from, to) = monthRangeOf(month);
+      return db
+          .select(db.transactions)
+          .watch()
+          .asyncMap((_) => db.getDailyTotals(from, to, accountId: acct));
+    });
+
 /// Satu titik arus kas bulanan: kunci "yyyy-MM" + (masuk, keluar).
 /// Dipakai grafik 6 bulan di Laporan — fungsi murni (testable).
 typedef MonthFlow = ({String key, int masuk, int keluar});
@@ -347,12 +363,12 @@ final historyFilterProvider = StateProvider<HistoryFilter>(
   (ref) => const HistoryFilter(),
 );
 
-/// Stream riwayat sesuai filter aktif + bulan yang dipilih.
+/// Stream riwayat sesuai filter aktif + PERIODE yang dipilih (v1.36.0).
 final historyProvider = StreamProvider<List<TxWithCategory>>((ref) {
   final db = ref.watch(dbProvider);
   final f = ref.watch(historyFilterProvider);
   final acct = ref.watch(selectedAccountProvider);
-  final (from, to) = ref.watch(monthRangeProvider);
+  final (from, to) = ref.watch(periodRangeProvider);
   return db.watchHistory(
     categoryId: f.categoryId,
     isExpense: f.isExpense,
@@ -364,12 +380,12 @@ final historyProvider = StreamProvider<List<TxWithCategory>>((ref) {
 });
 
 /// Jumlah TOTAL hasil filter aktif (tanpa limit) — strip Riwayat jujur
-/// soal limit (v1.24.9: "Menampilkan 100 dari N").
+/// soal limit (v1.24.9: "Menampilkan 100 dari N"). v1.36.0: ikut periode.
 final historyCountProvider = StreamProvider<int>((ref) {
   final db = ref.watch(dbProvider);
   final f = ref.watch(historyFilterProvider);
   final acct = ref.watch(selectedAccountProvider);
-  final (from, to) = ref.watch(monthRangeProvider);
+  final (from, to) = ref.watch(periodRangeProvider);
   return db.watchHistoryCount(
     categoryId: f.categoryId,
     isExpense: f.isExpense,

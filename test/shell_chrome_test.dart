@@ -138,11 +138,18 @@ void main() {
       // opaque di atasnya — kalau tidak, ripple tertutup.
       expect(host.color, AppTheme.light().colorScheme.surface);
       expect(host.clipBehavior, Clip.antiAlias);
-      // Riwayat, Scan, dan `+` (v1.33.1: lingkaran primer kini punya
-      // Material+InkWell sendiri, jadi ikut ber-ripple).
+      // v1.36.0: Riwayat + Scan tinggal di dalam kapsul; `+` pindah ke
+      // Stack luar (64px overlap) dan tetap punya Material+InkWell sendiri.
       expect(
         find.descendant(of: capsule, matching: find.byType(InkWell)),
-        findsNWidgets(3),
+        findsNWidgets(2),
+      );
+      expect(
+        find.descendant(
+          of: find.bySemanticsLabel('Catat transaksi'),
+          matching: find.byType(InkWell),
+        ),
+        findsOneWidget,
       );
     } finally {
       await _cleanup(tester, db);
@@ -221,6 +228,32 @@ void main() {
         await tester.pump(const Duration(milliseconds: 60));
       }
       expect(dy(), 0, reason: 'harus kembali setelah scroll berhenti');
+    } finally {
+      await _cleanup(tester, db);
+    }
+  });
+
+  testWidgets('FAB 64px menonjol 8px di atas kapsul (v1.36.0)', (
+    tester,
+  ) async {
+    final db = await _newDb(tester);
+    try {
+      await tester.pumpWidget(_app(db));
+      await _pump(tester);
+
+      final capsule = tester.getRect(
+        find.byKey(const ValueKey('home:navbar')),
+      );
+      final catat = tester.getRect(find.bySemanticsLabel('Catat transaksi'));
+      expect(capsule.height, 56.0);
+      expect(catat.width, AppSpacing.fabSize);
+      expect(catat.height, AppSpacing.fabSize);
+      // Dasar lingkaran sejajar dasar kapsul; kepala menonjol 8px.
+      expect(catat.bottom, closeTo(capsule.bottom, 0.5));
+      expect(
+        catat.top,
+        closeTo(capsule.top - AppSpacing.fabOverlap, 0.5),
+      );
     } finally {
       await _cleanup(tester, db);
     }

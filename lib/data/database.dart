@@ -303,6 +303,44 @@ class AppDatabase extends _$AppDatabase {
     return (inRow.read<int>('s'), outRow.read<int>('s'));
   }
 
+  /// Total (masuk, keluar) per HARI LOKAL dalam rentang (v1.36.0).
+  ///
+  /// Kunci map = `DateTime(y, m, d)` — bukan jam, supaya kalender bisa
+  /// memakai lookup O(1) per sel. Transfer tetap dikecualikan (sama
+  /// dengan [getTotals]): pindah dompet bukan pemasukan/pengeluaran.
+  /// Agregasi dilakukan di Dart, bukan SQL `strftime`, karena kolom date
+  /// disimpan sebagai timestamp UTC dan batas hari harus ikut zona HP.
+  Future<Map<DateTime, (int, int)>> getDailyTotals(
+    DateTime from,
+    DateTime to, {
+    int? accountId,
+  }) async {
+    final acctClause = accountId == null ? '' : ' AND account_id = ?';
+    final vars = <Variable>[
+      if (accountId != null) Variable.withInt(accountId),
+      Variable.withDateTime(from),
+      Variable.withDateTime(to),
+    ];
+    final rows = await customSelect(
+      'SELECT date, is_expense, amount FROM transactions '
+      'WHERE deleted_at IS NULL AND transfer_id IS NULL$acctClause '
+      'AND date BETWEEN ? AND ?',
+      variables: vars,
+      readsFrom: {transactions},
+    ).get();
+    final out = <DateTime, (int, int)>{};
+    for (final row in rows) {
+      final date = row.read<DateTime>('date');
+      final day = DateTime(date.year, date.month, date.day);
+      final current = out[day] ?? (0, 0);
+      final amount = row.read<int>('amount');
+      out[day] = row.read<bool>('is_expense')
+          ? (current.$1, current.$2 + amount)
+          : (current.$1 + amount, current.$2);
+    }
+    return out;
+  }
+
   /// Klausa WHERE + variabel untuk filter riwayat — SATU sumber untuk
   /// [watchHistory] + [watchHistoryCount] (v1.24.9: tak bisa drift).
   ({List<String> where, List<Variable> vars}) _historyFilterParts({

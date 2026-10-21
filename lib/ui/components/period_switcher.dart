@@ -6,6 +6,7 @@ import '../../data/providers.dart';
 import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
 import '../format.dart';
+import '../screens/calendar_screen.dart';
 
 /// Switcher periode (v1.35.0): Harian · Mingguan · Bulanan · Tahunan.
 ///
@@ -27,9 +28,25 @@ class PeriodSwitcher extends ConsumerWidget {
       height: 44,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: PeriodKind.values.length,
+        // +1 = chip "Kalender". Kalender bukan PeriodKind: ia alat
+        // navigasi (pilih tanggal → mode Harian), bukan rentang analitik.
+        itemCount: PeriodKind.values.length + 1,
         separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.s8),
         itemBuilder: (context, i) {
+          if (i == PeriodKind.values.length) {
+            return ChoiceChip(
+              key: const ValueKey('period:calendar'),
+              avatar: Icon(
+                Icons.calendar_month_outlined,
+                size: 18,
+                color: AppColors.mutedOf(context),
+              ),
+              label: const Text('Kalender'),
+              onSelected: (_) => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const CalendarScreen()),
+              ),
+            );
+          }
           final kind = PeriodKind.values[i];
           final selected = kind == active;
           return ChoiceChip(

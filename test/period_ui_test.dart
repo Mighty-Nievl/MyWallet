@@ -67,19 +67,21 @@ Future<void> _pumpReports(WidgetTester tester, AppDatabase db) async {
 }
 
 void main() {
-  testWidgets('rentang periode mengubah hasil query, bukan cuma label', (
-    tester,
-  ) async {
-    final db = await _newDb(tester);
+  // Provider + DB diuji sebagai `test` biasa (real async). Versi lama
+  // memakai testWidgets + tester.runAsync untuk membaca `.future`;
+  // kombinasi itu menggantung di CI (StreamProvider tidak pernah
+  // menyelesaikan future di zona fake-async) → job 10 menit timeout.
+  test('rentang periode mengubah hasil query, bukan cuma label', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    await db.backfillAccounts();
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day, 12);
     final tenDaysAgo = DateTime(now.year, now.month, now.day - 10, 12);
 
-    await tester.runAsync(() async {
-      // Dua pengeluaran: hari ini 50.000, sepuluh hari lalu 30.000.
-      await _seed(db, when: today, amount: 50000);
-      await _seed(db, when: tenDaysAgo, amount: 30000);
-    });
+    // Dua pengeluaran: hari ini 50.000, sepuluh hari lalu 30.000.
+    await _seed(db, when: today, amount: 50000);
+    await _seed(db, when: tenDaysAgo, amount: 30000);
 
     final container = ProviderContainer(
       overrides: [dbProvider.overrideWithValue(db)],
@@ -91,26 +93,31 @@ void main() {
     // yang sama kecuali hari ini < tanggal 11 — maka ekspektasinya
     // dihitung dari rentang, bukan diasumsikan 80.000).
     final monthRange = Period.of(PeriodKind.bulanan, today).range;
-    final expectMonth = (tenDaysAgo.isBefore(monthRange.$1) ? 0 : 30000) + 50000;
-    final monthly = await tester.runAsync(
-      () => container.read(periodTotalsProvider.future),
-    );
-    expect(monthly!.$2, expectMonth);
+    final expectMonth =
+        (tenDaysAgo.isBefore(monthRange.$1) ? 0 : 30000) + 50000;
+    final monthly = await container
+        .read(periodTotalsProvider.future)
+        .timeout(const Duration(seconds: 10));
+    expect(monthly.$2, expectMonth);
 
     // Harian: hanya transaksi hari ini.
     container.read(periodKindProvider.notifier).state = PeriodKind.harian;
     container.read(periodAnchorProvider.notifier).state = today;
-    final daily = await tester.runAsync(
-      () => container.read(periodTotalsProvider.future),
-    );
-    expect(daily!.$2, 50000, reason: 'harian hanya menjumlah hari ini');
+    final daily = await container
+        .read(periodTotalsProvider.future)
+        .timeout(const Duration(seconds: 10));
+    expect(daily.$2, 50000, reason: 'harian hanya menjumlah hari ini');
 
     // Mingguan: hari ini pasti masuk; 10 hari lalu pasti TIDAK (di luar 7 hari).
     container.read(periodKindProvider.notifier).state = PeriodKind.mingguan;
-    final weekly = await tester.runAsync(
-      () => container.read(periodTotalsProvider.future),
+    final weekly = await container
+        .read(periodTotalsProvider.future)
+        .timeout(const Duration(seconds: 10));
+    expect(
+      weekly.$2,
+      50000,
+      reason: 'mingguan tak menarik transaksi 10 hari lalu',
     );
-    expect(weekly!.$2, 50000, reason: 'mingguan tak menarik transaksi 10 hari lalu');
   });
 
   testWidgets('chip Mingguan mengubah periode aktif + judul seksi', (
@@ -174,9 +181,6 @@ void main() {
     }
 
     // Kembali ke bulanan = kembali ke bulan yang sama, bukan bulan lain.
-    expect(
-      find.text('Ringkasan ${monthLabel(before)}'),
-      findsOneWidget,
-    );
+    expect(find.text('Ringkasan ${monthLabel(before)}'), findsOneWidget);
   });
 }

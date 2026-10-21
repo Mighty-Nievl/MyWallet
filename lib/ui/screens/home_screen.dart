@@ -8,10 +8,10 @@ import '../../data/providers.dart';
 import '../../data/settings.dart';
 import '../components/app_empty_state.dart';
 import '../components/app_feedback.dart';
-import '../components/app_month_nav.dart';
 import '../components/app_progress.dart';
 import '../components/app_section.dart';
 import '../components/category_glyph.dart';
+import '../components/period_switcher.dart';
 import '../design/app_colors.dart';
 import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
@@ -43,12 +43,14 @@ class HomeScreen extends ConsumerWidget {
   // SECTION: HomeScreen.build dengan header minimalis + slot redesign
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final month = ref.watch(selectedMonthProvider);
+    // v1.36.0: Beranda tidak lagi dipaku ke bulan — semua angka utama
+    // ikut periode aktif (switcher harian/mingguan/bulanan/tahunan).
+    final period = ref.watch(activePeriodProvider);
     // v1.29: balanceProvider menganggur di Beranda (carousel pakai
     // accountBalanceProvider per-dompet). Provider dipertahankan —
     // dipakai debug + kontrak angka gabungan tetap ada.
     final dayTotals = ref.watch(dayTotalsProvider);
-    final byCat = ref.watch(monthExpenseByCategoryProvider);
+    final byCat = ref.watch(periodExpenseByCategoryProvider);
     final display = ref.watch(displayPrefsProvider);
     final showTop = ref.watch(showTopCategoriesProvider).value ?? true;
     final showRecent = ref.watch(showRecentProvider).value ?? true;
@@ -63,9 +65,6 @@ class HomeScreen extends ConsumerWidget {
     // Status bar adaptif (kritik brutal v1.24.2): ikon terang di dark,
     // gelap di light — bukan hardcode gelap terus.
     final isDark = AppColors.isDark(context);
-
-    void shift(int d) =>
-        ref.read(selectedMonthProvider.notifier).state = shiftMonth(month, d);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -127,12 +126,20 @@ class HomeScreen extends ConsumerWidget {
                       top: AppSpacing.sectionGapLarge,
                     ),
                   ),
-                  // Nav bulan: chip bulan jadi penanda konteks + kontrol
-                  // bulan aktif (shared selectedMonthProvider).
+                  // v1.36.0: switcher periode + navigasi. Key lama
+                  // (`home:monthnav`) dipertahankan agar test/lokasi
+                  // kontrol tidak pecah; isinya kini semua periode.
                   SliverToBoxAdapter(
                     key: const ValueKey('home:monthnav'),
                     child: _pad(
-                      AppMonthNav(month: month, onShift: shift),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const PeriodSwitcher(),
+                          const SizedBox(height: AppSpacing.s8),
+                          PeriodNav(period: period),
+                        ],
+                      ),
                       top: AppSpacing.sectionGapLarge,
                     ),
                   ),
@@ -147,7 +154,8 @@ class HomeScreen extends ConsumerWidget {
                       key: const ValueKey('home:topcats'),
                       child: _pad(
                         AppSection(
-                          title: 'Pengeluaran bulan ini$acctSuffix',
+                          title:
+                              'Pengeluaran ${periodRelativeLabel(period)}$acctSuffix',
                           trailing: TextButton(
                             // v1.24.3: label konteks, bukan generik
                             // "Lihat semua" (kritik brutal L5).
@@ -197,9 +205,9 @@ class HomeScreen extends ConsumerWidget {
                   SliverToBoxAdapter(
                     child: SizedBox(
                       // v1.32.6: clearance adaptif = bottomPad + safeBottom
-                      // aktual. Rumus: dockSlot 68 + safe + breath 44.
-                      // Emulator safe=0 → 112; HP gesture-nav ≈16-24 →
-                      // 128-136. Beranda satu-satunya body shell → cuma
+                      // aktual. Rumus v1.36.0: dockSlot 76 + safe + breath
+                      // 44. Emulator safe=0 → 120; HP gesture-nav ≈16-24 →
+                      // 136-144. Beranda satu-satunya body shell → cuma
                       // ekor ini yang adaptif (9 layar lain Scaffold
                       // sendiri, kapsul FAB tak tampil saat push).
                       // v1.33.0: kapsul = FAB overlay → body penuh, jadi
@@ -253,18 +261,20 @@ class _CategoryList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
+    final period = ref.watch(activePeriodProvider);
+    final relative = periodRelativeLabel(period);
     return byCat.when(
       loading: () => const AppSkeleton(lines: 3),
       error: (e, _) => AppErrorState(
         title: 'Kategori gagal dimuat.',
-        onRetry: () => ref.invalidate(monthExpenseByCategoryProvider),
+        onRetry: () => ref.invalidate(periodExpenseByCategoryProvider),
       ),
       data: (list) {
         if (list.isEmpty) {
-          return const AppEmptyState(
+          return AppEmptyState(
             icon: '📊',
-            title: 'Belum ada pengeluaran bulan ini',
-            subtitle: 'Catat pengeluaran pertamamu bulan ini.',
+            title: 'Belum ada pengeluaran $relative',
+            subtitle: 'Catat pengeluaran pertamamu $relative.',
           );
         }
         final total = list.fold<int>(0, (s, e) => s + e.total);

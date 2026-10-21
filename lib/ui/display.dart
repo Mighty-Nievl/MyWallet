@@ -35,6 +35,13 @@ class DisplayPrefs {
     return compactAmounts ? formatRpCompact(amount) : formatRp(amount);
   }
 
+  /// Nominal RINGKAS paksa — untuk sel kalender yang sempit.
+  /// Tetap hormat privacy: scope "semua nominal" = tersamar.
+  String compact(int amount) {
+    if (hide && scopeAll) return 'Rp••••';
+    return formatRpCompact(amount);
+  }
+
   /// Nominal bertanda -/+ untuk list transaksi & ringkasan.
   String signed(int amount, {required bool isExpense}) {
     final sign = isExpense ? '-' : '+';

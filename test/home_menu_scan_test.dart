@@ -376,14 +376,12 @@ void main() {
     }
   });
 
-  // v1.32.4 (audit foto user): lingkaran 72 top -16 = 15px kepala + glow
-  // di atas kapsul mengiris teks body ('Makan & Minu[m]', persen,
-  // nominal — 5 hits probe). Fix: lingkaran 56 flush DALAM kapsul
-  // (tak ada piksel di atas dock) + extendBody false (body berhenti di
-  // atas slot) + bottomPad 112. Kunci REALISTIS floating dock: lingkaran
-  // tak nongol + diam mentok-bawah bersih (tengah scroll konten lewat =
-  // wajar, bukan bug).
-  testWidgets('lingkaran + tidak menutupi teks body (v1.32.4)', (tester) async {
+  // v1.32.4 (audit foto user): lingkaran 72 top -16 mengiris teks body.
+  // v1.36.0 (request user): kembali overlap, tapi lebih terkendali —
+  // lingkaran 64, menonjol 8px, slot 76 + bottomPad 120. Kunci: teks
+  // terakhir saat scroll mentok tetap TIDAK tersentuh lingkaran/kapsul.
+  testWidgets('lingkaran + overlap 8px tidak menutupi teks body (v1.36.0)',
+      (tester) async {
     final db = await _newDb(tester);
     try {
       await tester.runAsync(() async {
@@ -419,9 +417,9 @@ void main() {
       final catatRect = tester.getRect(
         find.bySemanticsLabel('Catat transaksi'),
       );
-      // Lingkaran duduk DALAM kapsul: tak nongol di atas dock.
-      expect(catatRect.top, greaterThanOrEqualTo(barRect.top - 1.0));
-      expect(catatRect.height, lessThanOrEqualTo(56.0));
+      // v1.36.0: lingkaran 64, menonjol 8px di atas kapsul 56.
+      expect(catatRect.top, closeTo(barRect.top - 8.0, 0.5));
+      expect(catatRect.height, AppSpacing.fabSize);
       // Diam mentok-bawah: tak ada teks body diiris lingkaran/dock.
       final scrollables = find.descendant(
         of: find.byType(CustomScrollView),
@@ -540,9 +538,10 @@ void main() {
   });
 
   // v1.32.6 (prioritas user): konten TERAKHIR bisa digulir melewati dock
-  // dan terlihat SEPENUHNYA. Rumus: clearance = dockSlot 68 + safeBottom
-  // aktual + breath 44. Emulator safe=0 → bottomPad 112; HP gesture-nav
-  // ≈16-24 → ekor Beranda adaptif (+MediaQuery bottom). Kunci DUA arah:
+  // dan terlihat SEPENUHNYA. Rumus: clearance = dockSlot 76 (FAB 64 +
+  // margin 12, v1.36.0) + safeBottom aktual + breath 44. Emulator safe=0
+  // → bottomPad 120; HP gesture-nav ≈16-24 → ekor Beranda adaptif
+  // (+MediaQuery bottom). Kunci DUA arah:
   // (a) maxScrollExtent CUKUP (konten terakhir seluruhnya di atas dock
   // saat mentok, bukan pas-pasan); (b) token konsisten
   // (dockSlot + breath == bottomPad).
@@ -553,7 +552,8 @@ void main() {
       AppSpacing.dockSlot + AppSpacing.dockBreath,
       AppSpacing.bottomPad,
     );
-    expect(AppSpacing.dockSlot, 68.0);
+    expect(AppSpacing.dockSlot, 76.0);
+    expect(AppSpacing.fabSize + 12, AppSpacing.dockSlot);
     final db = await _newDb(tester);
     try {
       await tester.runAsync(() async {

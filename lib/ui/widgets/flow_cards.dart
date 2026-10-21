@@ -7,6 +7,7 @@ import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../display.dart';
+import '../format.dart';
 import '../screens/history_screen.dart';
 
 /// v1.34.0: dua kartu arus kas — Pemasukan & Pengeluaran — di bawah
@@ -18,13 +19,13 @@ import '../screens/history_screen.dart';
 /// di dalamnya dijamin pecah. Kartu sendiri juga membuat angka arus bisa
 /// dipindai tanpa membuka Laporan.
 ///
-/// Konteks periode mengikuti [selectedMonthProvider] (bulan yang sedang
-/// dilihat di Beranda, sama dengan nav bulan + Laporan), bukan
-/// `DateTime.now()` — supaya saat user menggeser bulan, angka di sini
-/// ikut, tidak diam-diam menampilkan bulan berjalan.
+/// Konteks periode mengikuti [activePeriodProvider] (v1.36.0): Harian,
+/// Mingguan, Bulanan, atau Tahunan — bukan selalu bulan. Angka tidak
+/// pernah memakai `DateTime.now()` diam-diam: saat user menggeser
+/// periode, kartu ikut.
 ///
-/// Delta = perbandingan dengan bulan sebelumnya lewat
-/// [prevMonthTotalsProvider]. Sengaja persen, bukan nominal: "12% lebih
+/// Delta = perbandingan dengan periode sebelumnya yang setara lewat
+/// [prevPeriodTotalsProvider]. Sengaja persen, bukan nominal: "12% lebih
 /// besar" lebih mudah dinilai daripada "-Rp340.000" yang harus dihitung
 /// sendiri terhadap total.
 class FlowCards extends ConsumerWidget {
@@ -32,8 +33,9 @@ class FlowCards extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final totals = ref.watch(monthTotalsProvider).value;
-    final prev = ref.watch(prevMonthTotalsProvider).value;
+    final period = ref.watch(activePeriodProvider);
+    final totals = ref.watch(periodTotalsProvider).value;
+    final prev = ref.watch(prevPeriodTotalsProvider).value;
     final display = ref.watch(displayPrefsProvider);
     final masuk = totals?.$1 ?? 0;
     final keluar = totals?.$2 ?? 0;
@@ -53,6 +55,7 @@ class FlowCards extends ConsumerWidget {
               color: AppColors.incomeOf(context),
               icon: Icons.south_west,
               display: display,
+              prevLabel: previousPeriodPhrase(period.kind),
             ),
           ),
           const SizedBox(width: AppSpacing.s12),
@@ -65,6 +68,7 @@ class FlowCards extends ConsumerWidget {
               color: AppColors.expenseOf(context),
               icon: Icons.north_east,
               display: display,
+              prevLabel: previousPeriodPhrase(period.kind),
             ),
           ),
         ],
@@ -82,6 +86,7 @@ class _FlowCard extends StatelessWidget {
     required this.color,
     required this.icon,
     required this.display,
+    required this.prevLabel,
   });
 
   final String label;
@@ -90,6 +95,9 @@ class _FlowCard extends StatelessWidget {
   final Color color;
   final IconData icon;
   final DisplayPrefs display;
+
+  /// "kemarin" · "minggu lalu" · "bulan lalu" · "tahun lalu".
+  final String prevLabel;
 
   /// Persen perubahan vs periode sebelumnya; null bila tak bisa dihitung
   /// (periode lalu nol — persen dari nol tak bermakna).
@@ -107,9 +115,9 @@ class _FlowCard extends StatelessWidget {
       if (amount == 0) return 'belum ada catatan';
       return 'baru periode ini';
     }
-    if (pct == 0) return 'sama dengan bulan lalu';
+    if (pct == 0) return 'sama dengan $prevLabel';
     final arrow = pct > 0 ? '▲' : '▼';
-    return '$arrow ${pct.abs()}% dari bulan lalu';
+    return '$arrow ${pct.abs()}% dari $prevLabel';
   }
 
   @override

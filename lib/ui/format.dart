@@ -162,6 +162,22 @@ String periodKindLabel(PeriodKind kind) {
   }
 }
 
+/// Frasa pembanding untuk delta kartu arus: "kemarin"/"minggu lalu"/...
+/// Dipakai [FlowCards] supaya "▲ 12% dari bulan lalu" tidak bohong saat
+/// periode aktif harian/mingguan/tahunan.
+String previousPeriodPhrase(PeriodKind kind) {
+  switch (kind) {
+    case PeriodKind.harian:
+      return 'kemarin';
+    case PeriodKind.mingguan:
+      return 'minggu lalu';
+    case PeriodKind.bulanan:
+      return 'bulan lalu';
+    case PeriodKind.tahunan:
+      return 'tahun lalu';
+  }
+}
+
 /// Frasa judul section: "hari ini"/"minggu ini"/... bila periode berjalan,
 /// selain itu label eksplisit (jangan bilang "bulan ini" untuk bulan lalu).
 String periodRelativeLabel(Period p) {

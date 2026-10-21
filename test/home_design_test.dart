@@ -21,7 +21,7 @@ import 'package:mywallet/data/database.dart';
 import 'package:mywallet/data/providers.dart';
 import 'package:mywallet/ui/app_theme.dart';
 import 'package:mywallet/ui/components/app_feedback.dart';
-import 'package:mywallet/ui/components/app_month_nav.dart';
+import 'package:mywallet/ui/components/period_switcher.dart';
 import 'package:mywallet/ui/components/setting_row.dart';
 import 'package:mywallet/ui/design/app_colors.dart';
 import 'package:mywallet/ui/screens/account_detail_screen.dart';
@@ -222,10 +222,10 @@ void main() {
     await _flushDriftCloseTimer(tester);
   });
 
-  // Regresi kritik brutal v1.14.x (2): nav bulan SELALU tampil
-  // (chicken-and-egg v1.13.x: AppMonthNav cuma dirender saat bulan lain,
-  // padahal ia satu-satunya penulis selectedMonthProvider di Beranda).
-  testWidgets('nav bulan selalu tampil di bulan berjalan', (tester) async {
+  // Regresi kritik brutal v1.14.x (2): kontrol periode SELALU tampil
+  // (chicken-and-egg v1.13.x: nav cuma dirender saat bulan lain).
+  // v1.36.0: AppMonthNav diganti switcher periode + PeriodNav.
+  testWidgets('kontrol periode selalu tampil di Beranda', (tester) async {
     final db = await _newDb(tester);
     await tester.runAsync(() async {
       await _loadFonts();
@@ -246,7 +246,8 @@ void main() {
     }
 
     expect(find.byKey(const ValueKey('home:monthnav')), findsOneWidget);
-    expect(find.byType(AppMonthNav), findsOneWidget);
+    expect(find.byType(PeriodSwitcher), findsOneWidget);
+    expect(find.byKey(const ValueKey('period:kind:bulanan')), findsOneWidget);
     await _flushDriftCloseTimer(tester);
   });
 

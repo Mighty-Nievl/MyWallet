@@ -20,6 +20,31 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.36.0',
+    date: '21 Okt 2026',
+    user:
+        'Beranda dan Riwayat kini punya pilihan Harian, Mingguan, Bulanan, '
+        'Tahunan, plus Kalender. Kalender menampilkan total masuk/keluar '
+        'tiap tanggal — ketuk satu tanggal untuk melihat rincian harinya. '
+        'Kartu Pemasukan/Pengeluaran ikut periode yang dipilih, dan tombol '
+        '+ di bilah bawah tampil lebih besar.',
+    tech:
+        'Kalender: `ui/screens/calendar_screen.dart` + '
+        '`calendarDailyTotalsProvider` (family per "yyyy-MM") + '
+        '`AppDatabase.getDailyTotals` (agregasi lokal per hari, transfer '
+        'dikecualikan). Chip Kalender ada di PeriodSwitcher (bukan '
+        'PeriodKind — alat navigasi). Beranda/Riwayat: AppMonthNav diganti '
+        'PeriodSwitcher + PeriodNav, historyProvider/historyCountProvider '
+        'ikut periodRangeProvider, judul kategori pakai '
+        'periodRelativeLabel. FlowCards pindah ke periodTotalsProvider + '
+        'prevPeriodTotalsProvider dengan frasa delta per jenis periode. '
+        'Shell: lingkaran + 64px (dari 56) menonjol 8px di atas kapsul; '
+        'lingkaran pindah ke Stack luar karena Material kapsul meng-clip; '
+        'token dockSlot 68→76, bottomPad 112→120. 5 test baru '
+        '(calendar_test 4 + geometri FAB 1).',
+    breaking: null,
+  ),
+  (
     version: 'v1.35.0',
     date: '21 Okt 2026',
     user:

@@ -10,9 +10,9 @@ import '../components/app_card.dart';
 import '../components/app_empty_state.dart';
 import '../components/app_feedback.dart';
 import '../components/app_header.dart';
-import '../components/app_month_nav.dart';
 import '../components/b2c_chip.dart';
 import '../components/category_glyph.dart';
+import '../components/period_switcher.dart';
 import '../design/app_motion.dart';
 import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
@@ -20,6 +20,7 @@ import '../design/app_typography.dart';
 import '../display.dart';
 import '../format.dart';
 import '../widgets/tx_tile.dart';
+import 'calendar_screen.dart';
 import 'tx_form_screen.dart';
 
 /// Layar riwayat + filter (kategori, tipe, kata kunci).
@@ -55,7 +56,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final history = ref.watch(historyProvider);
     // v1.24.9: total jujur tanpa limit (strip "Menampilkan 100 dari N").
     final totalAsync = ref.watch(historyCountProvider);
-    final month = ref.watch(selectedMonthProvider);
+    // v1.36.0: Riwayat ikut periode aktif (bukan bulan saja).
+    final period = ref.watch(activePeriodProvider);
     // v1.30: label dompet per-baris hanya bermakna bila >1 dompet
     // (1 dompet = semua baris miliknya; suffix cuma noise + merusak
     // exact-match meta lama. Selaras _RecentList Beranda).
@@ -75,18 +77,20 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               child: AppHeader(
                 title: 'Riwayat',
                 actionIcon: Icons.calendar_month_outlined,
-                actionTooltip: 'Pilih bulan',
-                onAction: () => _pickMonth(context, month),
+                actionTooltip: 'Kalender',
+                // v1.36.0: kalender = grid total harian, bukan date picker
+                // bulan (tanggal yang dipilih → mode Harian).
+                onAction: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const CalendarScreen()),
+                ),
                 // v1.26: dibuka via push dari grid Beranda (bukan tab).
                 onBack: Navigator.of(context).pop,
               ),
             ),
             const SizedBox(height: AppSpacing.s8),
-            AppMonthNav(
-              month: month,
-              onShift: (d) => ref.read(selectedMonthProvider.notifier).state =
-                  shiftMonth(month, d),
-            ),
+            const PeriodSwitcher(),
+            const SizedBox(height: AppSpacing.s8),
+            PeriodNav(period: period),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.page,
@@ -102,7 +106,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       decoration: InputDecoration(
                         // v1.24.9: hint jujur scope (kritik L4 — dulu
                         // "Cari transaksi..." padahal cuma bulan aktif).
-                        hintText: 'Cari di ${monthLabel(month)}...',
+                        hintText: 'Cari di ${periodLabel(period)}...',
                         prefixIcon: const Icon(Icons.search, size: 20),
                         suffixIcon: filter.keyword.isNotEmpty
                             ? IconButton(
@@ -177,7 +181,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         ref.watch(selectedAccountProvider) != null;
                     return _EmptyState(
                       hasFilter: hasFilter,
-                      monthLabel: monthLabel(month),
+                      periodLabel: periodLabel(period),
                     );
                   }
                   // v1.24.8: strip hasil (kritik brutal L3 — Riwayat tanpa
@@ -314,27 +318,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     }
   }
 
-  Future<void> _pickMonth(BuildContext context, String current) async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime(
-        int.parse(current.split('-')[0]),
-        int.parse(current.split('-')[1]),
-      ),
-      firstDate: DateTime(2020),
-      // v1.24.8: kunci ke bulan berjalan (kritik brutal L1 — dulu
-      // now+365 hari = pintu ke bulan kosong masa depan).
-      lastDate: DateTime(now.year, now.month + 1, 0),
-      initialDatePickerMode: DatePickerMode.day,
-      // v1.24.8: jujur — yang dipakai bulannya, bukan tanggalnya
-      // (kritik brutal L1: mode hari untuk tugas pilih bulan).
-      helpText: 'Pilih bulan (tanggal diabaikan)',
-    );
-    if (picked != null) {
-      ref.read(selectedMonthProvider.notifier).state = monthKey(picked);
-    }
-  }
 }
 
 /// Judul layar Riwayat sudah via [AppHeader] shared.
@@ -762,11 +745,11 @@ class _ResultStrip extends ConsumerWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.hasFilter, required this.monthLabel});
+  const _EmptyState({required this.hasFilter, required this.periodLabel});
 
-  /// true = filter aktif (bukan bulan kosong) → microcopy beda.
+  /// true = filter aktif (bukan periode kosong) → microcopy beda.
   final bool hasFilter;
-  final String monthLabel;
+  final String periodLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -777,7 +760,7 @@ class _EmptyState extends StatelessWidget {
       title: hasFilter ? 'Tidak ada yang cocok' : 'Belum ada transaksi',
       subtitle: hasFilter
           ? 'Coba longgarkan filter atau kata kunci di atas.'
-          : 'Belum ada catatan di $monthLabel. Ketuk + untuk mencatat yang pertama.',
+          : 'Belum ada catatan di $periodLabel. Ketuk + untuk mencatat yang pertama.',
     );
   }
 }

@@ -51,10 +51,11 @@ Future<void> _pumpCards(
     ProviderScope(
       overrides: [
         dbProvider.overrideWithValue(db),
-        monthTotalsProvider.overrideWith(
+        // v1.36.0: kartu ikut periode aktif, bukan bulan.
+        periodTotalsProvider.overrideWith(
           (ref) => Stream.value((masuk, keluar)),
         ),
-        prevMonthTotalsProvider.overrideWith(
+        prevPeriodTotalsProvider.overrideWith(
           (ref) => Stream.value((
             prevMasuk ?? 0,
             prevKeluar ?? 0,
