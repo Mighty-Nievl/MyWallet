@@ -99,13 +99,9 @@ void main() {
     await _pump(tester);
 
     final left = await tester.runAsync(
-      () =>
-          (db.select(db.transactions)..where(
-                (t) =>
-                    t.accountId.equals(ids.utama) |
-                    t.accountId.equals(ids.keluarga),
-              ))
-              .get(),
+      () => (db.select(
+        db.transactions,
+      )..where((t) => t.accountId.isIn([ids.utama, ids.keluarga]))).get(),
     );
     expect(left, hasLength(2));
     expect(left!.every((t) => t.deletedAt != null), isTrue);
