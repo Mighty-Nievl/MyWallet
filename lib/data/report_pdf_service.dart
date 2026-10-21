@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'database.dart';
+import 'period.dart';
 import 'providers.dart';
 
 /// Data siap-cetak satu laporan bulanan. Fungsi murni (tanpa ref)
@@ -67,7 +68,66 @@ Future<MonthReportData> fetchMonthReport(
   );
 }
 
-String _monthLabelId(String key) {
+/// Ambil data laporan untuk [period] aktif (v1.36.1).
+///
+/// Sejak Laporan bisa Harian/Mingguan/Bulanan/Tahunan, PDF wajib jadi
+/// cermin layar: rentang, total, kategori, dan daftar transaksi memakai
+/// range periode — bukan selalu bulan berjalan.
+Future<MonthReportData> fetchPeriodReport(
+  AppDatabase db, {
+  required Period period,
+  int? accountId,
+  String? accountName,
+}) async {
+  final (from, to) = period.range;
+  final (income, expense) = await db.getTotals(from, to, accountId: accountId);
+  final byCat = await db.totalsByCategory(from, to, true, accountId: accountId);
+  final txs = await db
+      .watchHistory(from: from, to: to, accountId: accountId, limit: 100000)
+      .first;
+  return MonthReportData(
+    monthKey: periodFileSlug(period),
+    monthLabel: _periodLabelId(period),
+    income: income,
+    expense: expense,
+    byCategory: byCat,
+    transactions: txs,
+    accountLabel: accountName,
+  );
+}
+
+/// Label manusia untuk judul PDF, mis. "5 Oktober 2026",
+/// "19–25 Oktober 2026", atau "Oktober 2026".
+String _periodLabelId(Period p) {
+  final endDay = DateTime(
+    p.endInclusive.year,
+    p.endInclusive.month,
+    p.endInclusive.day,
+  );
+  switch (p.kind) {
+    case PeriodKind.harian:
+      return '${p.start.day} ${_monthNameId(p.start.month)} ${p.start.year}';
+    case PeriodKind.mingguan:
+      if (p.start.month == endDay.month && p.start.year == endDay.year) {
+        return '${p.start.day}–${endDay.day} '
+            '${_monthNameId(endDay.month)} ${endDay.year}';
+      }
+      return '${p.start.day} ${_monthNameId(p.start.month)} – '
+          '${endDay.day} ${_monthNameId(endDay.month)} ${endDay.year}';
+    case PeriodKind.bulanan:
+      return _monthLabelId(_ym(p.start));
+    case PeriodKind.tahunan:
+      return '${p.start.year}';
+  }
+}
+
+/// Nama file aman untuk PDF periode, mis. `harian-20261021`.
+String periodFileSlug(Period p) =>
+    '${p.kind.name}-${p.start.year}'
+    '${p.start.month.toString().padLeft(2, '0')}'
+    '${p.start.day.toString().padLeft(2, '0')}';
+
+String _monthNameId(int m) {
   const full = [
     'Januari',
     'Februari',
@@ -82,11 +142,16 @@ String _monthLabelId(String key) {
     'November',
     'Desember',
   ];
+  if (m < 1 || m > 12) return '$m';
+  return full[m - 1];
+}
+
+String _monthLabelId(String key) {
   final parts = key.split('-');
   if (parts.length != 2) return key;
   final m = int.tryParse(parts[1]) ?? 0;
   if (m < 1 || m > 12) return key;
-  return '${full[m - 1]} ${parts[0]}';
+  return '${_monthNameId(m)} ${parts[0]}';
 }
 
 /// Bangun bytes PDF laporan dari [data].
@@ -155,7 +220,9 @@ Future<Uint8List> buildMonthReportPdf(MonthReportData data) async {
         ];
 
         if (data.byCategory.isEmpty) {
-          body.add(pw.Text('Belum ada pengeluaran bulan ini.', style: cell));
+          body.add(
+            pw.Text('Belum ada pengeluaran pada periode ini.', style: cell),
+          );
         } else {
           final total = data.byCategory.fold<int>(0, (s, e) => s + e.total);
           body.add(
@@ -238,7 +305,9 @@ Future<Uint8List> buildMonthReportPdf(MonthReportData data) async {
         body.add(pw.SizedBox(height: 6));
 
         if (data.transactions.isEmpty) {
-          body.add(pw.Text('Belum ada transaksi bulan ini.', style: cell));
+          body.add(
+            pw.Text('Belum ada transaksi pada periode ini.', style: cell),
+          );
         } else {
           body.add(
             pw.Table(
@@ -331,12 +400,13 @@ String _date(DateTime d) => '${d.day}/${d.month}/${d.year}';
 
 String _ym(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}';
 
-/// Service export PDF laporan bulanan.
+/// Service export PDF laporan (bulan atau periode aktif).
 ///
 /// 2 jalur keluar (sama kayak export CSV + backup):
-/// - `exportMonthPdf`: simpan via share sheet ([share_plus])
-/// - `saveMonthPdfToFile`: simpan via file picker.
-/// Keduanya 100% lokal.
+/// - `export*Pdf`: simpan via share sheet ([share_plus])
+/// - `save*PdfToFile`: simpan via file picker.
+/// Keduanya 100% lokal. Sejak v1.36.1 Laporan punya switcher periode,
+/// jadi layar memakai varian `Period` agar PDF = cermin layar.
 class ReportPdfService {
   /// Bangun + bagikan PDF bulan [monthKey] ("yyyy-MM").
   /// Return jumlah transaksi, 0 bila bulan kosong (tetap dibuatkan PDF).
@@ -392,6 +462,59 @@ class ReportPdfService {
     return FilePicker.saveFile(
       dialogTitle: 'Simpan laporan ${data.monthLabel}',
       fileName: 'mywallet-laporan-$monthKey.pdf',
+      bytes: bytes,
+    );
+  }
+
+  /// Bangun + bagikan PDF untuk [period] aktif (v1.36.1).
+  /// Return jumlah transaksi, 0 bila periode kosong (tetap dibuatkan PDF).
+  static Future<int> exportPeriodPdf(
+    WidgetRef ref, {
+    required Period period,
+  }) async {
+    final db = ref.read(dbProvider);
+    // v1.25: PDF = cermin layar (ikut dompet aktif).
+    final acct = ref.read(selectedAccountProvider);
+    final data = await fetchPeriodReport(
+      db,
+      period: period,
+      accountId: acct,
+      accountName: await _accountName(db, acct),
+    );
+    final bytes = await buildMonthReportPdf(data);
+    final slug = periodFileSlug(period);
+
+    final dir = await getTemporaryDirectory();
+    final file = File(p.join(dir.path, 'mywallet-laporan-$slug.pdf'));
+    await file.writeAsBytes(bytes, flush: true);
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path)],
+        text: 'Laporan MyWallet ${data.monthLabel}',
+      ),
+    );
+    return data.transactions.length;
+  }
+
+  /// Simpan PDF [period] ke file pilihan user (v1.36.1).
+  /// Return Uri hasil, null bila batal.
+  static Future<Uri?> savePeriodPdfToFile(
+    WidgetRef ref, {
+    required Period period,
+  }) async {
+    final db = ref.read(dbProvider);
+    final acct = ref.read(selectedAccountProvider);
+    final data = await fetchPeriodReport(
+      db,
+      period: period,
+      accountId: acct,
+      accountName: await _accountName(db, acct),
+    );
+    final bytes = await buildMonthReportPdf(data);
+    final slug = periodFileSlug(period);
+    return FilePicker.saveFile(
+      dialogTitle: 'Simpan laporan ${data.monthLabel}',
+      fileName: 'mywallet-laporan-$slug.pdf',
       bytes: bytes,
     );
   }

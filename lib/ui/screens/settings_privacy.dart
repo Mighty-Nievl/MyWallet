@@ -8,7 +8,7 @@ import '../design/app_spacing.dart';
 import '../format.dart';
 import 'settings_actions.dart';
 
-/// Sub-halaman Saldo & Privasi: sembunyikan + cakupan, saldo awal,
+/// Sub-halaman Saldo, Privasi & Pengingat: sembunyikan + cakupan, saldo awal,
 /// kunci aplikasi, pengingat harian.
 ///
 /// STEP 4 — hanya presentasi yang diubah. Semua provider, setter,
@@ -75,7 +75,7 @@ class _PrivacySettingsPageState extends ConsumerState<PrivacySettingsPage>
                 AppSpacing.page,
                 0,
               ),
-              child: BackHeader(title: 'Saldo & Privasi'),
+              child: BackHeader(title: 'Saldo, Privasi & Pengingat'),
             ),
             const SizedBox(height: AppSpacing.s8),
             Expanded(
@@ -90,7 +90,7 @@ class _PrivacySettingsPageState extends ConsumerState<PrivacySettingsPage>
                   TextField(
                     controller: _searchCtrl,
                     decoration: InputDecoration(
-                      hintText: 'Cari di Saldo & Privasi…',
+                      hintText: 'Cari di pengaturan ini…',
                       prefixIcon: const Icon(Icons.search),
                       suffixIcon: _q.isNotEmpty
                           ? IconButton(

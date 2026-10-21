@@ -20,6 +20,29 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.36.1',
+    date: '21 Okt 2026',
+    user:
+        'Mencatat saat sedang melihat kemarin atau bulan lalu kini memakai '
+        'tanggal periode itu, jadi transaksi tidak tersimpan di luar layar. '
+        'Laporan PDF ikut periode yang dipilih, aplikasi terkunci lagi saat '
+        'ditinggal ke background, dan pintu ganda di Riwayat/Pengaturan '
+        'dirapikan.',
+    tech:
+        'suggestedTransactionDate(period) di data/period.dart dipakai '
+        'TxFormScreen (dulu selalu DateTime.now()). Export PDF: '
+        'fetchPeriodReport + exportPeriodPdf/savePeriodPdfToFile (range '
+        'Period, label per jenis, slug file); varian bulan tetap ada. '
+        'app.dart: WidgetsBindingObserver + unlockedProvider=false saat '
+        'paused, LockScreen jadi overlay DI ATAS Navigator supaya route '
+        'yang di-push tidak menutupi kunci. Ikon kalender ganda di header '
+        'Riwayat dihapus (chip Kalender satu-satunya pintu). Budget dapat '
+        'caption "selalu per bulan". Grup Pengaturan jadi "Saldo, Privasi '
+        '& Pengingat". 6 test baru (4 period + 1 PDF periode + 1 lock '
+        'resume).',
+    breaking: null,
+  ),
+  (
     version: 'v1.36.0',
     date: '21 Okt 2026',
     user:

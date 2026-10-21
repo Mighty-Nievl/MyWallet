@@ -7,11 +7,43 @@ import 'app_theme.dart';
 import 'screens/lock_screen.dart';
 import 'shell.dart';
 
-class MyWalletApp extends ConsumerWidget {
+class MyWalletApp extends ConsumerStatefulWidget {
   const MyWalletApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyWalletApp> createState() => _MyWalletAppState();
+}
+
+class _MyWalletAppState extends ConsumerState<MyWalletApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// v1.36.1: kunci ulang saat aplikasi ditinggal ke background.
+  ///
+  /// Sebelumnya `unlockedProvider` hanya direset oleh proses mati, jadi
+  /// resume dari background langsung memperlihatkan data walau kunci
+  /// aktif. Lock setelah `paused` (bukan `inactive`) supaya dialog izin
+  /// singkat tidak memicu kunci palsu.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.paused) return;
+    final lock = ref.read(appLockProvider).value ?? 'none';
+    if (lock == 'none') return;
+    ref.read(unlockedProvider.notifier).state = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider).value ?? ThemeMode.system;
     final appLock = ref.watch(appLockProvider).value ?? 'none';
     final unlocked = ref.watch(unlockedProvider);
@@ -54,9 +86,21 @@ class MyWalletApp extends ConsumerWidget {
               textScaler:
                   TextScaler.linear(fontScaleValue(fontScale)),
             ),
-            child: child!,
+            // v1.36.1: kunci = overlay DI ATAS navigator. Dulu `home`
+            // diganti LockScreen, sehingga route yang sedang di-push
+            // (Riwayat, Scan, Pengaturan) tetap menutupi layar kunci saat
+            // app dibuka lagi dari background. Sekarang konten di bawah
+            // tertutup penuh dan route tetap utuh setelah unlock.
+            child: locked
+                ? Stack(
+                    children: [
+                      if (child != null) child,
+                      const Positioned.fill(child: LockScreen()),
+                    ],
+                  )
+                : child!,
           ),
-          home: locked ? const LockScreen() : const AppShell(),
+          home: const AppShell(),
         );
       },
     );

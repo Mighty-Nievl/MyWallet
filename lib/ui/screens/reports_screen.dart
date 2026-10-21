@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database.dart';
+import '../../data/period.dart';
 import '../../data/providers.dart';
 import '../../data/report_pdf_service.dart';
 import '../components/app_card.dart';
@@ -57,8 +58,9 @@ class ReportsScreen extends ConsumerWidget {
             AppHeader(
               title: 'Laporan',
               actionIcon: Icons.picture_as_pdf_outlined,
-              actionTooltip: 'Export PDF bulan ini',
-              onAction: () => _exportPdf(context, ref, month),
+              // v1.36.1: PDF mengikuti periode di layar, bukan selalu bulan.
+              actionTooltip: 'Export PDF periode ini',
+              onAction: () => _exportPdf(context, ref, period),
               // v1.26: dibuka via push dari grid Beranda (bukan tab).
               onBack: Navigator.of(context).pop,
             ),
@@ -139,12 +141,12 @@ String _accountSuffix(WidgetRef ref) {
   return '';
 }
 
-  /// Export PDF bulan aktif: tanya Simpan-file vs Bagikan dulu,
+  /// Export PDF periode aktif: tanya Simpan-file vs Bagikan dulu,
   /// lalu panggil [ReportPdfService]. 100% lokal, tanpa server.
   static Future<void> _exportPdf(
     BuildContext context,
     WidgetRef ref,
-    String month,
+    Period period,
   ) async {
     final choice = await showModalBottomSheet<String>(
       context: context,
@@ -174,9 +176,9 @@ String _accountSuffix(WidgetRef ref) {
     HapticFeedback.selectionClick();
     try {
       if (choice == 'save') {
-        final uri = await ReportPdfService.saveMonthPdfToFile(
+        final uri = await ReportPdfService.savePeriodPdfToFile(
           ref,
-          monthKey: month,
+          period: period,
         );
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -187,9 +189,9 @@ String _accountSuffix(WidgetRef ref) {
           ),
         );
       } else {
-        final count = await ReportPdfService.exportMonthPdf(
+        final count = await ReportPdfService.exportPeriodPdf(
           ref,
-          monthKey: month,
+          period: period,
         );
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

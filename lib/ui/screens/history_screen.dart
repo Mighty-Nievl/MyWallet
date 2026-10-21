@@ -20,7 +20,6 @@ import '../design/app_typography.dart';
 import '../display.dart';
 import '../format.dart';
 import '../widgets/tx_tile.dart';
-import 'calendar_screen.dart';
 import 'tx_form_screen.dart';
 
 /// Layar riwayat + filter (kategori, tipe, kata kunci).
@@ -76,13 +75,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               ),
               child: AppHeader(
                 title: 'Riwayat',
-                actionIcon: Icons.calendar_month_outlined,
-                actionTooltip: 'Kalender',
-                // v1.36.0: kalender = grid total harian, bukan date picker
-                // bulan (tanggal yang dipilih → mode Harian).
-                onAction: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const CalendarScreen()),
-                ),
+                // v1.36.1: pintu kalender cuma satu — chip "Kalender" di
+                // PeriodSwitcher. Ikon header duplikat dan membingungkan.
                 // v1.26: dibuka via push dari grid Beranda (bukan tab).
                 onBack: Navigator.of(context).pop,
               ),

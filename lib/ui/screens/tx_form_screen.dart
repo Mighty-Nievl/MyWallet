@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../data/actions.dart';
 import '../../data/database.dart';
+import '../../data/period.dart';
 import '../../data/providers.dart';
 import '../../data/receipt_parse.dart';
 import '../../data/receipt_scan_service.dart';
@@ -81,7 +82,12 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
               : '');
     _amountCtrl = TextEditingController(text: seed);
     _noteCtrl = TextEditingController(text: e?.note ?? '');
-    _date = e?.date ?? DateTime.now();
+    // v1.36.1: tanggal baru ikut periode yang dilihat. Dulu selalu
+    // DateTime.now() — mencatat saat menjelajah kemarin/bulan lalu
+    // menyimpan transaksi di luar layar (seolah hilang).
+    _date =
+        e?.date ??
+        ref.read(activePeriodProvider).suggestedTransactionDate();
     _categoryId = e?.categoryId;
     // v1.32: dompet awal = param eksplisit > filter aktif (dulu diam-diam
     // defaultAccountId di _save — user tak pernah tahu dompet mana).

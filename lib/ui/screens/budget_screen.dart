@@ -78,6 +78,17 @@ class BudgetScreen extends ConsumerWidget {
               onShift: (d) => ref.read(selectedMonthProvider.notifier).state =
                   shiftMonth(month, d),
             ),
+            // v1.36.1: Budget sengaja TIDAK ikut switcher periode (limit
+            // selalu per bulan) — beri tahu eksplisit agar tidak terlihat
+            // seperti bug saat periode lain aktif di layar lain.
+            const SizedBox(height: AppSpacing.s4),
+            Text(
+              'Budget selalu dihitung per bulan.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.mutedOf(context),
+              ),
+            ),
             // v1.25: filter dompet global (tanpa Kelola — milik Beranda).
             const SizedBox(height: AppSpacing.s8),
             const AccountPicker(),

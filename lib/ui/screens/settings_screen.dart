@@ -232,9 +232,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           const Divider(height: 1, indent: 52),
                           SettingRow(
                             icon: Icons.shield_outlined,
-                            title: 'Saldo & Privasi',
+                            // v1.36.1: pengingat tinggal di halaman ini,
+                            // jadi namanya jujur (dulu cuma Saldo & Privasi).
+                            title: 'Saldo, Privasi & Pengingat',
                             subtitle:
-                                'Saldo awal · Kunci: $lockLabel',
+                                'Saldo awal · Kunci: $lockLabel · Pengingat',
                             onTap: () =>
                                 _openGroup(_GroupKey.privasi),
                           ),
@@ -285,7 +287,7 @@ enum _GroupKey { tampilan, privasi, kelola, tentang }
 
 String _groupLabel(_GroupKey g) => switch (g) {
       _GroupKey.tampilan => 'Tampilan',
-      _GroupKey.privasi => 'Saldo & Privasi',
+      _GroupKey.privasi => 'Saldo, Privasi & Pengingat',
       _GroupKey.kelola => 'Kelola',
       _GroupKey.tentang => 'Tentang',
     };

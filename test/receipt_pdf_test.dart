@@ -3,6 +3,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mywallet/data/database.dart';
+import 'package:mywallet/data/period.dart';
 import 'package:mywallet/data/providers.dart';
 import 'package:mywallet/data/receipt_parse.dart';
 import 'package:mywallet/data/report_pdf_service.dart';
@@ -204,6 +205,34 @@ Denda   5.000
       final bytes = await buildMonthReportPdf(data);
       // Header file PDF: "%PDF-".
       expect(bytes.length, greaterThan(1000));
+      expect(String.fromCharCodes(bytes.take(5)), '%PDF-');
+    });
+
+    test('fetchPeriodReport harian: cermin layar, bukan selalu bulan '
+        '(v1.36.1)', () async {
+      final utama = (await db.select(db.accounts).get())
+          .firstWhere((a) => a.name == 'Utama')
+          .id;
+      for (final (day, amount) in [(5, 25000), (6, 40000)]) {
+        await db
+            .into(db.transactions)
+            .insert(
+              TransactionsCompanion.insert(
+                amount: amount,
+                isExpense: const Value(true),
+                categoryId: const Value(1),
+                date: DateTime(2026, 10, day),
+                accountId: Value(utama),
+              ),
+            );
+      }
+      final p = Period.of(PeriodKind.harian, DateTime(2026, 10, 5));
+      final data = await fetchPeriodReport(db, period: p);
+      expect(data.expense, 25000, reason: 'hanya tanggal 5, bukan sebulan');
+      expect(data.transactions, hasLength(1));
+      expect(data.monthLabel, '5 Oktober 2026');
+      expect(data.monthKey, 'harian-20261005');
+      final bytes = await buildMonthReportPdf(data);
       expect(String.fromCharCodes(bytes.take(5)), '%PDF-');
     });
 

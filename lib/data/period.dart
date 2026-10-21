@@ -91,6 +91,20 @@ class Period {
         d.isBefore(endExclusive);
   }
 
+  /// Tanggal default untuk form catat BARU (v1.36.1).
+  ///
+  /// Kalau periode sedang memuat hari ini → pakai [now] (perilaku lama).
+  /// Kalau user sedang menjelajah periode lain (mis. Harian kemarin atau
+  /// bulan lalu), form tidak boleh diam-diam memakai hari ini: transaksi
+  /// akan tersimpan di luar layar yang sedang dibuka dan terasa "hilang".
+  /// Pakai awal periode itu, jam 12 siang agar aman dari batas tengah
+  /// malam/zona waktu.
+  DateTime suggestedTransactionDate({DateTime? now}) {
+    final n = now ?? DateTime.now();
+    if (containsToday(now: n)) return n;
+    return DateTime(start.year, start.month, start.day, 12);
+  }
+
   @override
   bool operator ==(Object other) =>
       other is Period && other.kind == kind && other.start == start;

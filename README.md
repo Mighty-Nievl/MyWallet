@@ -10,8 +10,8 @@ Tanpa login, tanpa server — semua data cuma tinggal di perangkatmu.
 ![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.12-0175C2?logo=dart&logoColor=white)
 ![Drift](https://img.shields.io/badge/Drift-2.35-EAECED?logo=sqlite&logoColor=black)
-![Version](https://img.shields.io/badge/version-1.36.0-6C5CE7)
-![Tests](https://img.shields.io/badge/tests-292%2F292-2ECC71)
+![Version](https://img.shields.io/badge/version-1.36.1-6C5CE7)
+![Tests](https://img.shields.io/badge/tests-298%2F298-2ECC71)
 [![Check](https://github.com/Mighty-Nievl/MyWallet/actions/workflows/build.yml/badge.svg)](https://github.com/Mighty-Nievl/MyWallet/actions/workflows/build.yml)
 
 [**Ringkasan**](#-ringkasan) · [**Fitur**](#-fitur) · [**Mulai Cepat**](#-mulai-cepat) · [**Dokumentasi**](#-dokumentasi) · [**Rilis**](#-instal-dan-rilis)
@@ -29,7 +29,7 @@ Datanya disimpan penuh di lokal (SQLite lewat Drift), jadi aman, cepat, dan bisa
 - **Privasi di depan** — kunci PIN/biometrik, sembunyikan nominal, mode privacy scale.
 - **Visual rapi** — tema Material 3, 6 warna aksen + Material You, mode gelap hitam pekat, bilah bawah melayang berbentuk kapsul.
 - **Siap pakai harian** — budget per kategori, laporan 6 bulan, export CSV, pengingat mencatat.
-- **Sehat secara teknis** — `flutter analyze` bersih, **292/292 test hijau**, CI analyze+test di PR/manual, rilis otomatis sekali jalan dari tag.
+- **Sehat secara teknis** — `flutter analyze` bersih, **298/298 test hijau**, CI analyze+test di PR/manual, rilis otomatis sekali jalan dari tag.
 
 ## 🧩 Fitur
 
@@ -105,7 +105,7 @@ MyWallet/
 │       ├── app_theme.dart        #   tema + Material You
 │       ├── shell.dart            #   shell + bilah bawah FAB kapsul (Riwayat · Catat · Scan)
 │       └── changelog.dart        #   sumber changelog in-app
-├── test/                         # 292 test (unit + widget + golden Beranda + regresi shell/sync)
+├── test/                         # 298 test (unit + widget + golden Beranda + regresi shell/sync)
 ├── docs/                         # vault dokumentasi (Obsidian)
 └── .github/workflows/            # CI: build + release otomatis
 ```
@@ -190,7 +190,7 @@ Rincian lengkap: [docs/06-Roadmap.md](docs/06-Roadmap.md).
 | Pemeriksaan | Status |
 | :-- | :-- |
 | `flutter analyze` | No issues found |
-| `flutter test` | 292/292 passed |
+| `flutter test` | 298/298 passed |
 | CI *(PR/manual)* | Analyze & Test saja — push ke `main` tidak memicu run |
 | Rilis *(tag `v*`)* | Analyze + test + APK signed + AAB → GitHub Release otomatis |
 

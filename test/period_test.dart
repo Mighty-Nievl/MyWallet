@@ -106,6 +106,33 @@ void main() {
     });
   });
 
+  group('suggestedTransactionDate', () {
+    final now = DateTime(2026, 10, 21, 15, 30);
+
+    test('periode memuat hari ini → pakai sekarang', () {
+      final p = Period.of(PeriodKind.bulanan, now);
+      expect(p.suggestedTransactionDate(now: now), now);
+    });
+
+    test('harian kemarin → tanggal itu jam 12, bukan hari ini', () {
+      final p = Period.of(PeriodKind.harian, DateTime(2026, 10, 20));
+      expect(
+        p.suggestedTransactionDate(now: now),
+        DateTime(2026, 10, 20, 12),
+      );
+    });
+
+    test('bulan lalu → awal bulan itu jam 12', () {
+      final p = Period.of(PeriodKind.bulanan, DateTime(2026, 9, 15));
+      expect(p.suggestedTransactionDate(now: now), DateTime(2026, 9, 1, 12));
+    });
+
+    test('tahunan lama → 1 Januari tahun itu jam 12', () {
+      final p = Period.of(PeriodKind.tahunan, DateTime(2025, 6, 1));
+      expect(p.suggestedTransactionDate(now: now), DateTime(2025, 1, 1, 12));
+    });
+  });
+
   test('kesetaraan: kind sama + start sama = periode sama', () {
     final a = Period.of(PeriodKind.mingguan, DateTime(2026, 10, 21));
     final b = Period.of(PeriodKind.mingguan, DateTime(2026, 10, 23));
