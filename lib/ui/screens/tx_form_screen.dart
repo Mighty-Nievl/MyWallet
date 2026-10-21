@@ -5,7 +5,6 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../data/actions.dart';
 import '../../data/database.dart';
-import '../../data/period.dart';
 import '../../data/providers.dart';
 import '../../data/receipt_parse.dart';
 import '../../data/receipt_scan_service.dart';

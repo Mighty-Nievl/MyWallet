@@ -94,7 +94,7 @@ class _MyWalletAppState extends ConsumerState<MyWalletApp>
             child: locked
                 ? Stack(
                     children: [
-                      if (child != null) child,
+                      ?child,
                       const Positioned.fill(child: LockScreen()),
                     ],
                   )
