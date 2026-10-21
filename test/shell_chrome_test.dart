@@ -163,7 +163,14 @@ void main() {
       while (tester.takeException() != null) {}
 
       final capsuleFinder = find.byKey(const ValueKey('home:navbar'));
-      final capsule = tester.getRect(capsuleFinder);
+      // Rect VISUAL kapsul = Material di dalam Container. Container-nya
+      // punya margin bawah 12 (pemisah dari tepi layar sejak v1.33.1),
+      // jadi getRect(Container) = 68 dan bukan tinggi kapsul.
+      final capsule = tester.getRect(
+        find
+            .descendant(of: capsuleFinder, matching: find.byType(Material))
+            .first,
+      );
       expect(capsule.width, lessThanOrEqualTo(232.0));
       expect(capsule.height, lessThanOrEqualTo(56.0));
       for (final label in ['Riwayat', 'Scan']) {
