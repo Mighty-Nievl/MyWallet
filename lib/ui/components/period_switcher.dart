@@ -36,15 +36,17 @@ class PeriodSwitcher extends ConsumerWidget {
           if (i == PeriodKind.values.length) {
             return ChoiceChip(
               key: const ValueKey('period:calendar'),
+              // Kalender bukan period kind: tak pernah "terpilih".
+              selected: false,
               avatar: Icon(
                 Icons.calendar_month_outlined,
                 size: 18,
                 color: AppColors.mutedOf(context),
               ),
               label: const Text('Kalender'),
-              onSelected: (_) => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const CalendarScreen()),
-              ),
+              onSelected: (_) => Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const CalendarScreen())),
             );
           }
           final kind = PeriodKind.values[i];
@@ -131,9 +133,8 @@ class PeriodNav extends ConsumerWidget {
                   periodLabel(period),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 // Ketuk = pulang ke periode berjalan (perilaku sama
                 // dengan chip bulan di AppMonthNav).
@@ -165,9 +166,8 @@ class PeriodNav extends ConsumerWidget {
             child: Text(
               'Ketuk label untuk kembali ke ${periodKindLabel(period.kind).toLowerCase()} ini',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.mutedOf(context),
-              ),
+              style: Theme.of(context).textTheme.labelSmall
+                  ?.copyWith(color: AppColors.mutedOf(context)),
             ),
           ),
       ],
