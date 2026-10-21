@@ -20,6 +20,32 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.35.0',
+    date: '21 Okt 2026',
+    user:
+        'Di Laporan kamu sekarang bisa memilih rentang waktu: Harian, '
+        'Mingguan, Bulanan, atau Tahunan. Ringkasan dan rincian kategori '
+        'langsung ikut rentang yang dipilih, dan perbandingan dihitung '
+        'terhadap rentang sebelumnya yang setara.',
+    tech:
+        'Model baru `data/period.dart`: Period(kind, anchor) → range '
+        '(start, endInclusive = endExclusive − 1ms, pola sama dengan '
+        'monthRangeOf), pekan mulai SENIN, aritmetika lewat konstruktor '
+        'DateTime(y,m,d±n) supaya bebas DST. Provider baru: '
+        'periodKindProvider, periodAnchorProvider, activePeriodProvider '
+        '(bulanan DITURUNKAN dari selectedMonthProvider → satu sumber '
+        'kebenaran, layar bulanan tak bisa berbeda dari Laporan), '
+        'periodTotalsProvider, prevPeriodTotalsProvider, '
+        'periodExpenseByCategoryProvider. UI: PeriodSwitcher (ChoiceChip '
+        'di ListView horizontal — SegmentedButton 4 label Indonesia '
+        'overflow di textScaler 2.0) + PeriodNav (chevron + label + '
+        'jalan pintas kembali), menggantikan AppMonthNav di Laporan. '
+        'Grafik 6 bulan + strip wawasan tetap bulanan dan judulnya '
+        'sekarang menyebut "(bulanan)" agar tidak salah konteks. '
+        '13 test baru (period_test 12 + period_ui_test 4).',
+    breaking: null,
+  ),
+  (
     version: 'v1.34.0',
     date: '21 Okt 2026',
     user:

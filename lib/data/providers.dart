@@ -151,11 +151,29 @@ final periodAnchorProvider = StateProvider<DateTime>((ref) {
 });
 
 final activePeriodProvider = Provider<Period>((ref) {
-  return Period.of(
-    ref.watch(periodKindProvider),
-    ref.watch(periodAnchorProvider),
-  );
+  final kind = ref.watch(periodKindProvider);
+  // Bulanan tetap bersumber dari selectedMonthProvider (sumber lama, dipakai
+  // nav bulan, Riwayat, Budget, grafik 6 bulan) agar SATU kebenaran: tidak
+  // mungkin layar bulanan menampilkan bulan yang berbeda dari Laporan.
+  // Periode lain memakai periodAnchorProvider karena bulan tak bisa
+  // mewakili "hari ini" atau "minggu ini".
+  final anchor = kind == PeriodKind.bulanan
+      ? _anchorOfMonthKey(ref.watch(selectedMonthProvider))
+      : ref.watch(periodAnchorProvider);
+  return Period.of(kind, anchor);
 });
+
+/// "2026-10" → 1 Oktober 2026 (fallback: hari ini bila kunci rusak).
+DateTime _anchorOfMonthKey(String key) {
+  final parts = key.split('-');
+  final y = parts.length == 2 ? int.tryParse(parts[0]) : null;
+  final m = parts.length == 2 ? int.tryParse(parts[1]) : null;
+  if (y == null || m == null || m < 1 || m > 12) {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, 1);
+  }
+  return DateTime(y, m, 1);
+}
 
 /// Rentang periode aktif — pengganti `monthRangeProvider` untuk layar yang
 /// mengikuti switcher.
@@ -218,6 +236,19 @@ final monthExpenseByCategoryProvider = StreamProvider<List<CategoryTotal>>((
   final db = ref.watch(dbProvider);
   final acct = ref.watch(selectedAccountProvider);
   final (from, to) = ref.watch(monthRangeProvider);
+  return db
+      .select(db.transactions)
+      .watch()
+      .asyncMap((_) => db.totalsByCategory(from, to, true, accountId: acct));
+});
+
+/// Ringkasan pengeluaran per kategori pada PERIODE aktif (v1.35.0).
+final periodExpenseByCategoryProvider = StreamProvider<List<CategoryTotal>>((
+  ref,
+) {
+  final db = ref.watch(dbProvider);
+  final acct = ref.watch(selectedAccountProvider);
+  final (from, to) = ref.watch(periodRangeProvider);
   return db
       .select(db.transactions)
       .watch()

@@ -4,6 +4,7 @@
 Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, bukan Actions artifacts. Jadi tiap versi stabil diterbitkan sebagai Release berisi APK bertanda tangan → HP dapat notifikasi update otomatis.
 
 ## Riwayat rilis
+- **v1.35.0** (21 Okt 2026): Laporan bisa dilihat per hari, minggu, bulan, atau tahun — ringkasan & rincian kategori ikut rentang, perbandingan memakai rentang sebelumnya yang setara.
 - **v1.34.0** (21 Okt 2026): Dua kartu arus kas di Beranda — Pemasukan & Pengeluaran periode aktif dengan perbandingan bulan sebelumnya; ketuk untuk membuka Riwayat.
 - **v1.33.1** (21 Okt 2026): Teks di dekat bilah bawah memudar halus (tidak terpotong garis), ketukan Riwayat/Scan terasa balasannya, label tetap rapi di font besar, dan bilah bawah menyingkir saat menggulir.
 - **v1.33.0** (21 Okt 2026): Bilah bawah kini benar-benar melayang di atas layar — konten tergulir di belakangnya, posisinya tetap rapi di HP dengan navigasi gestur.

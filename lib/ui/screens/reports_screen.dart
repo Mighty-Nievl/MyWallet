@@ -10,9 +10,9 @@ import '../components/app_card.dart';
 import '../components/app_empty_state.dart';
 import '../components/app_feedback.dart';
 import '../components/app_header.dart';
-import '../components/app_month_nav.dart';
 import '../components/app_section.dart';
 import '../components/category_glyph.dart';
+import '../components/period_switcher.dart';
 import '../design/app_motion.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
@@ -31,9 +31,16 @@ class ReportsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final month = ref.watch(selectedMonthProvider);
-    final totals = ref.watch(monthTotalsProvider);
-    final prevTotals = ref.watch(prevMonthTotalsProvider);
-    final byCat = ref.watch(monthExpenseByCategoryProvider);
+    // v1.35.0: angka utama ikut PERIODE aktif (harian/mingguan/bulanan/
+    // tahunan), bukan selalu bulan. `monthTotals` tetap dipakai khusus
+    // untuk blok grafik 6 bulan + strip wawasan — keduanya memang bulanan
+    // dan diberi judul jujur supaya tidak tampak salah konteks.
+    final period = ref.watch(activePeriodProvider);
+    final totals = ref.watch(periodTotalsProvider);
+    final prevTotals = ref.watch(prevPeriodTotalsProvider);
+    final byCat = ref.watch(periodExpenseByCategoryProvider);
+    final monthTotals = ref.watch(monthTotalsProvider);
+    final monthPrev = ref.watch(prevMonthTotalsProvider);
     final display = ref.watch(displayPrefsProvider);
     // v1.30: suffix dompet utk judul section (jujur: angka milik siapa).
     final acctSuffix = _accountSuffix(ref);
@@ -57,11 +64,11 @@ class ReportsScreen extends ConsumerWidget {
               onBack: Navigator.of(context).pop,
             ),
             const SizedBox(height: AppSpacing.s8),
-            AppMonthNav(
-              month: month,
-              onShift: (d) => ref.read(selectedMonthProvider.notifier).state =
-                  shiftMonth(month, d),
-            ),
+            // v1.35.0: switcher periode + navigasi geser per unit.
+            // Menggantikan AppMonthNav: bulan hanyalah salah satu periode.
+            const PeriodSwitcher(),
+            const SizedBox(height: AppSpacing.s8),
+            PeriodNav(period: period),
             // v1.25: filter dompet global (tanpa Kelola — hemat vertikal;
             // kelola milik Beranda). Semua angka ikut via provider.
             const SizedBox(height: AppSpacing.s8),
@@ -73,7 +80,7 @@ class ReportsScreen extends ConsumerWidget {
             Stagger(
               index: 0,
               child: AppSection(
-                title: 'Ringkasan ${monthLabel(month)}$acctSuffix',
+                title: 'Ringkasan ${periodLabel(period)}$acctSuffix',
                 child: _SummaryCard(totals: totals),
               ),
             ),
@@ -81,7 +88,9 @@ class ReportsScreen extends ConsumerWidget {
             Stagger(
               index: 1,
               child: AppSection(
-                title: 'Arus 6 bulan terakhir',
+                // v1.35.0: judul menyebut "bulanan" secara eksplisit —
+                // grafik ini SELALU bulanan, walau periode aktif mingguan.
+                title: 'Arus 6 bulan terakhir (bulanan)',
                 // v1.24.11: legenda ditaruh di trailing judul (nempel
                 // grafik, tak makan tinggi kartu) + strip wawasan.
                 trailing: const _ChartLegend(),
@@ -93,8 +102,10 @@ class ReportsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppSpacing.s8),
                     _InsightStrip(
-                      totals: totals,
-                      prevTotals: prevTotals,
+                      // Strip wawasan membandingkan BULAN berjalan vs bulan
+                      // lalu → sengaja pakai totals bulanan, bukan periode.
+                      totals: monthTotals,
+                      prevTotals: monthPrev,
                       month: month,
                       display: display,
                     ),
@@ -106,7 +117,7 @@ class ReportsScreen extends ConsumerWidget {
             Stagger(
               index: 2,
               child: AppSection(
-                title: 'Rincian ${monthLabel(month)}$acctSuffix',
+                title: 'Rincian ${periodLabel(period)}$acctSuffix',
                 child: _Breakdown(byCat: byCat, display: display),
               ),
             ),

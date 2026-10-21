@@ -1,5 +1,7 @@
 // Helper format tampilan: rupiah, tanggal, dan kunci bulan "yyyy-MM".
 
+import '../data/period.dart';
+
 String _group(int n) {
   final s = n.toString();
   final buf = StringBuffer();
@@ -111,7 +113,6 @@ String monthAbbrLabel(String key) {
 
 String monthKey(DateTime d) =>
     '${d.year}-${d.month.toString().padLeft(2, '0')}';
-
 String currentMonthKey() => monthKey(DateTime.now());
 
 /// Geser kunci bulan, mis. shiftMonth("2026-01", -1) -> "2025-12".
@@ -121,4 +122,58 @@ String shiftMonth(String key, int delta) {
   final m = int.tryParse(parts[1]) ?? DateTime.now().month;
   final d = DateTime(y, m + delta, 1);
   return monthKey(d);
+}
+
+// ── Periode (v1.35.0) ─────────────────────────────────────────────────────
+// Label periode hidup di sini (bukan di data/period.dart) supaya model
+// tanggal tetap murni dan bebas dari bahasa tampilan.
+
+/// "21 Okt 2026" · "19–25 Okt 2026" · "Oktober 2026" · "2026".
+String periodLabel(Period p) {
+  switch (p.kind) {
+    case PeriodKind.harian:
+      return formatDate(p.start);
+    case PeriodKind.mingguan:
+      final end = p.endInclusive;
+      // Lintas bulan: sebut bulan kedua sisi supaya tak ambigu.
+      if (p.start.month == end.month) {
+        return '${p.start.day}–${end.day} ${_shortMonths[end.month - 1]} ${end.year}';
+      }
+      return '${p.start.day} ${_shortMonths[p.start.month - 1]} – '
+          '${end.day} ${_shortMonths[end.month - 1]} ${end.year}';
+    case PeriodKind.bulanan:
+      return monthLabel(monthKey(p.start));
+    case PeriodKind.tahunan:
+      return '${p.start.year}';
+  }
+}
+
+/// Nama jenis periode untuk chip switcher.
+String periodKindLabel(PeriodKind kind) {
+  switch (kind) {
+    case PeriodKind.harian:
+      return 'Harian';
+    case PeriodKind.mingguan:
+      return 'Mingguan';
+    case PeriodKind.bulanan:
+      return 'Bulanan';
+    case PeriodKind.tahunan:
+      return 'Tahunan';
+  }
+}
+
+/// Frasa judul section: "hari ini"/"minggu ini"/... bila periode berjalan,
+/// selain itu label eksplisit (jangan bilang "bulan ini" untuk bulan lalu).
+String periodRelativeLabel(Period p) {
+  if (!p.containsToday()) return periodLabel(p);
+  switch (p.kind) {
+    case PeriodKind.harian:
+      return 'hari ini';
+    case PeriodKind.mingguan:
+      return 'minggu ini';
+    case PeriodKind.bulanan:
+      return 'bulan ini';
+    case PeriodKind.tahunan:
+      return 'tahun ini';
+  }
 }
