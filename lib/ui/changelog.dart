@@ -20,6 +20,28 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.34.0',
+    date: '21 Okt 2026',
+    user:
+        'Di Beranda kini ada dua kartu: Pemasukan dan Pengeluaran pada '
+        'periode yang sedang kamu lihat, plus perbandingan dengan bulan '
+        'sebelumnya. Ketuk salah satunya untuk langsung melihat daftar '
+        'transaksinya.',
+    tech:
+        'Widget baru `ui/widgets/flow_cards.dart`: dua kartu terpisah di '
+        'bawah carousel dompet (bukan diselipkan ke kartu saldo yang '
+        'tinggi tetap 116px dan sudah overflow 70px di textScaler 2.0). '
+        'Angka dari monthTotalsProvider + prevMonthTotalsProvider, delta '
+        'persen (null-safe saat periode lalu 0 → "baru periode ini", '
+        'tanpa Infinity/NaN). Menghormati displayPrefsProvider: Rp•••• '
+        'saat privacy menyembunyikan semua nominal, dan teks delta ikut '
+        'disamarkan supaya arah arus tidak bocor lewat persen. Nominal '
+        'dibungkus FittedBox(scaleDown) + IntrinsicHeight agar dua kartu '
+        'tetap sama tinggi tanpa overflow di font besar. Tap → Riwayat. '
+        '5 test baru (flow_cards_test).',
+    breaking: null,
+  ),
+  (
     version: 'v1.33.1',
     date: '21 Okt 2026',
     user:

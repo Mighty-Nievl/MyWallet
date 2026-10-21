@@ -20,6 +20,7 @@ import '../display.dart';
 import '../format.dart';
 import '../greeting.dart';
 import '../widgets/account_carousel.dart';
+import '../widgets/flow_cards.dart';
 import '../widgets/home_feature_grid.dart';
 import '../widgets/tx_tile.dart';
 import 'history_screen.dart';
@@ -105,6 +106,17 @@ class HomeScreen extends ConsumerWidget {
                   SliverToBoxAdapter(
                     key: const ValueKey('home:hero-slot'),
                     child: const AccountCarousel(),
+                  ),
+                  // v1.34.0: arus kas periode aktif — Pemasukan &
+                  // Pengeluaran sebagai kartu sendiri. Dulu angka ini
+                  // hanya ada di Laporan; di Beranda user cuma lihat
+                  // saldo, jadi tak tahu uang masuk/keluar bulan ini.
+                  SliverToBoxAdapter(
+                    key: const ValueKey('home:flowcards'),
+                    child: _pad(
+                      const FlowCards(),
+                      top: AppSpacing.s12,
+                    ),
                   ),
                   // v1.26: menu fitur 4x2 (aksi + lihat) di bawah dompet,
                   // di atas nav bulan — Beranda jadi pintu masuk semua.

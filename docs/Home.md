@@ -19,7 +19,7 @@
 - **Penyimpanan:** 100% lokal, SQLite via Drift — tanpa login, tanpa server.
 - **State:** flutter_riverpod 3.x (`StreamProvider` auto-refresh, `StateProvider` via `legacy.dart`).
 - **File DB:** `mywallet.sqlite` di folder dokumen aplikasi.
-- **Status:** v1.33.1 — Kapsul melayang (`extendBody` + slot bar): teks memudar halus di belakangnya, ripple hidup, label aman di font besar, tuck saat scroll.
+- **Status:** v1.34.0 — Dua kartu arus kas (Pemasukan/Pengeluaran) di bawah dompet; kapsul melayang (`extendBody` + slot bar) dengan scrim fade, ripple, label aman font besar, tuck saat scroll.
 
 ## Peta kode
 
