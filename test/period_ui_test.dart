@@ -5,6 +5,8 @@
 //    sekadar label) — dibuktikan dengan dua transaksi di tanggal berbeda.
 // 2. Widget Laporan: chip switcher mengubah periode aktif, judul seksi
 //    ikut, dan chevron menggeser satu unit periode.
+import 'dart:async';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -54,6 +56,29 @@ Future<void> _seed(
       );
 }
 
+/// Nilai pertama [periodTotalsProvider] untuk state periode saat ini.
+///
+/// Wajib pakai listener aktif: `container.read(provider.future)` pada
+/// Riverpod 3 tidak menyelesaikan future tanpa listener (provider
+/// auto-dispose sebelum stream sempat emit), dan drift menahan
+/// `db.close()` selama stream query masih hidup — itu penyebab file ini
+/// menggantung sampai job 10 menit di-cancel.
+Future<(int, int)> _readTotals(ProviderContainer container) {
+  final completer = Completer<(int, int)>();
+  final sub = container.listen<AsyncValue<(int, int)>>(periodTotalsProvider, (
+    previous,
+    next,
+  ) {
+    // Tunggu AsyncData BARU (bukan AsyncLoading yang membawa nilai lama).
+    if (next is AsyncData<(int, int)> && !completer.isCompleted) {
+      completer.complete(next.value);
+    }
+  }, fireImmediately: true);
+  return completer.future
+      .timeout(const Duration(seconds: 10))
+      .whenComplete(sub.close);
+}
+
 Future<void> _pumpReports(WidgetTester tester, AppDatabase db) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -95,24 +120,18 @@ void main() {
     final monthRange = Period.of(PeriodKind.bulanan, today).range;
     final expectMonth =
         (tenDaysAgo.isBefore(monthRange.$1) ? 0 : 30000) + 50000;
-    final monthly = await container
-        .read(periodTotalsProvider.future)
-        .timeout(const Duration(seconds: 10));
+    final monthly = await _readTotals(container);
     expect(monthly.$2, expectMonth);
 
     // Harian: hanya transaksi hari ini.
     container.read(periodKindProvider.notifier).state = PeriodKind.harian;
     container.read(periodAnchorProvider.notifier).state = today;
-    final daily = await container
-        .read(periodTotalsProvider.future)
-        .timeout(const Duration(seconds: 10));
+    final daily = await _readTotals(container);
     expect(daily.$2, 50000, reason: 'harian hanya menjumlah hari ini');
 
     // Mingguan: hari ini pasti masuk; 10 hari lalu pasti TIDAK (di luar 7 hari).
     container.read(periodKindProvider.notifier).state = PeriodKind.mingguan;
-    final weekly = await container
-        .read(periodTotalsProvider.future)
-        .timeout(const Duration(seconds: 10));
+    final weekly = await _readTotals(container);
     expect(
       weekly.$2,
       50000,

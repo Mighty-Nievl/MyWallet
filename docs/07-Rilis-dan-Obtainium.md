@@ -38,18 +38,18 @@ Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, buka
 1. Naikkan `version:` di `pubspec.yaml` (contoh: `1.0.1+2`).
 2. WAJIB tambah entri baru paling atas di `lib/ui/changelog.dart` (satu-satunya sumber changelog in-app — dialog Tentang ambil dari sini otomatis). `test/changelog_test.dart` gagal bila langkah ini lupa.
 3. Update `docs/07-Rilis-dan-Obtainium.md` (riwayat rilis) + `README.md` (status versi).
-4. Commit + push ke `main`.
+4. Commit + push ke `main` (tidak memicu workflow — hemat menit).
 5. `git tag v1.0.1 && git push origin v1.0.1`
-6. Workflow **Release MyWallet** otomatis jalan: codegen → analyze → test → `flutter build apk --release` (signed) + AAB → membuat GitHub Release berisi `mywallet-v1.0.1.apk` (+ `.aab` untuk Play Console).
+6. Workflow **Release MyWallet** otomatis jalan SEKALI: codegen → analyze → test → `flutter build apk --release` (signed) + AAB → membuat GitHub Release berisi `mywallet-v1.0.1.apk` (+ `.aab` untuk Play Console).
 7. Pantau di tab **Actions → Release MyWallet**.
 
 ## Workflow CI (3 file di `.github/workflows/`)
 
 | Workflow | Pemicu | Hasil |
 |---|---|---|
-| **Build MyWallet** (`build.yml`) | push/PR ke `main` | Analyze + test + APK debug + AAB rilis (artifacts) |
-| **Fast Flutter APK Build** (`build-apk.yml`) | push ke `main` / manual | APK rilis signed keystore resmi (artifact, retensi 3 hari) — buat cek cepat di HP tanpa tag |
-| **Release MyWallet** (`release.yml`) | push tag `v*` / manual | GitHub Release berisi `mywallet-vX.Y.Z.apk` + `.aab` → Obtainium |
+| **Check MyWallet** (`build.yml`) | PR ke `main` / manual | Analyze + test saja (gerbang review; push ke `main` tidak memicu) |
+| **Fast Flutter APK Build** (`build-apk.yml`) | manual | APK rilis signed keystore resmi (artifact, retensi 3 hari) — buat cek cepat di HP tanpa tag |
+| **Release MyWallet** (`release.yml`) | push tag `v*` / manual | Analyze + test + GitHub Release berisi `mywallet-vX.Y.Z.apk` + `.aab` → Obtainium |
 
 ## Riwayat rilis
 - **v1.26.0** (12 Okt 2026): Menu fitur Beranda + nav ramping + scan struk resmi dibuka. Full 227/227.

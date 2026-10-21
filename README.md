@@ -12,7 +12,7 @@ Tanpa login, tanpa server — semua data cuma tinggal di perangkatmu.
 ![Drift](https://img.shields.io/badge/Drift-2.35-EAECED?logo=sqlite&logoColor=black)
 ![Version](https://img.shields.io/badge/version-1.36.0-6C5CE7)
 ![Tests](https://img.shields.io/badge/tests-292%2F292-2ECC71)
-[![Build](https://github.com/Mighty-Nievl/MyWallet/actions/workflows/build.yml/badge.svg)](https://github.com/Mighty-Nievl/MyWallet/actions/workflows/build.yml)
+[![Check](https://github.com/Mighty-Nievl/MyWallet/actions/workflows/build.yml/badge.svg)](https://github.com/Mighty-Nievl/MyWallet/actions/workflows/build.yml)
 
 [**Ringkasan**](#-ringkasan) · [**Fitur**](#-fitur) · [**Mulai Cepat**](#-mulai-cepat) · [**Dokumentasi**](#-dokumentasi) · [**Rilis**](#-instal-dan-rilis)
 
@@ -29,7 +29,7 @@ Datanya disimpan penuh di lokal (SQLite lewat Drift), jadi aman, cepat, dan bisa
 - **Privasi di depan** — kunci PIN/biometrik, sembunyikan nominal, mode privacy scale.
 - **Visual rapi** — tema Material 3, 6 warna aksen + Material You, mode gelap hitam pekat, bilah bawah melayang berbentuk kapsul.
 - **Siap pakai harian** — budget per kategori, laporan 6 bulan, export CSV, pengingat mencatat.
-- **Sehat secara teknis** — `flutter analyze` bersih, **292/292 test hijau**, CI jalan di tiap push/PR.
+- **Sehat secara teknis** — `flutter analyze` bersih, **292/292 test hijau**, CI analyze+test di PR/manual, rilis otomatis sekali jalan dari tag.
 
 ## 🧩 Fitur
 
@@ -142,16 +142,17 @@ atau langsung dari GitHub:
 
 ```bash
 # 1. Naikkan version: di pubspec.yaml  2. Tambah entri di lib/ui/changelog.dart
-git commit -am "v1.33.0: ..."
-git tag v1.33.0 && git push origin main v1.33.0
-# → workflow "Release MyWallet" otomatis: analyze → test → APK signed + AAB → GitHub Release
+git commit -am "vX.Y.Z: ..."
+git push origin main          # tidak memicu workflow apa pun (hemat menit)
+git tag vX.Y.Z && git push origin vX.Y.Z
+# → "Release MyWallet" jalan SEKALI: analyze → test → APK signed + AAB → GitHub Release
 ```
 
 **Alur CI:**
 
 | Workflow | Trigger | Isi |
 | :-- | :-- | :-- |
-| `build.yml` · Build MyWallet | push/PR ke `main` | Analyze & Test → Build APK debug (artifact) |
+| `build.yml` · Check MyWallet | PR ke `main` atau **manual** | Analyze & Test saja (push ke `main` tidak lagi memicu apa pun) |
 | `build-apk.yml` · Fast APK Build | **manual** (`workflow_dispatch`) | APK rilis **signed**, build-only — buat cek cepat di HP tanpa nunggu tag |
 | `release.yml` · Release MyWallet | tag `v*` atau manual | Analyze → test → APK + AAB signed → publish GitHub Release |
 
@@ -190,8 +191,8 @@ Rincian lengkap: [docs/06-Roadmap.md](docs/06-Roadmap.md).
 | :-- | :-- |
 | `flutter analyze` | No issues found |
 | `flutter test` | 292/292 passed |
-| CI *(push & PR ke `main`)* | Analyze & Test → Build APK & AAB |
-| Rilis *(tag `v*`)* | APK signed + AAB → GitHub Release otomatis |
+| CI *(PR/manual)* | Analyze & Test saja — push ke `main` tidak memicu run |
+| Rilis *(tag `v*`)* | Analyze + test + APK signed + AAB → GitHub Release otomatis |
 
 ---
 

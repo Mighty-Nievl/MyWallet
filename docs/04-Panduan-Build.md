@@ -1,12 +1,10 @@
 # 04 — Panduan Build
 
 ## Cara utama: GitHub Actions (cloud, tanpa makan RAM lokal)
-Repo: `Mighty-Nievl/MyWallet` (publik). Workflow `.github/workflows/build.yml`:
-- Tiap push / PR ke `main` (atau manual via **Actions → Build MyWallet → Run workflow**):
-  1. `analyze-test`: pub get → build_runner → `flutter analyze` → `flutter test`
-  2. `build-debug-apk` (jalan kalau tahap 1 hijau): APK debug → di-upload sebagai artifact.
-- **Ambil hasilnya:** tab Actions → klik run → bagian Artifacts → `mywallet-apk-debug`.
-- AAB resmi (untuk Play Console) cuma dibuat saat rilis: lihat `release.yml`. Sejak v1.33.0 AAB tidak lagi dibangun tiap push (tanpa keystore rilis, AAB itu bertanda tangan debug dan tidak bisa dipakai).
+Repo: `Mighty-Nievl/MyWallet` (publik). Sejak v1.36.0 push ke `main` **tidak memicu workflow apa pun** (dulu tiap commit = analyze + test + APK debug = boros menit). Sekarang:
+- **Cek cepat (tanpa rilis):** PR ke `main`, atau manual via **Actions → Check MyWallet → Run workflow** → job `analyze-test`: pub get → build_runner → `flutter analyze` → `flutter test`.
+- **APK signed buat dites di HP tanpa tag:** manual via **Actions → Fast Flutter APK Build → Run workflow** → artifact `mywallet-apk-release` (retensi 3 hari).
+- **Rilis resmi:** push tag `v*` → `release.yml` jalan sekali: analyze → test → APK rilis signed + AAB → GitHub Release. AAB untuk Play Console cuma ada di sini (sejak v1.33.0 AAB tidak dibuat di alur cek biasa).
 - Prep Android (disk, Java, Flutter, tuning Gradle, NDK anti-korup, keystore, `google-services.json`) ada di satu composite action: `.github/actions/android-prep` — dipakai ketiga workflow, jangan disalin lagi.
 - ✅ Build pertama (7 Okt 2026, run `37568474280`): hijau semua — `analyze-test` 42 dtk, `build-android` 10 mnt 46 dtk. Artifact: `app-release.aab` 58 MB, `app-debug.apk` 164 MB (tersimpan di `dist-cloud/`, di-ignore git).
 

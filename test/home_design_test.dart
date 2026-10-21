@@ -281,18 +281,24 @@ void main() {
     // tidak boleh ada — seksi memakai judul "Pengeluaran bulan ini".
     expect(find.text('Kategori cepat'), findsNothing);
     expect(find.text('Top kategori'), findsNothing);
-    expect(find.text('Pengeluaran bulan ini'), findsOneWidget);
     // Nama kategori muncul di seksi Top (judul, bodyLarge w600).
     // v1.24.4: subtitle tile Beranda = nama kategori polos (tanggal
     // disembunyikan, showDate:false) → exact-match 2x itu benar per
     // desain baru (judul seksi + subtitle tile), bukan blok ganda
     // ala v1.14.x (strip "Kategori cepat" + seksi Top).
     // v1.26: grid menu menambah tinggi atas → tile kategori di bawah
-    // lipatan; gulir dulu sebelum hitung (CustomScrollView lazy).
-    await tester.ensureVisible(find.text('Pengeluaran bulan ini'));
+    // lipatan (v1.36.0: switcher + PeriodNav menambah ~50px) → sliver
+    // belum dibangun; scrollUntilVisible yang menyusul, bukan
+    // ensureVisible yang butuh widget sudah ada.
+    await tester.scrollUntilVisible(
+      find.text('Pengeluaran bulan ini'),
+      200,
+      scrollable: find.byType(CustomScrollView),
+    );
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
+    expect(find.text('Pengeluaran bulan ini'), findsOneWidget);
     expect(find.text('Makan & Minum'), findsNWidgets(2));
     await _flushDriftCloseTimer(tester);
   });
@@ -839,8 +845,13 @@ void main() {
     expect(find.text('Semua'), findsNothing);
     // v1.30: 2 dompet + auto-select kartu pertama (Keluarga, alfabetis) =
     // judul seksi sebut scope. Pola gulir ikut test kategori-ganda
-    // (grid v1.26 mendorong judul ke bawah lipatan).
-    await tester.ensureVisible(find.text('Pengeluaran bulan ini · Keluarga'));
+    // (grid v1.26 + kontrol periode v1.36 mendorong judul ke bawah
+    // lipatan; sliver belum dibangun → scrollUntilVisible).
+    await tester.scrollUntilVisible(
+      find.text('Pengeluaran bulan ini · Keluarga'),
+      200,
+      scrollable: find.byType(CustomScrollView),
+    );
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }

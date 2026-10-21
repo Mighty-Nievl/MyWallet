@@ -1,15 +1,19 @@
-name: Build MyWallet
+name: Check MyWallet
 
+# v1.36.0: push ke main TIDAK lagi memicu workflow ini (hemat menit —
+# dulu tiap commit = analyze + test + build APK debug). Sekarang:
+# - PR ke main  : analyze + test (gerbang review).
+# - Manual      : analyze + test (cek cepat tanpa merilis).
+# - Rilis       : push tag v* → release.yml (analyze + test + APK/AAB
+#                 bertanda tangan + GitHub Release). Satu pipeline saja.
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
 
-# Push baru membatalkan build lama di ref yang sama (hemat menit + antrean).
+# Push/PR baru membatalkan run lama di ref yang sama (hemat menit + antrean).
 concurrency:
-  group: build-${{ github.ref }}
+  group: check-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -30,31 +34,3 @@ jobs:
       - run: dart run build_runner build
       - run: flutter analyze
       - run: flutter test
-
-  build-debug-apk:
-    name: Build APK debug
-    runs-on: ubuntu-latest
-    needs: analyze-test
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-
-      # Disk, Java 17, Flutter, tuning Gradle, NDK anti-korup,
-      # google-services.json — dari composite action bersama. Keystore
-      # tidak diisi: APK debug memang bertanda tangan debug.
-      - uses: ./.github/actions/android-prep
-        with:
-          google-services-base64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
-
-      - run: flutter pub get
-      - run: dart run build_runner build
-      - run: flutter build apk --debug
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mywallet-apk-debug
-          path: build/app/outputs/flutter-apk/app-debug.apk
-
-      # v1.33.0: AAB di sini DIHAPUS. Tanpa keystore rilis, AAB-nya
-      # bertanda tangan debug — tidak bisa diunggah ke Play Console dan
-      # tidak dipakai siapa pun. AAB resmi dibuat release.yml saat tag.
