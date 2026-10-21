@@ -34,9 +34,10 @@ String transferNote(String note) {
 // ---------- Inti (AppDatabase — testable langsung) ----------
 
 /// Kaki transfer satu grup (keluar asal + masuk tujuan), tertua dulu.
+/// Tombstone (sudah dihapus) tidak ikut.
 Future<List<Transaction>> transferLegs(AppDatabase db, String groupId) {
   return (db.select(db.transactions)
-        ..where((t) => t.transferId.equals(groupId))
+        ..where((t) => t.transferId.equals(groupId) & t.deletedAt.isNull())
         ..orderBy([(t) => drift.OrderingTerm.asc(t.id)]))
       .get();
 }
@@ -56,19 +57,21 @@ Future<String> insertTransfer(
     throw ArgumentError('Dompet asal dan tujuan harus beda.');
   }
   if (amount <= 0) throw ArgumentError('Nominal harus lebih dari 0.');
-  final from = await (db.select(db.accounts)
-        ..where((a) => a.id.equals(fromAccountId)))
-      .getSingleOrNull();
-  final to = await (db.select(db.accounts)
-        ..where((a) => a.id.equals(toAccountId)))
-      .getSingleOrNull();
+  final from = await (db.select(
+    db.accounts,
+  )..where((a) => a.id.equals(fromAccountId))).getSingleOrNull();
+  final to = await (db.select(
+    db.accounts,
+  )..where((a) => a.id.equals(toAccountId))).getSingleOrNull();
   if (from == null || to == null) {
     throw ArgumentError('Dompet tidak ditemukan.');
   }
   final cleanNote = note.trim();
   final groupId = newSyncUuid();
   // Kaki KELUAR (asal): pengeluaran.
-  await db.into(db.transactions).insert(
+  await db
+      .into(db.transactions)
+      .insert(
         TransactionsCompanion.insert(
           amount: amount,
           isExpense: const drift.Value(true),
@@ -81,7 +84,9 @@ Future<String> insertTransfer(
         ),
       );
   // Kaki MASUK (tujuan): pemasukan.
-  await db.into(db.transactions).insert(
+  await db
+      .into(db.transactions)
+      .insert(
         TransactionsCompanion.insert(
           amount: amount,
           isExpense: const drift.Value(false),
@@ -97,11 +102,18 @@ Future<String> insertTransfer(
 }
 
 /// Hapus transfer berpasangan (kedua kaki sekaligus).
-/// Tanpa undo (konfirmasi di UI, ala hapus transaksi).
+/// v1.36.2: soft-delete, bukan hapus fisik — tombstone ikut sync supaya
+/// transfer yang dihapus di satu HP tidak muncul lagi dari cloud.
 Future<void> deleteTransfer(AppDatabase db, String groupId) async {
-  await (db.delete(db.transactions)
-        ..where((t) => t.transferId.equals(groupId)))
-      .go();
+  final now = syncNow();
+  await (db.update(
+    db.transactions,
+  )..where((t) => t.transferId.equals(groupId))).write(
+    TransactionsCompanion(
+      deletedAt: drift.Value(now),
+      updatedAt: drift.Value(now),
+    ),
+  );
 }
 
 // ---------- Aturan hapus/arsip dompet (Fase 3 UI) ----------
@@ -110,26 +122,23 @@ Future<void> deleteTransfer(AppDatabase db, String groupId) async {
 /// DAN tanpa transaksi DAN tanpa utang/cicilan.
 /// Selain itu tawarkan ARSIP (bukan hapus — riwayat tak jadi yatim).
 Future<bool> accountDeletable(AppDatabase db, int accountId) async {
-  final acc = await (db.select(db.accounts)
-        ..where((a) => a.id.equals(accountId)))
-      .getSingleOrNull();
+  final acc = await (db.select(
+    db.accounts,
+  )..where((a) => a.id.equals(accountId))).getSingleOrNull();
   if (acc == null) return false;
   if (acc.openingBalance != 0) return false;
   if ((await db.getBalance(accountId: accountId)) != 0) return false;
-  final txCount =
-      await (db.select(db.transactions)
-            ..where((t) => t.accountId.equals(accountId)))
-          .get();
+  final txCount = await (db.select(
+    db.transactions,
+  )..where((t) => t.accountId.equals(accountId) & t.deletedAt.isNull())).get();
   if (txCount.isNotEmpty) return false;
-  final debtCount =
-      await (db.select(db.debts)
-            ..where((d) => d.accountId.equals(accountId)))
-          .get();
+  final debtCount = await (db.select(
+    db.debts,
+  )..where((d) => d.accountId.equals(accountId) & d.deletedAt.isNull())).get();
   if (debtCount.isNotEmpty) return false;
-  final payCount =
-      await (db.select(db.debtPayments)
-            ..where((p) => p.accountId.equals(accountId)))
-          .get();
+  final payCount = await (db.select(
+    db.debtPayments,
+  )..where((p) => p.accountId.equals(accountId) & p.deletedAt.isNull())).get();
   if (payCount.isNotEmpty) return false;
   return true;
 }
@@ -139,6 +148,16 @@ Future<void> archiveAccount(AppDatabase db, int accountId) async {
   await (db.update(db.accounts)..where((a) => a.id.equals(accountId))).write(
     AccountsCompanion(
       isArchived: const drift.Value(true),
+      updatedAt: drift.Value(syncNow()),
+    ),
+  );
+}
+
+/// Pulihkan dompet arsip ke daftar aktif (v1.36.2).
+Future<void> unarchiveAccount(AppDatabase db, int accountId) async {
+  await (db.update(db.accounts)..where((a) => a.id.equals(accountId))).write(
+    AccountsCompanion(
+      isArchived: const drift.Value(false),
       updatedAt: drift.Value(syncNow()),
     ),
   );

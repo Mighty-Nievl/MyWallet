@@ -20,6 +20,32 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.36.2',
+    date: '21 Okt 2026',
+    user:
+        'Sync keluarga kini hanya mengirim dompet yang kamu tandai Keluarga, '
+        'jadi dompet pribadi tidak ikut. Saldo awal ikut tersinkron, transfer '
+        'tidak bisa rusak satu sisi, budget yang dihapus bisa diurungkan, dan '
+        'dompet arsip bisa dipulihkan.',
+    tech:
+        'pushableAccounts/pushableTx hanya isShared + accountUuid shared; '
+        'pull menolak dompet pribadi baru dan transaksi non-shared '
+        '(shouldPullAccount/pullableTx). accountToMap + RemoteAccount + '
+        'upsertLocalAccount membawa openingBalance (nullable agar dokumen lama '
+        'tidak menimpa angka lokal). Transfer: openTransaction mengarahkan '
+        'transferId ke sheet ringkasan + hapus berpasangan; deleteTransfer '
+        'jadi soft-delete tombstone agar hapus ikut sync; form catat tidak lagi '
+        'membuka kaki transfer. upsertBudget mengosongkan deletedAt saat Undo. '
+        'unarchiveAccount + archivedAccountsProvider + sheet Kelola. onCreate '
+        'seed dompet Utama. Tanggal TransferSheet ikut activePeriodProvider. '
+        'Copy privacy Keluarga + caption budget global diperjelas. '
+        'firestore.rules mengizinkan openingBalance int.',
+    breaking:
+        'Jika memakai Sync keluarga, publish firestore.rules v1.36.2 lebih '
+        'dulu lewat Firebase Console → Firestore → Rules. Tanpa itu, sync '
+        'dompet akan ditolak karena field saldo awal baru.',
+  ),
+  (
     version: 'v1.36.1',
     date: '21 Okt 2026',
     user:
@@ -934,8 +960,7 @@ const appChangelog = <({String version, String date, String user, String tech, S
   (
     version: 'v1.10.1',
     date: '8 Okt 2026',
-    user:
-        'Tombol + Catat menyatu rapi di bar bawah, ikon seragam di semua layar.',
+    user: 'Tombol + Catat menyatu rapi di bar bawah, ikon seragam di semua layar.',
     tech:
         'Penyeragaman: FAB Catat tertanam via BottomAppBar notch + Beranda '
         'CustomScrollView satu-sliver-per-section + ikon monochrome di semua '
@@ -977,8 +1002,7 @@ const appChangelog = <({String version, String date, String user, String tech, S
   (
     version: 'v1.7.2',
     date: '7 Okt 2026',
-    user:
-        'Perbaikan: budget yang baru disimpan sekarang langsung muncul di daftar.',
+    user: 'Perbaikan: budget yang baru disimpan sekarang langsung muncul di daftar.',
     tech: 'Fix list budget tetap kosong setelah simpan + SnackBar tersimpan.',
     breaking: null,
   ),
@@ -986,8 +1010,7 @@ const appChangelog = <({String version, String date, String user, String tech, S
     version: 'v1.7.1',
     date: '7 Okt 2026',
     user: 'Perbaikan: tombol Tambah Budget sekarang langsung membuka dialog.',
-    tech:
-        'Fix tombol Tambah Budget: dialog instan + SnackBar bila belum lengkap.',
+    tech: 'Fix tombol Tambah Budget: dialog instan + SnackBar bila belum lengkap.',
     breaking: null,
   ),
   (

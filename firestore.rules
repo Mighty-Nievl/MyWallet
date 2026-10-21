@@ -77,14 +77,15 @@ service cloud.firestore {
           && request.resource.data.updatedBy == request.auth.uid;
         allow delete: if false;
       }
-      // Dompet v1.25: identitas + arsip saja. Saldo TIDAK sync
-      // (dihitung per-HP) — tolak dokumen yang bawa angka.
+      // Dompet v1.25 + v1.36.2: identitas, arsip, isShared, saldo awal.
+      // Saldo berjalan tetap TIDAK sync (dihitung per-HP); openingBalance
+      // wajib integer dan ikut agar saldo antar-HP tidak berbeda.
       match /accounts/{doc} {
         allow read: if isMember(hid);
         allow create, update: if isMember(hid)
           && request.resource.data.updatedBy == request.auth.uid
           && (!('openingBalance' in request.resource.data)
-            || request.resource.data.openingBalance == null)
+            || request.resource.data.openingBalance is int)
           && (!('amount' in request.resource.data)
             || request.resource.data.amount == null);
         allow delete: if false;

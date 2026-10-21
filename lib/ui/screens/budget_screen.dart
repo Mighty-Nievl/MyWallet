@@ -83,11 +83,11 @@ class BudgetScreen extends ConsumerWidget {
             // seperti bug saat periode lain aktif di layar lain.
             const SizedBox(height: AppSpacing.s4),
             Text(
-              'Budget selalu dihitung per bulan.',
+              'Budget selalu dihitung per bulan. Batas berlaku untuk semua '
+              'dompet; angka terpakai mengikuti dompet yang dipilih.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.mutedOf(context),
-              ),
+              style: Theme.of(context).textTheme.labelSmall
+                  ?.copyWith(color: AppColors.mutedOf(context)),
             ),
             // v1.25: filter dompet global (tanpa Kelola — milik Beranda).
             const SizedBox(height: AppSpacing.s8),
@@ -113,8 +113,7 @@ class BudgetScreen extends ConsumerWidget {
                     return AppEmptyState(
                       icon: '💰',
                       title: 'Belum ada budget',
-                      subtitle:
-                          'Belum ada budget bulan ini.\nTambahkan batas per kategori agar pengeluaran terkontrol.',
+                      subtitle: 'Belum ada budget bulan ini.\nTambahkan batas per kategori agar pengeluaran terkontrol.',
                       action: FilledButton.icon(
                         onPressed: () =>
                             _openBudgetDialog(context, ref, month, list),
@@ -236,9 +235,8 @@ class BudgetScreen extends ConsumerWidget {
             children: [
               Text(
                 'Pilih kategori',
-                style: Theme.of(
-                  s,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                style: Theme.of(s).textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: AppSpacing.s8),
               for (final cat in cats)
@@ -256,9 +254,8 @@ class BudgetScreen extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             cat.name,
-                            style: Theme.of(s).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: Theme.of(s).textTheme.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w500),
                           ),
                         ),
                         if (known.containsKey(cat.id))
@@ -523,9 +520,8 @@ class BudgetScreen extends ConsumerWidget {
         ),
       );
       if (res == 'saved' && context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Budget tersimpan.')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Budget tersimpan.')));
       } else if (res == 'delete' && existing != null && context.mounted) {
         await _confirmDelete(context, ref, month, existing);
       }
@@ -548,7 +544,7 @@ class BudgetScreen extends ConsumerWidget {
         content: Text(
           '${item.name} · ${monthLabel(month)} '
           '(${formatRp(item.budget.limit)}) akan dihapus. '
-          'Tidak bisa dikembalikan.',
+          'Kamu masih bisa mengurungkannya sebentar setelah ini.',
         ),
         actions: [
           TextButton(
@@ -637,9 +633,8 @@ class _OverviewCard extends ConsumerWidget {
         children: [
           Text(
             'Anggaran · ${monthLabel(month)}',
-            style: AppType.labelMuted(
-              context,
-            ).copyWith(color: white.withValues(alpha: 0.85)),
+            style: AppType.labelMuted(context)
+                .copyWith(color: white.withValues(alpha: 0.85)),
           ),
           const SizedBox(height: AppSpacing.s4),
           Text(
@@ -665,9 +660,8 @@ class _OverviewCard extends ConsumerWidget {
           const SizedBox(height: AppSpacing.s8),
           Text(
             '$safe dari ${list.length} budget aman',
-            style: AppType.secondary(
-              context,
-            ).copyWith(color: white.withValues(alpha: 0.92)),
+            style: AppType.secondary(context)
+                .copyWith(color: white.withValues(alpha: 0.92)),
           ),
         ],
       ),
@@ -718,9 +712,8 @@ class _BudgetItem extends ConsumerWidget {
                 children: [
                   Text(
                     b.name,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w500),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -729,9 +722,8 @@ class _BudgetItem extends ConsumerWidget {
                     children: [
                       Text(
                         display.money(b.spent),
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
                       ),
                       Flexible(
                         child: Text(

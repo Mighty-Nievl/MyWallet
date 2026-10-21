@@ -4,6 +4,7 @@
 Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, bukan Actions artifacts. Jadi tiap versi stabil diterbitkan sebagai Release berisi APK bertanda tangan → HP dapat notifikasi update otomatis.
 
 ## Riwayat rilis
+- **v1.36.2** (21 Okt 2026): Sync keluarga kini hanya mengirim dompet bertanda Keluarga + transaksinya; dompet pribadi tidak lagi ikut ke cloud. Saldo awal ikut sync, transfer tidak bisa diedit/dihapus satu sisi, Undo budget benar-benar mengembalikan, dompet arsip bisa dipulihkan, dan instalasi baru langsung punya dompet Utama. **WAJIB publish `firestore.rules` baru** sebelum sync keluarga (field `openingBalance`).
 - **v1.36.1** (21 Okt 2026): Tanggal form catat ikut periode yang sedang dilihat (tidak lagi selalu hari ini), export PDF mengikuti periode di Laporan, aplikasi terkunci lagi saat ditinggal ke background (route yang terbuka ikut tertutup), pintu kalender ganda di Riwayat dihapus, Budget diberi penanda selalu bulanan, dan grup Pengaturan dinamai jujur "Saldo, Privasi & Pengingat".
 - **v1.36.0** (21 Okt 2026): Beranda & Riwayat ikut periode Harian/Mingguan/Bulanan/Tahunan, plus kalender grid dengan total harian (ketuk tanggal → rincian harian). Kartu masuk/keluar ikut periode; tombol + jadi 64px dengan overlap 8px.
 - **v1.35.0** (21 Okt 2026): Laporan bisa dilihat per hari, minggu, bulan, atau tahun — ringkasan & rincian kategori ikut rentang, perbandingan memakai rentang sebelumnya yang setara.

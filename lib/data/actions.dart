@@ -144,6 +144,10 @@ Future<void> upsertBudget(
     await (db.update(db.budgets)..where((b) => b.id.equals(existing.id))).write(
       BudgetsCompanion(
         limit: drift.Value(limit),
+        // v1.36.2: Undo setelah hapus = hidupkan lagi tombstones.
+        // Dulu deletedAt dibiarkan, jadi baris "kembali" tapi tetap
+        // tersembunyi dari daftar.
+        deletedAt: const drift.Value(null),
         // Jejak tulis sync (Fase 0).
         updatedAt: drift.Value(syncNow()),
       ),

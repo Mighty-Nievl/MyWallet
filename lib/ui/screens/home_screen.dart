@@ -19,6 +19,7 @@ import '../design/app_typography.dart';
 import '../display.dart';
 import '../format.dart';
 import '../greeting.dart';
+import '../transaction_actions.dart';
 import '../widgets/account_carousel.dart';
 import '../widgets/flow_cards.dart';
 import '../widgets/home_feature_grid.dart';
@@ -27,7 +28,6 @@ import 'history_screen.dart';
 import 'profile_screen.dart';
 import 'reports_screen.dart';
 import 'settings_screen.dart';
-import 'tx_form_screen.dart';
 
 /// Redesign v1.24 B2C minimalis: header netral ramping, hero kartu putih
 /// bersih (saldo 48px + 1 CTA), delta/kilat/debts dihapus, spacing 32px.
@@ -112,10 +112,7 @@ class HomeScreen extends ConsumerWidget {
                   // saldo, jadi tak tahu uang masuk/keluar bulan ini.
                   SliverToBoxAdapter(
                     key: const ValueKey('home:flowcards'),
-                    child: _pad(
-                      const FlowCards(),
-                      top: AppSpacing.s12,
-                    ),
+                    child: _pad(const FlowCards(), top: AppSpacing.s12),
                   ),
                   // v1.26: menu fitur 4x2 (aksi + lihat) di bawah dompet,
                   // di atas nav bulan — Beranda jadi pintu masuk semua.
@@ -450,9 +447,8 @@ class _HomeHeader extends ConsumerWidget {
                   backgroundColor: scheme.primaryContainer,
                   child: Text(
                     initial,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: scheme.onPrimaryContainer,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium
+                        ?.copyWith(color: scheme.onPrimaryContainer),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.s12),
@@ -469,9 +465,8 @@ class _HomeHeader extends ConsumerWidget {
                       ),
                       Text(
                         name ?? 'Akun saya',
-                        style: AppType.screenTitle(
-                          context,
-                        ).copyWith(fontSize: 20),
+                        style: AppType.screenTitle(context)
+                            .copyWith(fontSize: 20),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -564,11 +559,7 @@ class _RecentList extends ConsumerWidget {
                     // v1.30: label dompet (Riwayat & Terakhir catat wajib
                     // sebut dompet asal bila >1).
                     showAccount: multiWallet,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => TxFormScreen(existing: tx),
-                      ),
-                    ),
+                    onTap: () => openTransaction(context, ref, tx),
                   ),
                 ),
               ],

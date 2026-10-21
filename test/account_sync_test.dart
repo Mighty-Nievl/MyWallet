@@ -30,17 +30,26 @@ void main() {
         (x) => x.name == 'Utama',
       );
       await (a.update(a.accounts)..where((t) => t.id.equals(utamaA.id))).write(
-        const AccountsCompanion(name: Value('Dompetku')),
+        AccountsCompanion(
+          name: const Value('Dompetku'),
+          openingBalance: const Value(250000),
+          isShared: const Value(true),
+        ),
       );
       final famId = await a
           .into(a.accounts)
-          .insert(AccountsCompanion.insert(name: 'Keluarga'));
+          .insert(
+            AccountsCompanion.insert(
+              name: 'Keluarga',
+              isShared: const Value(true),
+            ),
+          );
 
       // Push manual: accountToMap → parseRemoteAccount → upsertLocalAccount.
       for (final acc in await pushableAccounts(a)) {
         final map = accountToMap(acc, 'hid', 'uid');
-        // Saldo TIDAK ikut sync (anti konflik angka).
-        expect(map.containsKey('openingBalance'), isFalse);
+        // v1.36.2: saldo awal ikut sync; angka turunan tetap tidak.
+        expect(map['openingBalance'], isA<int>());
         expect(map.containsKey('amount'), isFalse);
         final r = parseRemoteAccount(map)!;
         await upsertLocalAccount(b, r, 'hid');
@@ -58,6 +67,7 @@ void main() {
         (x) => x.name == 'Dompetku',
       );
       expect(renamed.uuid, utamaA2.uuid);
+      expect(renamed.openingBalance, 250000);
 
       // Transaksi milik Keluarga di HP-A → pull di HP-B → accountId
       // teresolusi ke Keluarga LOKAL HP-B (id boleh beda).
@@ -89,7 +99,18 @@ void main() {
     );
     final famId = await a
         .into(a.accounts)
-        .insert(AccountsCompanion.insert(name: 'Keluarga'));
+        .insert(
+          AccountsCompanion.insert(
+            name: 'Keluarga',
+            isShared: const Value(true),
+          ),
+        );
+    await (a.update(a.accounts)..where((t) => t.id.equals(utamaA.id))).write(
+      AccountsCompanion(
+        isShared: const Value(true),
+        updatedAt: Value(syncNow()),
+      ),
+    );
 
     // Transfer 50rb Utama → Keluarga di HP-A (2 kaki, 1 grup).
     await insertTransfer(
@@ -125,10 +146,7 @@ void main() {
     expect(await b.getBalance(), 0); // gabungan netral
     final epoch = DateTime.fromMillisecondsSinceEpoch(0);
     final jauh = DateTime.now().add(const Duration(days: 1));
-    expect(
-      await b.getTotals(epoch, jauh),
-      (0, 0),
-    ); // totals tak kembung
+    expect(await b.getTotals(epoch, jauh), (0, 0)); // totals tak kembung
     final famB = (await (b.select(
       b.accounts,
     )..where((t) => t.name.equals('Keluarga'))).getSingle()).id;
@@ -168,13 +186,8 @@ void main() {
     final a = await _memDb();
     addTearDown(a.close);
     final acc = (await a.select(a.accounts).get()).single;
-    await (a.update(
-      a.accounts,
-    )..where((t) => t.id.equals(acc.id))).write(
-      AccountsCompanion(
-        sortOrder: const Value(7),
-        updatedAt: Value(syncNow()),
-      ),
+    await (a.update(a.accounts)..where((t) => t.id.equals(acc.id))).write(
+      AccountsCompanion(sortOrder: const Value(7), updatedAt: Value(syncNow())),
     );
     final fresh = await (a.select(
       a.accounts,
@@ -191,5 +204,113 @@ void main() {
     final rows = await b.select(b.accounts).get();
     final got = rows.firstWhere((x) => x.uuid == fresh.uuid);
     expect(got.sortOrder, 7);
+  });
+
+  test(
+    'v1.36.2 privasi: hanya dompet isShared + transaksinya yang push',
+    () async {
+      final a = await _memDb();
+      addTearDown(a.close);
+
+      final utama = (await a.select(a.accounts).get()).firstWhere(
+        (x) => x.name == 'Utama',
+      );
+      final keluargaId = await a
+          .into(a.accounts)
+          .insert(
+            AccountsCompanion.insert(
+              name: 'Keluarga',
+              isShared: const Value(true),
+            ),
+          );
+      final keluarga = (await (a.select(
+        a.accounts,
+      )..where((x) => x.id.equals(keluargaId))).getSingle());
+
+      await a
+          .into(a.transactions)
+          .insert(
+            TransactionsCompanion.insert(
+              amount: 10000,
+              isExpense: const Value(true),
+              date: DateTime(2026, 10, 10),
+              accountId: Value(utama.id),
+              accountUuid: Value(utama.uuid),
+            ),
+          );
+      await a
+          .into(a.transactions)
+          .insert(
+            TransactionsCompanion.insert(
+              amount: 20000,
+              isExpense: const Value(false),
+              date: DateTime(2026, 10, 11),
+              accountId: Value(keluargaId),
+              accountUuid: Value(keluarga.uuid),
+            ),
+          );
+
+      final accs = await pushableAccounts(a);
+      expect(accs.map((x) => x.name), ['Keluarga']);
+      final txs = await pushableTx(a);
+      expect(txs, hasLength(1));
+      expect(txs.single.accountUuid, keluarga.uuid);
+    },
+  );
+
+  test('v1.36.2 privasi: dokumen pribadi tidak di-pull ke HP baru', () async {
+    final b = await _memDb();
+    addTearDown(b.close);
+
+    final pribadi = parseRemoteAccount({
+      'uuid': 'akun-pribadi',
+      'name': 'Rahasia',
+      'isShared': false,
+      'updatedAt': DateTime.now().millisecondsSinceEpoch,
+    })!;
+    expect(await shouldPullAccount(b, pribadi), isFalse);
+
+    final txPribadi = parseRemoteTx({
+      'uuid': 'tx-pribadi',
+      'amount': 50000,
+      'isExpense': true,
+      'date': DateTime.now().millisecondsSinceEpoch,
+      'note': 'pribadi',
+      'createdAt': DateTime.now().millisecondsSinceEpoch,
+      'updatedAt': DateTime.now().millisecondsSinceEpoch,
+      'accountUuid': 'akun-pribadi',
+    })!;
+    expect(pullableTx(txPribadi, {'akun-keluarga'}), isFalse);
+    expect(
+      pullableTx(
+        parseRemoteTx({
+          'uuid': 'tx-keluarga',
+          'amount': 50000,
+          'isExpense': true,
+          'date': DateTime.now().millisecondsSinceEpoch,
+          'note': 'keluarga',
+          'createdAt': DateTime.now().millisecondsSinceEpoch,
+          'updatedAt': DateTime.now().millisecondsSinceEpoch,
+          'accountUuid': 'akun-keluarga',
+        })!,
+        {'akun-keluarga'},
+      ),
+      isTrue,
+    );
+    expect(
+      pullableTx(
+        parseRemoteTx({
+          'uuid': 'tx-tanpa-dompet',
+          'amount': 50000,
+          'isExpense': true,
+          'date': DateTime.now().millisecondsSinceEpoch,
+          'note': 'lama',
+          'createdAt': DateTime.now().millisecondsSinceEpoch,
+          'updatedAt': DateTime.now().millisecondsSinceEpoch,
+        })!,
+        {'akun-keluarga'},
+      ),
+      isFalse,
+    );
   });
 }

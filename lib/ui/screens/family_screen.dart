@@ -121,8 +121,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
     if (!mounted) return;
     if (members.isEmpty) {
       setState(() {
-        _errorMsg =
-            'Tidak bisa cek anggota saat offline — sambungkan internet dulu biar tidak salah keluar.';
+        _errorMsg = 'Tidak bisa cek anggota saat offline — sambungkan internet dulu biar tidak salah keluar.';
         _rawError = null;
         _retryJob = null;
       });
@@ -309,9 +308,8 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
                 padding: const EdgeInsets.only(top: AppSpacing.s4),
                 child: Text(
                   'Tahan untuk salin detail teknis.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onErrorContainer,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: scheme.onErrorContainer),
                 ),
               ),
           ],
@@ -614,8 +612,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
                                 if (!mounted) return;
                                 if (code == null) {
                                   setState(() {
-                                    _errorMsg =
-                                        'Kode kedaluwarsa — putar kode baru di bawah.';
+                                    _errorMsg = 'Kode kedaluwarsa — putar kode baru di bawah.';
                                     _retryJob = null;
                                   });
                                   return;
@@ -742,9 +739,8 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
                 owner
                     ? 'Kamu pengelola — atur peran / keluarkan anggota.'
                     : 'Ketuk namamu untuk keluar rumah.',
-                style: Theme.of(
-                  c,
-                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                style: Theme.of(c).textTheme.bodySmall
+                    ?.copyWith(color: scheme.onSurfaceVariant),
               ),
               const SizedBox(height: AppSpacing.s12),
               for (final m in members) ...[
@@ -926,7 +922,8 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
     final st = ref.watch(syncStateProvider);
     final busy = st.phase == SyncPhase.working;
     final subtitle = switch (st.phase) {
-      SyncPhase.idle => 'Beta — kirim & ambil transaksi + kategori serumah',
+      SyncPhase.idle =>
+        'Beta — hanya dompet bertanda Keluarga yang dikirim (manual)',
       SyncPhase.working => st.message.isEmpty ? 'Sinkron…' : st.message,
       SyncPhase.done =>
         'Terakhir OK: +${st.pushed} kirim, +${st.pulled} terima',
@@ -1011,14 +1008,15 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
                 const SizedBox(height: AppSpacing.s4),
                 Text(
                   'Satu rumah tangga, dua HP. Opsional — '
-                  'tanpa login aplikasi tetap 100% offline.',
+                  'tanpa login aplikasi tetap 100% offline. '
+                  'Hanya dompet bertanda Keluarga yang ikut Sync.',
                   style: AppType.secondary(context),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.s12),
                 _benefit(
                   Icons.sync_outlined,
-                  'Saling nyatat, saldo ikut (beta — tap Sync data)',
+                  'Hanya dompet bertanda Keluarga + transaksinya (beta — tap Sync data)',
                 ),
                 _benefit(
                   Icons.lock_outlined,
@@ -1045,9 +1043,8 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
           label: Text(_busy ? 'Menghubungkan…' : 'Masuk dengan Google'),
           style: FilledButton.styleFrom(
             minimumSize: const Size.fromHeight(AppSpacing.ctaHeight),
-            textStyle: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+            textStyle: Theme.of(context).textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w600),
           ),
         ),
         const SizedBox(height: AppSpacing.s8),

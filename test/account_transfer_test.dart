@@ -118,6 +118,8 @@ void main() {
     expect(await transferLegs(db, g), isEmpty);
     expect(await db.getBalance(accountId: utamaId), 0);
     expect(await db.getBalance(accountId: keluargaId), 0);
+    // Tombstone tidak boleh membuat dompet kosong jadi tak bisa dihapus.
+    expect(await accountDeletable(db, keluargaId), isTrue);
   });
 
   test('aturan hapus dompet: berisi = arsip, kosong = hapus', () async {
@@ -133,15 +135,12 @@ void main() {
       note: '',
     );
     expect(await accountDeletable(db, keluargaId), isFalse);
-    expect(
-      () => deleteAccount(db, keluargaId),
-      throwsArgumentError,
-    );
+    expect(() => deleteAccount(db, keluargaId), throwsArgumentError);
     // Arsip jalan; dompet hilang dari accountsProvider tapi saldo utuh.
     await archiveAccount(db, keluargaId);
-    final acc = await (db.select(db.accounts)
-          ..where((a) => a.id.equals(keluargaId)))
-        .getSingle();
+    final acc = await (db.select(
+      db.accounts,
+    )..where((a) => a.id.equals(keluargaId))).getSingle();
     expect(acc.isArchived, isTrue);
     expect(await db.getBalance(), 0);
   });

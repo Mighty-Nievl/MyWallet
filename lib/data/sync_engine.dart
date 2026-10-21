@@ -22,9 +22,12 @@ import 'sync_meta.dart';
 /// - `households/{hid}/tx/{uuid}`: transaksi non-cermin.
 ///
 /// Aturan main beta:
-/// - Push = SEMUA baris lokal (hidup + terhapus-lembut sebagai tombstone),
-///   kecuali cermin utang. Baris yang di-push di-stamp `householdId`.
-/// - Pull = full koleksi (skala beta ratusan baris, aman) → upsert LWW.
+/// - Push = SEMUA kategori lokal + HANYA dompet bertanda `isShared`
+///   beserta transaksinya (v1.36.2 — dompet pribadi tidak menyentuh
+///   cloud). Cermin utang tidak pernah di-push.
+/// - Pull = kategori penuh, dompet yang dishare, dan transaksi milik
+///   dompet itu. Dokumen pribadi dari aplikasi versi lama ditolak
+///   (kecuali barisnya sudah ada lokal, demi merambatkan toggle OFF).
 /// - Soft-delete merambat via `deletedAt`; hapus fisik tidak merambat
 ///   (actions Fase 2 sudah soft-delete, bukan hapus fisik).
 
@@ -39,8 +42,10 @@ typedef RemoteCat = ({
 });
 
 /// Dokumen dompet jarak-jauh (v1.25).
-/// Saldo TIDAK ikut (dihitung per-HP dari transaksi); yang sync hanya
-/// identitas + arsip (keputusan plan — anti konflik angka).
+/// v1.36.2: `openingBalance` ikut sync (sebelumnya sengaja tidak —
+/// akibatnya saldo antar-HP bisa beda). `int?` = dokumen lama tanpa
+/// field tetap menghormati angka lokal. Saldo berjalan tetap dihitung
+/// per-HP dari transaksi (anti konflik angka turunan).
 /// v1.32: + isShared (toggle keluarga per-dompet).
 typedef RemoteAccount = ({
   String uuid,
@@ -48,6 +53,7 @@ typedef RemoteAccount = ({
   bool isArchived,
   int sortOrder,
   bool isShared,
+  int? openingBalance,
   DateTime updatedAt,
   DateTime? deletedAt,
 });
@@ -124,8 +130,8 @@ Map<String, dynamic> txToMap(
   };
 }
 
-/// Map dompet untuk push (v1.25). Saldo/opening TIDAK ikut — dihitung
-/// per-HP dari transaksi (anti konflik angka antar-HP).
+/// Map dompet untuk push (v1.25). v1.36.2: `openingBalance` ikut supaya
+/// saldo antar-HP tidak berbeda; saldo berjalan tetap dihitung per-HP.
 Map<String, dynamic> accountToMap(
   Account a,
   String householdId,
@@ -138,6 +144,7 @@ Map<String, dynamic> accountToMap(
     'name': a.name,
     'isArchived': a.isArchived,
     'sortOrder': a.sortOrder,
+    'openingBalance': a.openingBalance,
     // v1.32: toggle keluarga ikut push (LWW di HP lain via upsert).
     'isShared': a.isShared,
     'updatedAt': (a.updatedAt ?? t).millisecondsSinceEpoch,
@@ -178,6 +185,9 @@ RemoteAccount? parseRemoteAccount(Map<String, dynamic> m) {
     sortOrder: (m['sortOrder'] as int?) ?? 0,
     // v1.32: HP lama tanpa flag = pribadi (aman, bukan dishare diam2).
     isShared: (m['isShared'] as bool?) ?? false,
+    // v1.36.2: dokumen lama tanpa openingBalance → null (jangan timpa
+    // angka lokal dengan 0).
+    openingBalance: (m['openingBalance'] as num?)?.toInt(),
     updatedAt: _ms(m['updatedAt'] as int?, now),
     deletedAt: m['deletedAt'] == null
         ? null
@@ -278,6 +288,7 @@ Future<bool> upsertLocalAccount(
             isArchived: Value(r.isArchived),
             sortOrder: Value(r.sortOrder),
             isShared: Value(r.isShared),
+            openingBalance: Value(r.openingBalance ?? 0),
             uuid: Value(r.uuid),
             updatedAt: Value(r.updatedAt),
             deletedAt: Value(r.deletedAt),
@@ -293,6 +304,9 @@ Future<bool> upsertLocalAccount(
       isArchived: Value(r.isArchived),
       sortOrder: Value(r.sortOrder),
       isShared: Value(r.isShared),
+      openingBalance: r.openingBalance == null
+          ? const Value.absent()
+          : Value(r.openingBalance!),
       updatedAt: Value(r.updatedAt),
       deletedAt: Value(r.deletedAt),
       householdId: Value(householdId),
@@ -390,17 +404,45 @@ bool isMirrorTx(Transaction t) => t.debtId != null;
 Future<List<Category>> pushableCats(AppDatabase db) =>
     db.select(db.categories).get();
 
-/// Transaksi non-cermin (hidup + tombstone) untuk push penuh beta.
+/// Transaksi yang boleh di-push: non-cermin DAN milik dompet bertanda
+/// `isShared` (v1.36.2 — privacy). `accountUuid` null (baris lama) TIDAK
+/// di-push: tanpa dompet keluarga, tidak ada alasan ikut ke cloud.
 Future<List<Transaction>> pushableTx(AppDatabase db) async {
+  final shared = await pushableAccounts(db);
+  final sharedUuids = shared.map((a) => a.uuid).whereType<String>().toSet();
   final all = await db.select(db.transactions).get();
-  return all.where((t) => !isMirrorTx(t)).toList();
+  return all
+      .where(
+        (t) =>
+            !isMirrorTx(t) &&
+            t.accountUuid != null &&
+            sharedUuids.contains(t.accountUuid),
+      )
+      .toList();
 }
 
-/// Semua dompet lokal untuk push (v1.25). Tanpa stamp householdId pun
-/// tetap ke-push (uuid clientDefault selalu ada) — stamp menyusul pola
-/// kategori agar konsisten.
+/// Dompet yang boleh di-push: HANYA yang bertanda `isShared` (v1.36.2).
+/// Dompet pribadi tidak pernah menyentuh cloud, jadi anggota rumah tidak
+/// bisa melihat nama/saldonya. Kebijakan ini menggantikan "push semua".
 Future<List<Account>> pushableAccounts(AppDatabase db) =>
-    db.select(db.accounts).get();
+    (db.select(db.accounts)..where((a) => a.isShared.equals(true))).get();
+
+/// Layar kedua privacy (v1.36.2): dokumen dompet pribadi hanya diterima
+/// bila baris lokalnya sudah ada (kasus toggle Keluarga → Pribadi pada
+/// HP lain). HP yang belum pernah punya baris itu tidak akan dibuat.
+Future<bool> shouldPullAccount(AppDatabase db, RemoteAccount r) async {
+  if (r.isShared) return true;
+  final local = await (db.select(
+    db.accounts,
+  )..where((a) => a.uuid.equals(r.uuid))).getSingleOrNull();
+  return local != null;
+}
+
+/// Layar kedua privacy (v1.36.2): transaksi remote hanya di-pull bila
+/// dompetnya benar-benar bertanda Keluarga di remote. Transaksi tanpa
+/// `accountUuid` (data lama) ikut ditolak — bukan data keluarga baru.
+bool pullableTx(RemoteTx r, Set<String> sharedAccountUuids) =>
+    r.accountUuid != null && sharedAccountUuids.contains(r.accountUuid);
 
 /// Stamp `householdId` + pastikan uuid/updatedAt dompet terisi (v1.25).
 Future<void> stampPushedAccounts(

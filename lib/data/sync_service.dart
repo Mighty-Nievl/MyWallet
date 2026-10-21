@@ -157,9 +157,9 @@ class SyncService {
 
       // ---- PULL kategori ----
       onProgress?.call('Mengambil kategori…');
-      final rCats = await _catsOf(
-        hid,
-      ).get(const GetOptions(source: Source.server)).timeout(opTimeout);
+      final rCats = await _catsOf(hid)
+          .get(const GetOptions(source: Source.server))
+          .timeout(opTimeout);
       for (final d in rCats.docs) {
         final r = parseRemoteCat(d.data());
         if (r == null) continue;
@@ -169,21 +169,25 @@ class SyncService {
       // ---- PULL dompet (v1.25, sebelum transaksi) ----
       // Urutan disengaja: upsertLocalTx butuh akun lokal untuk resolusi
       // accountUuid → accountId dalam SIKLUS YANG SAMA.
+      // v1.36.2: privacy — dompet pribadi tidak dibuat di HP anggota.
       onProgress?.call('Mengambil dompet…');
-      final rAccs = await _accountsOf(
-        hid,
-      ).get(const GetOptions(source: Source.server)).timeout(opTimeout);
+      final rAccs = await _accountsOf(hid)
+          .get(const GetOptions(source: Source.server))
+          .timeout(opTimeout);
+      final sharedAccUuids = <String>{};
       for (final d in rAccs.docs) {
         final r = parseRemoteAccount(d.data());
         if (r == null) continue;
+        if (r.isShared && r.deletedAt == null) sharedAccUuids.add(r.uuid);
+        if (!await shouldPullAccount(db, r)) continue;
         if (await upsertLocalAccount(db, r, hid)) pulled++;
       }
 
-      // ---- PULL transaksi (skip cermin nyasar) ----
+      // ---- PULL transaksi (skip cermin nyasar + dompet pribadi) ----
       onProgress?.call('Mengambil transaksi…');
-      final rTxs = await _txOf(
-        hid,
-      ).get(const GetOptions(source: Source.server)).timeout(opTimeout);
+      final rTxs = await _txOf(hid)
+          .get(const GetOptions(source: Source.server))
+          .timeout(opTimeout);
       for (final d in rTxs.docs) {
         final m = d.data();
         // Cermin tidak pernah di-push; bila ada (tulis manual console),
@@ -191,6 +195,8 @@ class SyncService {
         if (m['debtId'] != null) continue;
         final r = parseRemoteTx(m);
         if (r == null) continue;
+        // v1.36.2: hanya transaksi milik dompet yang dishare.
+        if (!pullableTx(r, sharedAccUuids)) continue;
         if (await upsertLocalTx(db, r, hid)) pulled++;
       }
 

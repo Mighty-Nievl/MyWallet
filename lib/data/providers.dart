@@ -78,6 +78,18 @@ final accountsProvider = StreamProvider<List<Account>>((ref) {
       .watch();
 });
 
+/// Dompet yang diarsipkan (v1.36.2) — pintu pulih, bukan jalan buntu.
+final archivedAccountsProvider = StreamProvider<List<Account>>((ref) {
+  final db = ref.watch(dbProvider);
+  return (db.select(db.accounts)
+        ..where((a) => a.isArchived.equals(true) & a.deletedAt.isNull())
+        ..orderBy([
+          (a) => OrderingTerm.asc(a.sortOrder),
+          (a) => OrderingTerm.asc(a.name),
+        ]))
+      .watch();
+});
+
 /// Saldo SATU dompet = openingBalance + SUM transaksinya.
 /// BUKAN saldo awal Settings (itu milik gabungan, lihat [balanceProvider]).
 final accountBalanceProvider = StreamProvider.family<int, int>((

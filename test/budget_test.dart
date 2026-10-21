@@ -1,7 +1,10 @@
 import 'package:drift/drift.dart' hide isNotNull;
 import 'package:drift/native.dart';
+import 'package:flutter/material.dart' show SizedBox;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:mywallet/data/actions.dart';
 import 'package:mywallet/data/database.dart';
 import 'package:mywallet/data/providers.dart';
 
@@ -174,5 +177,51 @@ void main() {
       final list = await fetchBudgets(db, month: '2026-10', from: from, to: to);
       expect(list.single.spent, 150000);
     });
+  });
+
+  testWidgets('undo budget menghidupkan lagi baris soft-delete (v1.36.2)', (
+    tester,
+  ) async {
+    late WidgetRef ref;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: Consumer(
+          builder: (context, r, _) {
+            ref = r;
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
+
+    final cat = await firstExpenseCat();
+    await tester.runAsync(() async {
+      await upsertBudget(
+        ref,
+        categoryId: cat.id,
+        limit: 500000,
+        month: '2026-10',
+      );
+      final row = (await db.select(db.budgets).get()).single;
+      await deleteBudget(ref, row.id);
+      final (from, to) = monthRangeOf('2026-10');
+      expect(
+        await fetchBudgets(db, month: '2026-10', from: from, to: to),
+        isEmpty,
+      );
+
+      // Undo di SnackBar memanggil upsertBudget lagi.
+      await upsertBudget(
+        ref,
+        categoryId: cat.id,
+        limit: 500000,
+        month: '2026-10',
+      );
+      final list = await fetchBudgets(db, month: '2026-10', from: from, to: to);
+      expect(list, hasLength(1));
+      expect(list.single.budget.limit, 500000);
+    });
+    await tester.pumpWidget(const SizedBox());
   });
 }

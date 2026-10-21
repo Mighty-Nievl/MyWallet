@@ -45,6 +45,10 @@ class AppDatabase extends _$AppDatabase {
           ),
         );
       }
+      // v1.36.2: instalasi baru langsung punya dompet. Dulu dompet
+      // "Utama" hanya dibuat saat migrasi data lama, sehingga pengguna
+      // baru sempat mentok "Belum ada dompet".
+      await into(accounts).insert(AccountsCompanion.insert(name: 'Utama'));
     },
     onUpgrade: (m, from, to) async {
       // v1 → v2 (utang-piutang): 2 kolom tautan di transactions +

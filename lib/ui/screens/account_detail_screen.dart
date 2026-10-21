@@ -18,6 +18,7 @@ import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../display.dart';
 import '../scan_flow.dart';
+import '../transaction_actions.dart';
 import '../widgets/tx_tile.dart';
 import 'accounts_screen.dart';
 import 'budget_screen.dart';
@@ -125,9 +126,8 @@ class _Body extends ConsumerWidget {
                     ),
                     data: (b) => Text(
                       display.money(b),
-                      style: AppType.balanceHero(
-                        context,
-                      ).copyWith(color: white),
+                      style: AppType.balanceHero(context)
+                          .copyWith(color: white),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -423,14 +423,38 @@ class _SharedToggle extends ConsumerWidget {
       title: 'Dikelola keluarga',
       subtitle: shared
           ? (inHousehold
-                ? 'Dishare ke rumah tangga — HP anggota ikut sync'
-                : 'Akan dishare saat HP ini gabung rumah tangga')
-          : 'Pribadi — hanya HP ini yang lihat',
+                ? 'Keluarga — dompet + transaksinya ikut Sync'
+                : 'Akan ikut Sync setelah gabung rumah tangga')
+          : 'Pribadi — tidak dikirim ke rumah tangga',
       trailing: Switch(
         key: ValueKey('detail:shared-$accountId'),
         value: shared,
         onChanged: (v) async {
           HapticFeedback.selectionClick();
+          if (shared && !v) {
+            final yes = await showDialog<bool>(
+              context: context,
+              builder: (d) => AlertDialog(
+                title: const Text('Jadikan pribadi?'),
+                content: const Text(
+                  'Dompet ini tidak akan dikirim pada Sync berikutnya. '
+                  'Data yang sudah terlanjur tersinkron tetap ada di HP '
+                  'anggota lain — hapus manual bila perlu.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(d, false),
+                    child: const Text('Batal'),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(d, true),
+                    child: const Text('Jadikan pribadi'),
+                  ),
+                ],
+              ),
+            );
+            if (yes != true) return;
+          }
           await (ref.read(dbProvider).update(ref.read(dbProvider).accounts)
                 ..where((a) => a.id.equals(accountId)))
               .write(
@@ -479,11 +503,7 @@ class _AccountRecent extends ConsumerWidget {
                   tx: list[j],
                   showDate: true,
                   dense: true,
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => TxFormScreen(existing: list[j]),
-                    ),
-                  ),
+                  onTap: () => openTransaction(context, ref, list[j]),
                 ),
               ),
           ],

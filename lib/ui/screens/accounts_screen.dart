@@ -29,6 +29,8 @@ class AccountsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final accounts = ref.watch(accountsProvider);
+    final archivedCount =
+        ref.watch(archivedAccountsProvider).value?.length ?? 0;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
@@ -91,6 +93,15 @@ class AccountsScreen extends ConsumerWidget {
                         ),
                 ),
               ),
+              if (archivedCount > 0) ...[
+                const SizedBox(height: AppSpacing.s4),
+                TextButton.icon(
+                  key: const ValueKey('accounts:archived'),
+                  onPressed: () => _archivedSheet(context, ref),
+                  icon: const Icon(Icons.inventory_2_outlined, size: 18),
+                  label: Text('Dompet diarsipkan ($archivedCount)'),
+                ),
+              ],
               const SizedBox(height: AppSpacing.s12),
               SizedBox(
                 height: AppSpacing.ctaHeight,
@@ -120,17 +131,89 @@ class AccountsScreen extends ConsumerWidget {
       showDragHandle: true,
       isScrollControlled: true,
       builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom,
-        ),
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
         child: const _NameSheet(title: 'Dompet baru'),
       ),
     );
     if (name == null || name.trim().isEmpty) return;
     final db = ref.read(dbProvider);
-    await db.into(db.accounts).insert(
-          AccountsCompanion.insert(name: name.trim()),
-        );
+    await db
+        .into(db.accounts)
+        .insert(AccountsCompanion.insert(name: name.trim()));
+  }
+
+  /// Daftar arsip + pulihkan (v1.36.2). Arsip dulu jalan satu arah:
+  /// dompet hilang dari Beranda tanpa pintu kembali.
+  Future<void> _archivedSheet(BuildContext context, WidgetRef ref) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) => Consumer(
+        builder: (ctx, sheetRef, _) {
+          final rows = sheetRef.watch(archivedAccountsProvider);
+          return SafeArea(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(ctx).size.height * 0.7,
+              ),
+              child: rows.when(
+                loading: () => const Padding(
+                  padding: EdgeInsets.all(AppSpacing.page),
+                  child: AppSkeleton(lines: 3),
+                ),
+                error: (_, _) => const Padding(
+                  padding: EdgeInsets.all(AppSpacing.page),
+                  child: Text('Dompet arsip gagal dimuat.'),
+                ),
+                data: (list) => list.isEmpty
+                    ? const Padding(
+                        padding: EdgeInsets.all(AppSpacing.page),
+                        child: Text('Tidak ada dompet diarsipkan.'),
+                      )
+                    : ListView(
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.page,
+                          AppSpacing.s8,
+                          AppSpacing.page,
+                          AppSpacing.sectionGap,
+                        ),
+                        children: [
+                          Text(
+                            'Dompet diarsipkan',
+                            style: AppType.sectionTitle(ctx),
+                          ),
+                          const SizedBox(height: AppSpacing.s8),
+                          for (final a in list)
+                            ListTile(
+                              key: ValueKey('archived-${a.id}'),
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.inventory_2_outlined),
+                              title: Text(a.name),
+                              subtitle: const Text(
+                                'Riwayatnya tetap di gabungan',
+                              ),
+                              trailing: TextButton(
+                                key: ValueKey('restore-${a.id}'),
+                                onPressed: () async {
+                                  HapticFeedback.selectionClick();
+                                  await unarchiveAccount(
+                                    sheetRef.read(dbProvider),
+                                    a.id,
+                                  );
+                                },
+                                child: const Text('Pulihkan'),
+                              ),
+                            ),
+                        ],
+                      ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   /// Drag-reorder (v1.29): tulis sortOrder via [reorderAccounts] sesuai
@@ -204,9 +287,7 @@ class _AccountCard extends ConsumerWidget {
                   error: (_, _) => const Text('—'),
                   data: (b) => Text(
                     display.money(b),
-                    style: AppType.balance(
-                      context,
-                    ).copyWith(fontSize: 20),
+                    style: AppType.balance(context).copyWith(fontSize: 20),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -224,18 +305,9 @@ class _AccountCard extends ConsumerWidget {
             tooltip: 'Opsi dompet',
             onSelected: (v) => _menu(context, ref, v),
             itemBuilder: (_) => const [
-              PopupMenuItem(
-                value: 'rename',
-                child: Text('Ganti nama'),
-              ),
-              PopupMenuItem(
-                value: 'archive',
-                child: Text('Arsipkan'),
-              ),
-              PopupMenuItem(
-                value: 'delete',
-                child: Text('Hapus'),
-              ),
+              PopupMenuItem(value: 'rename', child: Text('Ganti nama')),
+              PopupMenuItem(value: 'archive', child: Text('Arsipkan')),
+              PopupMenuItem(value: 'delete', child: Text('Hapus')),
             ],
           ),
         ],
@@ -255,21 +327,18 @@ class _AccountCard extends ConsumerWidget {
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(ctx).viewInsets.bottom,
             ),
-            child: _NameSheet(
-              title: 'Ganti nama',
-              initial: account.name,
-            ),
+            child: _NameSheet(title: 'Ganti nama', initial: account.name),
           ),
         );
         if (name == null || name.trim().isEmpty) return;
-        await (db.update(db.accounts)
-              ..where((a) => a.id.equals(account.id)))
-            .write(
-              AccountsCompanion(
-                name: drift.Value(name.trim()),
-                updatedAt: drift.Value(syncNow()),
-              ),
-            );
+        await (db.update(
+          db.accounts,
+        )..where((a) => a.id.equals(account.id))).write(
+          AccountsCompanion(
+            name: drift.Value(name.trim()),
+            updatedAt: drift.Value(syncNow()),
+          ),
+        );
       case 'archive':
         HapticFeedback.selectionClick();
         await archiveAccount(db, account.id);
@@ -400,9 +469,7 @@ class TransferSheet extends ConsumerStatefulWidget {
       showDragHandle: true,
       isScrollControlled: true,
       builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom,
-        ),
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
         child: TransferSheet(fromId: fromId),
       ),
     );
@@ -418,11 +485,14 @@ class _TransferSheetState extends ConsumerState<TransferSheet> {
   int? _fromId;
   int? _toId;
   String? _error;
+  late DateTime _date;
 
   @override
   void initState() {
     super.initState();
     _fromId = widget.fromId;
+    // v1.36.2: ikut periode yang sedang dilihat, sama dengan form catat.
+    _date = ref.read(activePeriodProvider).suggestedTransactionDate();
   }
 
   @override
@@ -470,8 +540,7 @@ class _TransferSheetState extends ConsumerState<TransferSheet> {
         ? null
         : ref.watch(accountBalanceProvider(_fromId!)).value;
     final amount = int.tryParse(_amountCtrl.text.replaceAll('.', '')) ?? 0;
-    final overdraft =
-        fromBalance != null && amount > 0 && amount > fromBalance;
+    final overdraft = fromBalance != null && amount > 0 && amount > fromBalance;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -503,6 +572,15 @@ class _TransferSheetState extends ConsumerState<TransferSheet> {
           ),
           onChanged: (_) => setState(() {}),
         ),
+        const SizedBox(height: AppSpacing.s8),
+        OutlinedButton.icon(
+          key: const ValueKey('transfer-date'),
+          onPressed: _pickDate,
+          icon: const Icon(Icons.calendar_today_outlined, size: 18),
+          label: Text(
+            'Tanggal · ${ref.watch(displayPrefsProvider).date(_date)}',
+          ),
+        ),
         if (fromBalance != null) ...[
           const SizedBox(height: AppSpacing.s4),
           Text(
@@ -532,11 +610,8 @@ class _TransferSheetState extends ConsumerState<TransferSheet> {
           const SizedBox(height: AppSpacing.s4),
           Text(
             _error!,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.error,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: Theme.of(context).colorScheme.error),
           ),
         ],
         const SizedBox(height: AppSpacing.s12),
@@ -549,6 +624,26 @@ class _TransferSheetState extends ConsumerState<TransferSheet> {
         ),
       ],
     );
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      setState(() {
+        _date = DateTime(
+          picked.year,
+          picked.month,
+          picked.day,
+          _date.hour,
+          _date.minute,
+        );
+      });
+    }
   }
 
   Future<void> _submit() async {
@@ -572,7 +667,7 @@ class _TransferSheetState extends ConsumerState<TransferSheet> {
         fromAccountId: _fromId!,
         toAccountId: _toId!,
         amount: amount,
-        date: DateTime.now(),
+        date: _date,
         note: _noteCtrl.text,
       );
       HapticFeedback.lightImpact();

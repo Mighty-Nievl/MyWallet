@@ -19,8 +19,8 @@ import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../display.dart';
 import '../format.dart';
+import '../transaction_actions.dart';
 import '../widgets/tx_tile.dart';
-import 'tx_form_screen.dart';
 
 /// Layar riwayat + filter (kategori, tipe, kata kunci).
 ///
@@ -229,9 +229,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           ),
                           child: Text(
                             display.date(entries[i].key),
-                            style: AppType.sectionTitle(
-                              context,
-                            ).copyWith(fontSize: 14),
+                            style: AppType.sectionTitle(context)
+                                .copyWith(fontSize: 14),
                           ),
                         ),
                         for (final tx in entries[i].value)
@@ -252,12 +251,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                               // v1.30: label dompet (filter Semua + >1 dompet
                               // = tiap baris sebut asalnya).
                               showAccount: multiWallet,
-                              onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (ctx) =>
-                                      TxFormScreen(existing: tx),
-                                ),
-                              ),
+                              onTap: () => openTransaction(context, ref, tx),
                             ),
                           ),
                       ],
@@ -311,7 +305,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       ref.read(selectedAccountProvider.notifier).state = null;
     }
   }
-
 }
 
 /// Judul layar Riwayat sudah via [AppHeader] shared.
@@ -646,9 +639,8 @@ class _SheetCatRow extends StatelessWidget {
             Expanded(
               child: Text(
                 name,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(fontWeight: FontWeight.w500),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
