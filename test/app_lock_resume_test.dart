@@ -62,13 +62,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('halaman rahasia'), findsOneWidget);
 
-    // Ke background: kunci menutup route yang sedang terbuka.
+    // Ke background lalu kembali: kunci menutup route yang terbuka.
+    // (Saat paused frame memang dimatikan, jadi rebuild baru terlihat
+    // setelah resumed — perilaku nyata HP juga begitu.)
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump();
     expect(find.byType(LockScreen), findsOneWidget);
+    expect(find.text('halaman rahasia'), findsOneWidget);
 
-    // Resume + unlock: route lama kembali (navigasi tidak hilang).
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    // Unlock: route lama kembali (navigasi tidak hilang).
     container.read(unlockedProvider.notifier).state = true;
     await tester.pump();
     expect(find.byType(LockScreen), findsNothing);
