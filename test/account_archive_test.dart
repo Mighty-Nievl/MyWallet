@@ -31,6 +31,11 @@ Future<void> _pump(WidgetTester tester, {int ticks = 60}) async {
   }
 }
 
+Future<void> _flushDriftCloseTimer(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox());
+  await tester.pump(const Duration(milliseconds: 1));
+}
+
 Future<void> _waitFor(WidgetTester tester, Finder finder) async {
   for (var i = 0; i < 40; i++) {
     if (finder.evaluate().isNotEmpty) return;
@@ -83,5 +88,6 @@ void main() {
       )..where((a) => a.id.equals(utamaId))).getSingle(),
     );
     expect(row!.isArchived, isFalse);
+    await _flushDriftCloseTimer(tester);
   });
 }

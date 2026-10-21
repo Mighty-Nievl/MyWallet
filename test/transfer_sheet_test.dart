@@ -32,6 +32,11 @@ Future<void> _pump(WidgetTester tester, {int ticks = 60}) async {
   }
 }
 
+Future<void> _flushDriftCloseTimer(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox());
+  await tester.pump(const Duration(milliseconds: 1));
+}
+
 void main() {
   testWidgets('sheet pindah dana menampilkan tanggal (v1.36.2)', (
     tester,
@@ -57,5 +62,6 @@ void main() {
       findsOneWidget,
       reason: 'tanggal transfer tak terlihat — user tak bisa tahu masuk periode mana',
     );
+    await _flushDriftCloseTimer(tester);
   });
 }

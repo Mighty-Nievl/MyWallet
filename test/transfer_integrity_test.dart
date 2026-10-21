@@ -33,6 +33,11 @@ Future<void> _pump(WidgetTester tester, {int ticks = 40}) async {
   }
 }
 
+Future<void> _flushDriftCloseTimer(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox());
+  await tester.pump(const Duration(milliseconds: 1));
+}
+
 Future<void> _waitFor(
   WidgetTester tester,
   Finder finder, {
@@ -106,5 +111,6 @@ void main() {
     expect(left, hasLength(2));
     expect(left!.every((t) => t.deletedAt != null), isTrue);
     expect(find.text('Transfer antar dompet'), findsNothing);
+    await _flushDriftCloseTimer(tester);
   });
 }
