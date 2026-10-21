@@ -37,7 +37,6 @@ class ReportsScreen extends ConsumerWidget {
     // dan diberi judul jujur supaya tidak tampak salah konteks.
     final period = ref.watch(activePeriodProvider);
     final totals = ref.watch(periodTotalsProvider);
-    final prevTotals = ref.watch(prevPeriodTotalsProvider);
     final byCat = ref.watch(periodExpenseByCategoryProvider);
     final monthTotals = ref.watch(monthTotalsProvider);
     final monthPrev = ref.watch(prevMonthTotalsProvider);
