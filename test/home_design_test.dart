@@ -26,6 +26,7 @@ import 'package:mywallet/ui/components/setting_row.dart';
 import 'package:mywallet/ui/design/app_colors.dart';
 import 'package:mywallet/ui/screens/account_detail_screen.dart';
 import 'package:mywallet/ui/screens/home_screen.dart';
+import 'package:mywallet/ui/screens/history_screen.dart';
 import 'package:mywallet/ui/widgets/flow_cards.dart';
 import 'package:mywallet/ui/widgets/home_feature_grid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
