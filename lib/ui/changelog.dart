@@ -45,7 +45,7 @@ const appChangelog = <({String version, String date, String user, String tech, S
         '+ saldo utuh, default privat) dibangun lewat NativeDatabase.memory '
         '(setup:) + PRAGMA user_version=4, dan onCreate v5 (seed kategori + '
         'dompet Utama). test/auto_sync_test.dart baru: 7 kasus controller + 3 '
-        'widget. 330 test.',
+        'widget. 332 test.',
     breaking: null,
   ),
   (

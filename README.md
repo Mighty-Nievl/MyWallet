@@ -11,7 +11,7 @@ Tanpa login, tanpa server — semua data cuma tinggal di perangkatmu.
 ![Dart](https://img.shields.io/badge/Dart-3.12-0175C2?logo=dart&logoColor=white)
 ![Drift](https://img.shields.io/badge/Drift-2.35-EAECED?logo=sqlite&logoColor=black)
 ![Version](https://img.shields.io/badge/version-1.38.5-6C5CE7)
-![Tests](https://img.shields.io/badge/tests-320%2F320-2ECC71)
+![Tests](https://img.shields.io/badge/tests-332%2F332-2ECC71)
 [![Check](https://github.com/Mighty-Nievl/MyWallet/actions/workflows/build.yml/badge.svg)](https://github.com/Mighty-Nievl/MyWallet/actions/workflows/build.yml)
 
 [**Ringkasan**](#-ringkasan) · [**Fitur**](#-fitur) · [**Mulai Cepat**](#-mulai-cepat) · [**Dokumentasi**](#-dokumentasi) · [**Rilis**](#-instal-dan-rilis)
