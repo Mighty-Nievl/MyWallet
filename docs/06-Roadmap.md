@@ -186,7 +186,9 @@ Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi 
 - [ ] Fase 4 — hardening production-grade: RLS audit, hapus akun, kebijakan privasi (wajib Play Store), crash reporting.
 
 ## v1.17 — Berikutnya (tetap lokal)
-- [ ] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet.
+- [x] Multi-dompet (Tunai / Bank / E-wallet) + transfer antar dompet — rilis
+  v1.29.0 (carousel kartu per dompet + Pindah dana); total gabungan "Semua
+  dompet" menyusul di v1.38.0.
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).
 
 ## Backlog — Data aman & berguna
