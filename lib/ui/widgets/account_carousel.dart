@@ -131,58 +131,76 @@ class _AccountCarouselState extends ConsumerState<AccountCarousel> {
               ),
             ),
             const SizedBox(height: AppSpacing.s8),
-            // v1.37: dots hanya bila >1 dompet. Target sentuh 48px per
-            // dot (visual 6px, token AppSpacing.touchMin) — dulu 24px,
-            // di bawah standar. Dot dibungkus Wrap sendiri supaya dompet
-            // banyak turun baris, bukan overflow horizontal.
-            Wrap(
-              alignment: WrapAlignment.center,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                if (list.length > 1)
-                  Wrap(
-                    key: const ValueKey('home:dots'),
-                    alignment: WrapAlignment.center,
-                    children: [
-                      for (var i = 0; i < list.length; i++)
-                        SizedBox(
-                          key: ValueKey('home:dots-$i'),
-                          width: AppSpacing.touchMin,
-                          height: AppSpacing.touchMin,
-                          child: Semantics(
+            // v1.37.1: indikator halaman sendirian di kiri, aksi Kelola di
+            // kanan — pola section header (konten + trailing), bukan satu
+            // baris center yang mencampur paginasi dengan pengaturan.
+            //
+            // Pitch: slot 28×32. Target 48px (touchMin) terbukti merusak
+            // pitch — celah antar dot jadi 42px sehingga dua titik 6px
+            // terbaca nyasar. 28×32 masih di atas minimum WCAG 2.2 AA
+            // (24×24) dan mis-tap antar dompet murah (tinggal geser lagi).
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
+              child: Row(
+                children: [
+                  if (list.length > 1)
+                    Row(
+                      key: const ValueKey('home:dots'),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (var i = 0; i < list.length; i++)
+                          Semantics(
                             button: true,
-                            label: 'Dompet ${i + 1} dari ${list.length}',
+                            selected: i == _page.clamp(0, list.length - 1),
+                            inMutuallyExclusiveGroup: true,
+                            label:
+                                '${list[i].name}, dompet ${i + 1} '
+                                'dari ${list.length}',
                             child: GestureDetector(
-                              onTap: () {
-                                HapticFeedback.selectionClick();
-                                _ctrl.jumpToPage(i);
-                              },
-                              child: Center(
-                                child: _Dot(
-                                  active: i == _page.clamp(0, list.length - 1),
+                              behavior: HitTestBehavior.opaque,
+                              // Tanpa haptic di sini: jumpToPage memicu
+                              // onPageChanged → _pick yang sudah bergetar.
+                              // Dulu ketukan dot bergetar dua kali.
+                              onTap: () => _ctrl.jumpToPage(i),
+                              child: SizedBox(
+                                key: ValueKey('home:dots-$i'),
+                                width: 28,
+                                height: 32,
+                                child: Center(
+                                  child: _Dot(
+                                    key: ValueKey('home:dots-$i-visual'),
+                                    active: i == _page.clamp(
+                                      0,
+                                      list.length - 1,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
+                      ],
+                    ),
+                  const Spacer(),
+                  TextButton(
+                    key: const ValueKey('home:manage'),
+                    onPressed: () {
+                      HapticFeedback.selectionClick();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const AccountsScreen(),
                         ),
-                      const SizedBox(width: AppSpacing.s4),
-                    ],
+                      );
+                    },
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(0, AppSpacing.touchMin),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.s8,
+                      ),
+                    ),
+                    child: const Text('Kelola dompet'),
                   ),
-                TextButton.icon(
-                  key: const ValueKey('home:manage'),
-                  onPressed: () {
-                    HapticFeedback.selectionClick();
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const AccountsScreen()),
-                    );
-                  },
-                  icon: const Icon(Icons.settings_outlined, size: 18),
-                  label: const Text('Kelola dompet'),
-                  style: TextButton.styleFrom(
-                    minimumSize: const Size(0, AppSpacing.touchMin),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         );
@@ -389,19 +407,29 @@ class _TapToOpenState extends State<_TapToOpen> {
 }
 
 class _Dot extends StatelessWidget {
-  const _Dot({required this.active});
+  const _Dot({super.key, required this.active});
 
   final bool active;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
-      width: 6,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      // v1.37.1: aktif = pill 18×6 (beda BENTUK + ukuran), non-aktif 6×6.
+      // Sebelumnya cuma beda warna → melanggar WCAG 1.4.1 "jangan andalkan
+      // warna saja", dan ukuran 6px terlalu kecil untuk dibaca sebagai
+      // penanda posisi.
+      width: active ? 18 : 6,
       height: 6,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: active ? scheme.primary : scheme.outlineVariant,
+        borderRadius: BorderRadius.circular(3),
+        // Non-aktif pakai `outline`, bukan `outlineVariant`: sampel piksel
+        // golden v1.31 menunjukkan outlineVariant hanya 1,63:1 (light) dan
+        // 2,13:1 (dark) terhadap latar — di bawah 3:1 yang diminta WCAG
+        // 1.4.11 untuk komponen UI. outline ada di ≈4-7:1.
+        color: active ? scheme.primary : scheme.outline,
       ),
     );
   }

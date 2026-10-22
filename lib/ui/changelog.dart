@@ -20,6 +20,26 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.37.1',
+    date: '22 Okt 2026',
+    user:
+        'Penanda dompet di Beranda kini jelas: dompet yang sedang tampil '
+        'ditandai pil panjang, bukan sekadar beda warna tipis. Tombol "Kelola '
+        'dompet" pindah ke kanan supaya tidak tercampur dengan penanda '
+        'halaman, dan pembaca layar (TalkBack) sekarang menyebut dompet mana '
+        'yang sedang aktif.',
+    tech:
+        'v1.37.1: _Dot aktif = AnimatedContainer 18×6 (180ms), non-aktif 6×6 '
+        'pakai scheme.outline (outlineVariant terukur 1,63:1 light / 2,13:1 '
+        'dark — di bawah 3:1 WCAG 1.4.11); slot sentuh 48→28×32 (WCAG 2.2 AA '
+        '24×24) agar pitch kembali 28px dan celah visual 22px; Semantics '
+        'selected + inMutuallyExclusiveGroup + nama dompet; Kelola jadi '
+        'trailing plain TextButton (ikon gear dibuang, home:manage di luar '
+        'home:dots); haptic dobel dihapus (jumpToPage → onPageChanged → _pick '
+        'sudah bergetar).',
+    breaking: null,
+  ),
+  (
     version: 'v1.37.0',
     date: '22 Okt 2026',
     user:

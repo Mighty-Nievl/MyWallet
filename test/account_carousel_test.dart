@@ -154,14 +154,31 @@ void main() {
 
     expect(find.byKey(const ValueKey('home:dots-0')), findsOneWidget);
     expect(find.byKey(const ValueKey('home:dots-1')), findsOneWidget);
-    // v1.37: target sentuh dot = token touchMin (48), bukan 24.
+    // v1.37.1: slot 28×32 (minimum WCAG 2.2 AA = 24×24). 48px terbukti
+    // merusak pitch: celah antar dot jadi 42px.
     for (final key in ['home:dots-0', 'home:dots-1']) {
       final size = tester.getSize(find.byKey(ValueKey(key)));
-      expect(size.width, greaterThanOrEqualTo(AppSpacing.touchMin),
-          reason: key);
-      expect(size.height, greaterThanOrEqualTo(AppSpacing.touchMin),
-          reason: key);
+      expect(size.width, greaterThanOrEqualTo(24), reason: key);
+      expect(size.height, greaterThanOrEqualTo(24), reason: key);
+      expect(size.width, lessThan(AppSpacing.touchMin), reason: key);
     }
+    // Indikator aktif beda BENTUK (pill 18px), bukan cuma warna.
+    expect(
+      tester.getSize(find.byKey(const ValueKey('home:dots-0-visual'))).width,
+      18,
+    );
+    expect(
+      tester.getSize(find.byKey(const ValueKey('home:dots-1-visual'))).width,
+      6,
+    );
+    // v1.37.1: Kelola keluar dari baris dot (kiri = posisi, kanan = aksi).
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('home:dots')),
+        matching: find.byKey(const ValueKey('home:manage')),
+      ),
+      findsNothing,
+    );
     // v1.37: Kelola tidak lagi jadi halaman carousel.
     expect(find.byKey(const ValueKey('home:dots-manage')), findsNothing);
     expect(find.byKey(const ValueKey('home:manage')), findsOneWidget);
@@ -183,6 +200,41 @@ void main() {
     expect(fam, findsOneWidget);
     expect(tester.getCenter(fam).dx, greaterThan(0));
 
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // v1.37.1: halaman aktif harus terbaca screen reader — sebelumnya dua
+  // dot sama-sama "Dompet N dari M" tanpa status, jadi TalkBack tak bisa
+  // membedakan mana yang sedang tampil.
+  testWidgets('semantik dot: halaman aktif ditandai selected (v1.37.1)', (
+    tester,
+  ) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(() async {
+      await _loadFonts();
+      final utama = (await db.select(db.accounts).get()).firstWhere(
+        (a) => a.name == 'Utama',
+      );
+      final keluargaId = await db
+          .into(db.accounts)
+          .insert(AccountsCompanion.insert(name: 'Keluarga'));
+      await reorderAccounts(db, [utama.id, keluargaId]);
+    });
+    final handle = tester.ensureSemantics();
+    await _pumpCarousel(tester, db);
+
+    final aktif = tester
+        .getSemantics(find.byKey(const ValueKey('home:dots-0')))
+        .getSemanticsData();
+    final pasif = tester
+        .getSemantics(find.byKey(const ValueKey('home:dots-1')))
+        .getSemanticsData();
+    expect(aktif.label, contains('Utama'));
+    expect(aktif.hasFlag(SemanticsFlag.isSelected), isTrue);
+    expect(pasif.label, contains('Keluarga'));
+    expect(pasif.hasFlag(SemanticsFlag.isSelected), isFalse);
+
+    handle.dispose();
     await _flushDriftCloseTimer(tester);
   });
 
