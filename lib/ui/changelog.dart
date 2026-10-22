@@ -20,6 +20,34 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.38.3',
+    date: '22 Okt 2026',
+    user:
+        'Baris filter waktu di Beranda dan Laporan kini rapi: keempat pilihan '
+        '(Harian, Mingguan, Bulanan, Tahunan) terbaca utuh — tidak ada lagi '
+        'tulisan yang terpotong di tengah — dan warna tulisannya cukup gelap '
+        'untuk dibaca di layar terang. Ikon Kalender pindah ke samping panah '
+        'periode, jadi selalu kelihatan dan tidak perlu digeser dulu.',
+    tech:
+        'v1.38.3: diukur dari screenshot rilis v1.38.2 (1224 px / 390dp = '
+        '3,14x). Centang M3 (showCheckmark default) ternyata tak terbaca — '
+        'kecerahan 46 vs 68 dari 255, ~1,4:1 — tapi memakan 37dp ruang kiri '
+        'vs 17,5dp kanan, dan itulah yang mendorong chip "Tahunan" keluar '
+        'viewport sehingga glyph terpotong tanpa elipsis (border kanan ikut '
+        'hilang). Centang dimatikan; seleksi dibawa fill + w700. Padding '
+        'horizontal 16 -> 12dp: empat label (218,5dp) + padding + jarak = '
+        '338,5dp, muat di 358dp sehingga maxScrollExtent = 0 di 390dp '
+        '(ListView tetap ada untuk textScaler 2.0). Label idle mutedOf '
+        '2,23:1 (gagal AA) -> strongSecondaryOf ~9:1; chip idle fill '
+        'lightSubtle + border outline (~4,4:1, dulu 1,91:1); label periode '
+        'onSurface eksplisit (dulu 3,88:1). "Kalender" keluar dari '
+        'ListView (item ke-5 tak pernah terlihat di 390dp) ke PeriodNav '
+        'sebagai IconButton.outlined 44dp, dengan penyeimbang 44dp supaya '
+        'grup chevron+label tetap di tengah. Test baru '
+        'test/period_switcher_test.dart menjaga keempat klaim itu.',
+    breaking: null,
+  ),
+  (
     version: 'v1.38.2',
     date: '22 Okt 2026',
     user:
