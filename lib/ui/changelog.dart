@@ -20,6 +20,27 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.37.0',
+    date: '22 Okt 2026',
+    user:
+        'Beranda kini lebih fokus ke data: pilihan periode ada tepat di atas '
+        'angka masuk/keluar, transaksi terakhir naik ke atas, dan menu '
+        'dipangkas jadi empat pintasan yang belum ada di bilah bawah. Ketuk '
+        'kartu Pemasukan/Pengeluaran untuk langsung membuka riwayat sesuai '
+        'jenisnya, dan Kelola dompet kini tombol terpisah — tidak lagi jadi '
+        'halaman tak sengaja saat menggeser kartu.',
+    tech:
+        'v1.37.0: urutan HomeScreen carousel → PeriodSwitcher/PeriodNav → '
+        'FlowCards → recent → topcats → HomeFeatureGrid; tap FlowCards mengisi '
+        'historyFilterProvider (HistoryFilter) lalu push HistoryScreen; '
+        '_DailyStrip berlabel "Hari ini"; HomeFeatureGrid jadi StatelessWidget '
+        '4 _LinkTile (Pindah dana/Budget/Laporan/Utang); AccountCarousel '
+        'itemCount=list.length, dots hanya >1 (target sentuh 40), '
+        'home:manage TextButton di luar PageView + empty-state action. '
+        '305 test.',
+    breaking: null,
+  ),
+  (
     version: 'v1.36.2',
     date: '21 Okt 2026',
     user:

@@ -10,7 +10,7 @@ Tanpa login, tanpa server — semua data cuma tinggal di perangkatmu.
 ![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.12-0175C2?logo=dart&logoColor=white)
 ![Drift](https://img.shields.io/badge/Drift-2.35-EAECED?logo=sqlite&logoColor=black)
-![Version](https://img.shields.io/badge/version-1.36.2-6C5CE7)
+![Version](https://img.shields.io/badge/version-1.37.0-6C5CE7)
 ![Tests](https://img.shields.io/badge/tests-305%2F305-2ECC71)
 [![Check](https://github.com/Mighty-Nievl/MyWallet/actions/workflows/build.yml/badge.svg)](https://github.com/Mighty-Nievl/MyWallet/actions/workflows/build.yml)
 
@@ -40,7 +40,7 @@ Datanya disimpan penuh di lokal (SQLite lewat Drift), jadi aman, cepat, dan bisa
 | **Budget** | Budget bulanan per kategori · progress & ambang 80% · edit/hapus + undo 5 detik |
 | **Utang-piutang** | Tab Utang ke-5 + kartu Beranda · cicilan parsial + jatuh tempo + lunas otomatis · saldo ikut otomatis (cermin transaksi) |
 | **Laporan** | **Periode Harian/Mingguan/Bulanan/Tahunan** · ringkasan 6 bulan · bar chart + pie · rincian per kategori · export CSV · **export PDF offline** |
-| **Beranda Insight** | Sapaan + tanggal pinned · **periode + kalender** · kartu masuk/keluar ikut periode · pacing budget · top kategori proporsional |
+| **Beranda Insight** | Sapaan + tanggal pinned · **periode + kalender tepat di atas arus kas** · transaksi terakhir sebelum kategori · menu ringkas 4 pintasan · pacing budget · top kategori proporsional |
 | **Tampilan** | 6 warna aksen + Material You · hitam pekat · privacy semua nominal · nominal ringkas (`Rp1,5 jt`) · ukuran font · kustom isi Beranda · **bilah bawah melayang berkapsul (Riwayat · Catat · Scan) dengan + 64px** |
 | **Privasi & data** | Kunci PIN/biometrik · **sync keluarga opt-in** (hanya dompet bertanda Keluarga) · backup/restore file `.sqlite` · hapus semua data |
 | **Lainnya** | Pengingat harian (notifikasi lokal) · skeleton shimmer + error ramah di semua layar |
@@ -159,6 +159,12 @@ git tag vX.Y.Z && git push origin vX.Y.Z
 Prep Android (disk, Java, Flutter, tuning Gradle, NDK anti-korup, keystore, `google-services.json`) hidup di satu composite action: `.github/actions/android-prep`.
 
 ## 🗺 Roadmap
+
+### Baru di v1.37.0 ✅
+
+- [x] Beranda fokus data: periode di atas arus kas, transaksi terakhir naik, menu dipangkas jadi 4 pintasan unik
+- [x] Kartu Pemasukan/Pengeluaran membuka Riwayat yang sudah terfilter
+- [x] Kelola dompet jadi tombol aksi; dots carousel hanya muncul bila dompet >1
 
 ### Baru di v1.33.0 ✅
 
