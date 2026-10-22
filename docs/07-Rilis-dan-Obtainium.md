@@ -4,6 +4,7 @@
 Obtainium (updater open-source di HP) memantau halaman **GitHub Releases**, bukan Actions artifacts. Jadi tiap versi stabil diterbitkan sebagai Release berisi APK bertanda tangan → HP dapat notifikasi update otomatis.
 
 ## Riwayat rilis
+- **v1.38.2** (22 Okt 2026): kotak gelap di belakang indikator halaman dihapus — diukur dari screenshot v1.38.1 hanya 1,31:1 terhadap kartu dan memakan 21% tinggi kartu untuk tiga titik. Titik putih kini langsung di kartu (7,05:1 aktif / 4,99:1 non-aktif), pitch dirapatkan ke 24px, dan tombol kelola dompet jadi ikon putih polos seperti mata saldo. 309/309 test hijau.
 - **v1.38.1** (22 Okt 2026): indikator halaman kartu dompet kini mengambang di tengah bawah kartu saldo — halaman aktif jadi garis pendek, lainnya titik, dan tombol kelola dompet jadi ikon gerigi di kanan baris. Baris dot lama (40px) hilang sehingga kartu lebih lega. 309/309 test hijau.
 - **v1.38.0** (22 Okt 2026): Beranda punya halaman **Semua dompet** (total gabungan semua dompet, dipakai sebagai default) dan mode onboarding untuk user tanpa transaksi: satu tombol "Catat pengeluaran pertama" + scan struk, sementara switcher periode, kartu arus kas, kategori, dan riwayat disembunyikan sampai ada data. 308/308 test hijau.
 - **v1.37.1** (22 Okt 2026): Penanda dompet di Beranda dibetulkan — dompet aktif ditandai pil panjang (bukan cuma beda warna 1,6:1 yang praktis tak terlihat), jarak antar titik kembali rapat setelah sempat direnggangkan target sentuh 48px, TalkBack menyebut dompet mana yang aktif, dan "Kelola dompet" dipisah ke kanan. 306/306 test hijau.
