@@ -20,6 +20,27 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.38.0',
+    date: '22 Okt 2026',
+    user:
+        'Punya lebih dari satu dompet? Beranda kini punya halaman "Semua '
+        'dompet" yang menunjukkan total seluruh uangmu — tidak perlu '
+        'menjumlah sendiri. Dan kalau kamu belum pernah mencatat apa pun, '
+        'Beranda langsung menawarkan satu tombol "Catat pengeluaran pertama" '
+        '(atau scan struk), bukan tumpukan angka Rp0.',
+    tech:
+        'v1.38.0: AccountCarousel halaman 0 = _AllWalletsCard (balanceProvider) '
+        'saat dompet >1; itemCount = list.length+1; onPageChanged memetakan '
+        'halaman 0 → selected null (= Semua, default provider) — sebelumnya '
+        'null dipaksa ke dompet pertama sehingga total gabungan tak pernah '
+        'tampil; 1 dompet tetap dikunci ke dompet itu. Onboarding: '
+        'hasAnyTxProvider (AppDatabase.watchTxCount, COUNT(*) WHERE '
+        'deleted_at IS NULL) → Beranda menyembunyikan PeriodSwitcher, '
+        'FlowCards, kategori, dan riwayat, lalu menampilkan _OnboardingStart '
+        '(CTA catat pengeluaran + scan struk). 2 test baru. 308 test.',
+    breaking: null,
+  ),
+  (
     version: 'v1.37.1',
     date: '22 Okt 2026',
     user:
