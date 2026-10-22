@@ -6,6 +6,7 @@ import '../../data/auth_service.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../../data/settings.dart';
+import '../components/app_card.dart';
 import '../components/app_empty_state.dart';
 import '../components/app_feedback.dart';
 import '../components/app_progress.dart';
@@ -19,6 +20,7 @@ import '../design/app_typography.dart';
 import '../display.dart';
 import '../format.dart';
 import '../greeting.dart';
+import '../scan_flow.dart';
 import '../transaction_actions.dart';
 import '../widgets/account_carousel.dart';
 import '../widgets/flow_cards.dart';
@@ -28,6 +30,7 @@ import 'history_screen.dart';
 import 'profile_screen.dart';
 import 'reports_screen.dart';
 import 'settings_screen.dart';
+import 'tx_form_screen.dart';
 
 /// Redesign v1.24 B2C minimalis: header netral ramping, hero kartu putih
 /// bersih (saldo 48px + 1 CTA), delta/kilat/debts dihapus, spacing 32px.
@@ -56,6 +59,9 @@ class HomeScreen extends ConsumerWidget {
     final showRecent = ref.watch(showRecentProvider).value ?? true;
     final recentCount = ref.watch(recentCountProvider).value ?? 5;
     final showDaily = ref.watch(showDailyTotalsProvider).value ?? true;
+    // v1.38.0: nol transaksi = user baru. null (loading) dianggap
+    // "sudah ada data" supaya onboarding tidak berkedip.
+    final newUser = ref.watch(hasAnyTxProvider).value == false;
     // v1.30: suffix dompet utk judul section (jujur: angka milik siapa).
     final acctSuffix = accountTitleSuffix(
       ref.watch(accountsProvider).value ?? const <Account>[],
@@ -106,25 +112,37 @@ class HomeScreen extends ConsumerWidget {
                     key: const ValueKey('home:hero-slot'),
                     child: const AccountCarousel(),
                   ),
-                  // v1.37: periode naik ke atas angka yang dipengaruhinya.
-                  // Dulu FlowCards tampil sebelum switcher → user melihat
-                  // total periode tanpa tahu rentangnya. Key lama
-                  // (`home:monthnav`) dipertahankan agar test/lokasi
-                  // kontrol tidak pecah.
-                  SliverToBoxAdapter(
-                    key: const ValueKey('home:monthnav'),
-                    child: _pad(
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const PeriodSwitcher(),
-                          const SizedBox(height: AppSpacing.s8),
-                          PeriodNav(period: period),
-                        ],
+                  // v1.38.0: user benar-benar baru (nol transaksi) dapat satu
+                  // jalan masuk, bukan saldo Rp0 + dua kartu Rp0 + dua empty
+                  // state bertumpuk. yang butuh data bisa langsung mulai.
+                  if (newUser)
+                    SliverToBoxAdapter(
+                      key: const ValueKey('home:onboarding'),
+                      child: _pad(
+                        const _OnboardingStart(),
+                        top: AppSpacing.s16,
                       ),
-                      top: AppSpacing.s16,
+                    )
+                  else ...[
+                    // v1.37: periode naik ke atas angka yang dipengaruhinya.
+                    // Dulu FlowCards tampil sebelum switcher → user melihat
+                    // total periode tanpa tahu rentangnya. Key lama
+                    // (`home:monthnav`) dipertahankan agar test/lokasi
+                    // kontrol tidak pecah.
+                    SliverToBoxAdapter(
+                      key: const ValueKey('home:monthnav'),
+                      child: _pad(
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const PeriodSwitcher(),
+                            const SizedBox(height: AppSpacing.s8),
+                            PeriodNav(period: period),
+                          ],
+                        ),
+                        top: AppSpacing.s16,
+                      ),
                     ),
-                  ),
                   // v1.34.0: arus kas periode aktif — Pemasukan &
                   // Pengeluaran sebagai kartu sendiri. Dulu angka ini
                   // hanya ada di Laporan; di Beranda user cuma lihat
@@ -194,6 +212,7 @@ class HomeScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
+                  ],
                   ],
                   // v1.37: menu ringkas (4 pintasan unik) turun ke bawah
                   // data. Catat/Scan/Riwayat sudah ada di dock, jadi
@@ -574,6 +593,69 @@ class _RecentList extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// Onboarding Beranda (v1.38.0): pengganti tumpukan empty state untuk user
+/// yang belum punya satu transaksi pun.
+///
+/// Satu tujuan utama (catat pengeluaran) + satu alternatif (scan struk).
+/// Analitik periode sengaja tidak ditampilkan: switcher Harian/Mingguan/
+/// Bulanan/Tahunan tanpa data hanya menawarkan pilihan kosong.
+class _OnboardingStart extends ConsumerWidget {
+  const _OnboardingStart();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Mulai dari satu catatan', style: AppType.sectionTitle(context)),
+          const SizedBox(height: AppSpacing.s8),
+          Text(
+            'Belum ada transaksi. Catat pengeluaran pertamamu — 10 detik, '
+            'tanpa akun, semua tersimpan di HP ini.',
+            style: AppType.secondary(context),
+          ),
+          const SizedBox(height: AppSpacing.s16),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              key: const ValueKey('home:onboarding-cta'),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const TxFormScreen(startAsExpense: true),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.add, size: 20),
+              label: const Text('Catat pengeluaran pertama'),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.s4),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              key: const ValueKey('home:onboarding-scan'),
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                runScanFlow(context, ref);
+              },
+              icon: Icon(
+                Icons.document_scanner_outlined,
+                size: 18,
+                color: scheme.primary,
+              ),
+              label: const Text('Atau scan struk belanja'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

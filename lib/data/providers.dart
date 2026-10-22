@@ -58,6 +58,14 @@ final balanceProvider = StreamProvider<int>((ref) {
       .asyncMap((_) async => start + await db.getBalance());
 });
 
+/// v1.38.0: Beranda punya data atau belum — beda dari "periode ini kosong".
+/// null (loading) sengaja tidak dianggap kosong supaya onboarding tak
+/// berkedip sebelum query pertama selesai.
+final hasAnyTxProvider = StreamProvider<bool>((ref) {
+  final db = ref.watch(dbProvider);
+  return db.watchTxCount().map((n) => n > 0);
+});
+
 // ---------- Dompet ganda (v1.25) ----------
 
 /// Dompet aktif: null = Semua (gabungan, perilaku lama = default).

@@ -462,6 +462,20 @@ class AppDatabase extends _$AppDatabase {
     return query.watchSingle().map((row) => row.read<int>('c'));
   }
 
+  /// Jumlah transaksi hidup (bukan soft-delete) di SEMUA dompet, tanpa
+  /// filter periode/dompet/keyword.
+  ///
+  /// v1.38.0: dipakai Beranda untuk membedakan "user benar-benar baru"
+  /// dari "filter periode ini kebetulan kosong" — dua keadaan yang butuh
+  /// UI berbeda (onboarding vs empty state biasa).
+  Stream<int> watchTxCount() {
+    final query = customSelect(
+      'SELECT COUNT(*) AS c FROM transactions t WHERE t.deleted_at IS NULL',
+      readsFrom: {transactions},
+    );
+    return query.watchSingle().map((row) => row.read<int>('c'));
+  }
+
   /// Ringkasan pengeluaran per kategori dalam rentang tanggal.
   ///
   /// v1.25: kaki transfer dikecualikan (bukan pengeluaran kategori);

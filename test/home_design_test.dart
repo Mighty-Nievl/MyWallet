@@ -27,6 +27,7 @@ import 'package:mywallet/ui/components/setting_row.dart';
 import 'package:mywallet/ui/design/app_colors.dart';
 import 'package:mywallet/ui/screens/account_detail_screen.dart';
 import 'package:mywallet/ui/screens/home_screen.dart';
+import 'package:mywallet/ui/screens/tx_form_screen.dart';
 import 'package:mywallet/ui/screens/history_screen.dart';
 import 'package:mywallet/ui/widgets/flow_cards.dart';
 import 'package:mywallet/ui/widgets/home_feature_grid.dart';
@@ -252,6 +253,48 @@ void main() {
     expect(find.byKey(const ValueKey('home:monthnav')), findsOneWidget);
     expect(find.byType(PeriodSwitcher), findsOneWidget);
     expect(find.byKey(const ValueKey('period:kind:bulanan')), findsOneWidget);
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // v1.38.0: user baru (nol transaksi) dapat satu jalan masuk, bukan
+  // tumpukan empty state. Analitik periode disembunyikan karena tanpa data
+  // switcher Harian/Mingguan/Bulanan/Tahunan hanya menawarkan pilihan kosong.
+  testWidgets('onboarding: satu CTA, analitik disembunyikan (v1.38.0)', (
+    tester,
+  ) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(_loadFonts);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    expect(find.byKey(const ValueKey('home:onboarding')), findsOneWidget);
+    expect(find.text('Catat pengeluaran pertama'), findsOneWidget);
+    expect(find.byKey(const ValueKey('home:onboarding-scan')), findsOneWidget);
+    // Tanpa data: periode, arus kas, kategori, dan riwayat tidak tampil.
+    expect(find.byType(PeriodSwitcher), findsNothing);
+    expect(find.byType(FlowCards), findsNothing);
+    expect(find.text('Terakhir dicatat'), findsNothing);
+    expect(find.textContaining('Pengeluaran bulan'), findsNothing);
+    expect(find.text('Belum ada transaksi'), findsNothing);
+    // CTA utama membuka form pengeluaran.
+    await tester.tap(find.byKey(const ValueKey('home:onboarding-cta')));
+    await tester.pump();
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(find.byType(TxFormScreen), findsOneWidget);
+
     await _flushDriftCloseTimer(tester);
   });
 
