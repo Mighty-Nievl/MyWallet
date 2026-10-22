@@ -40,7 +40,7 @@ const appChangelog = <({String version, String date, String user, String tech, S
         'home_feature_grid; home_menu_scan_test). test/contrast_test.dart '
         'baru: 20 pasangan token dihitung rasionya untuk light+dark (ambang '
         '4,5:1 teks, 3:1 batas komponen) + penjaga konstanta uji = token '
-        'asli; test/tx_delete_undo_test.dart baru. 2 test baru.',
+        'asli; test/tx_delete_undo_test.dart baru. 2 file test baru, 320 test.',
     breaking: null,
   ),
   (
