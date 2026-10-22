@@ -19,7 +19,7 @@
 - **Penyimpanan:** 100% lokal, SQLite via Drift — tanpa login, tanpa server.
 - **State:** flutter_riverpod 3.x (`StreamProvider` auto-refresh, `StateProvider` via `legacy.dart`).
 - **File DB:** `mywallet.sqlite` di folder dokumen aplikasi.
-- **Status:** v1.35.0 — Laporan bisa Harian/Mingguan/Bulanan/Tahunan (switcher + nav periode); dua kartu arus kas di Beranda; kapsul melayang (`extendBody` + slot bar).
+- **Status:** v1.37.0 — Beranda fokus data: periode tepat di atas kartu arus kas, transaksi terakhir naik sebelum kategori, menu ringkas 4 pintasan unik, tap kartu Pemasukan/Pengeluaran membuka Riwayat terfilter; Kelola dompet jadi tombol terpisah.
 
 ## Peta kode
 
