@@ -76,27 +76,40 @@ void main() {
   ) async {
     await _pump(tester);
 
-    // Empat chip, bukan lima: "Kalender" bukan pilihan periode.
-    expect(
+    // Empat chip, bukan lima: "Kalender" bukan pilihan periode. ListView
+    // malas membangun item di luar viewport (font uji lebih lebar dari
+    // Roboto), jadi jumlah item dibaca dari delegate: 4 chip + 3 separator
+    // = 7. Kalau "Kalender" balik ke baris ini, angkanya jadi 9.
+    final list = tester.widget<ListView>(
+      find.descendant(
+        of: find.byType(PeriodSwitcher),
+        matching: find.byType(ListView),
+      ),
+    );
+    final delegate = list.childrenDelegate as SliverChildBuilderDelegate;
+    expect(delegate.estimatedChildCount, PeriodKind.values.length * 2 - 1);
+    expect(find.byKey(const ValueKey('period:kind:kalender')), findsNothing);
+
+    // Tanpa ellipsis di level label: kalau teks dipotong, itu clip
+    // viewport (bug v1.38.2), bukan pemotongan yang disengaja.
+    for (final chip in tester.widgetList<ChoiceChip>(
       find.descendant(
         of: find.byType(PeriodSwitcher),
         matching: find.byType(ChoiceChip),
       ),
-      findsNWidgets(PeriodKind.values.length),
-    );
-    // Tanpa ellipsis di level label: kalau teks dipotong, itu clip
-    // viewport (bug v1.38.2), bukan pemotongan yang disengaja.
-    for (final kind in PeriodKind.values) {
-      final label = tester.widget<Text>(
-        find.descendant(of: _chip(kind.name), matching: find.byType(Text)),
-      );
+    )) {
+      final label = chip.label as Text;
       expect(label.overflow, isNot(TextOverflow.ellipsis));
       expect(label.maxLines, isNull);
     }
     // Semua chip ada di dalam layar (kiri), tidak menempel negatif.
     for (final kind in PeriodKind.values) {
-      final rect = tester.getRect(_chip(kind.name));
-      expect(rect.left, greaterThanOrEqualTo(AppSpacing.page - 0.5));
+      final chip = find.byKey(ValueKey('period:kind:${kind.name}'));
+      if (chip.evaluate().isEmpty) continue; // belum dibangun (malas)
+      expect(
+        tester.getRect(chip).left,
+        greaterThanOrEqualTo(AppSpacing.page - 0.5),
+      );
     }
   });
 
