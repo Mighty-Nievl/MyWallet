@@ -20,6 +20,27 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.38.1',
+    date: '22 Okt 2026',
+    user:
+        'Penunjuk halaman kartu dompet kini mengambang rapi di tengah bawah '
+        'kartu saldo: halaman aktif tampil sebagai garis pendek, halaman lain '
+        'sebagai titik, dan tombol kelola dompet jadi ikon gerigi — layar '
+        'jadi lebih lega tanpa baris tambahan di bawah kartu.',
+    tech:
+        'v1.38.1: indikator halaman + Kelola dipindah jadi overlay di dalam '
+        'SizedBox 188 milik carousel (Stack + Positioned bottom s8) → '
+        'menghemat 40px hero (baris dot lama 32+8 hilang). Kapsul dot: '
+        'Container tinggi 32, padding horizontal s4, AppRadius.pillAll, latar '
+        'kDotScrim (putih 18%) karena kontras token tema di atas mesh cuma '
+        '~1,6:1. _Dot dapat activeColor/inactiveColor (default tetap token): '
+        'aktif putih solid, non-aktif putih 80% (kDotIdle) — pembeda halaman '
+        'tetap bentuk pill 18×6 vs titik 6×6, bukan warna (WCAG 1.4.1). Slot '
+        'dot 28×32 dipertahankan (48px merusak pitch). Kelola: TextButton → '
+        'IconButton settings_outlined 32px dalam target sentuh 48px '
+        '(touchMin), bottom-right. 1 test baru. 309 test.',
+  ),
+  (
     version: 'v1.38.0',
     date: '22 Okt 2026',
     user:

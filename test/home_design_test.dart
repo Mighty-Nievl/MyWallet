@@ -921,7 +921,7 @@ void main() {
     expect(find.byKey(const ValueKey('home:carousel')), findsOneWidget);
     expect(find.text('Utama'), findsOneWidget);
     // v1.37: Kelola keluar dari PageView → tombol aksi di bawah kartu.
-    expect(find.text('Kelola dompet'), findsOneWidget);
+    expect(find.byTooltip('Kelola dompet'), findsOneWidget);
     expect(find.byKey(const ValueKey('home:manage')), findsOneWidget);
     expect(find.byKey(const ValueKey('home:dots-0')), findsNothing);
     expect(find.text('Semua'), findsNothing);

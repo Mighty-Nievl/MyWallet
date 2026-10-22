@@ -8,11 +8,18 @@ import '../../data/settings.dart';
 import '../components/app_empty_state.dart';
 import '../components/app_feedback.dart';
 import '../components/mesh_gradient.dart';
+import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../display.dart';
 import '../screens/accounts_screen.dart';
 import '../screens/account_detail_screen.dart';
+
+/// v1.38.1: latar kapsul indikator halaman + tombol Kelola, keduanya
+/// mengambang di atas kartu mesh (hijau gelap, teks putih). Putih transparan
+/// — bukan token tema — karena latarnya selalu mesh kartu, bukan `surface`.
+const Color kDotScrim = Color(0x2EFFFFFF); // putih 18%
+const Color kDotIdle = Color(0xCCFFFFFF); // putih 80%
 
 /// Carousel kartu dompet Beranda (v1.29): gantikan hero gabungan +
 /// strip chip. Satu halaman = satu kartu = satu dompet; kartu tampil
@@ -132,91 +139,140 @@ class _AccountCarouselState extends ConsumerState<AccountCarousel> {
               // v1.32: 264→188 (CTA 52 + spacer 24 hilang, kartu fokus
               // saldo; audit ulang via rect bila disentuh lagi).
               height: 188,
-              child: PageView.builder(
-                key: const ValueKey('home:carousel'),
-                controller: _ctrl,
-                onPageChanged: (i) {
-                  setState(() => _page = i);
-                  _syncing = true;
-                  _pick(
-                    multi ? (i == 0 ? null : list[i - 1].id) : list.first.id,
-                  );
-                  _syncing = false;
-                },
-                itemCount: pageCount,
-                itemBuilder: (_, i) => multi
-                    ? (i == 0
-                          ? _AllWalletsCard(count: list.length)
-                          : _WalletCard(account: list[i - 1]))
-                    : _WalletCard(account: list.first),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.s8),
-            // v1.37.1: indikator halaman sendirian di kiri, aksi Kelola di
-            // kanan — pola section header (konten + trailing), bukan satu
-            // baris center yang mencampur paginasi dengan pengaturan.
-            //
-            // Pitch: slot 28×32. Target 48px (touchMin) terbukti merusak
-            // pitch — celah antar dot jadi 42px sehingga dua titik 6px
-            // terbaca nyasar. 28×32 masih di atas minimum WCAG 2.2 AA
-            // (24×24) dan mis-tap antar dompet murah (tinggal geser lagi).
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
-              child: Row(
+              child: Stack(
                 children: [
-                  if (multi)
-                    Row(
-                      key: const ValueKey('home:dots'),
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        for (var i = 0; i < pageCount; i++)
-                          Semantics(
-                            button: true,
-                            selected: i == _page.clamp(0, pageCount - 1),
-                            inMutuallyExclusiveGroup: true,
-                            label: i == 0
-                                ? 'Semua dompet, ${list.length} dompet'
-                                : '${list[i - 1].name}, dompet ${i + 1} '
-                                      'dari $pageCount',
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              // Tanpa haptic di sini: jumpToPage memicu
-                              // onPageChanged → _pick yang sudah bergetar.
-                              // Dulu ketukan dot bergetar dua kali.
-                              onTap: () => _ctrl.jumpToPage(i),
-                              child: SizedBox(
-                                key: ValueKey('home:dots-$i'),
-                                width: 28,
-                                height: 32,
-                                child: Center(
-                                  child: _Dot(
-                                    key: ValueKey('home:dots-$i-visual'),
-                                    active: i == _page.clamp(0, pageCount - 1),
+                  Positioned.fill(
+                    child: PageView.builder(
+                      key: const ValueKey('home:carousel'),
+                      controller: _ctrl,
+                      onPageChanged: (i) {
+                        setState(() => _page = i);
+                        _syncing = true;
+                        _pick(
+                          multi
+                              ? (i == 0 ? null : list[i - 1].id)
+                              : list.first.id,
+                        );
+                        _syncing = false;
+                      },
+                      itemCount: pageCount,
+                      itemBuilder: (_, i) => multi
+                          ? (i == 0
+                                ? _AllWalletsCard(count: list.length)
+                                : _WalletCard(account: list[i - 1]))
+                          : _WalletCard(account: list.first),
+                    ),
+                  ),
+                  // v1.38.1: indikator + Kelola mengambang di bawah tengah
+                  // kartu (permintaan user 2026-10-22). Slot dot tetap 28×32:
+                  // memperbesar ke touchMin merusak pitch (celah antar titik
+                  // jadi 42px, dua titik 6px terbaca nyasar). Kapsul cuma
+                  // latar tipis — pembeda halaman tetap BENTUK (pill vs
+                  // titik), bukan warna, jadi aman untuk buta warna.
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: AppSpacing.s8,
+                    child: SizedBox(
+                      // Tinggi dipatok touchMin: tanpa ini Stack menyusut ke
+                      // nol saat dompet tunggal (tak ada kapsul dot) dan gear
+                      // kehilangan tempat.
+                      height: AppSpacing.touchMin,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          if (multi)
+                            Container(
+                              key: const ValueKey('home:dots'),
+                              height: 32,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.s4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: kDotScrim,
+                                borderRadius: AppRadius.pillAll,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  for (var i = 0; i < pageCount; i++)
+                                    Semantics(
+                                      button: true,
+                                      selected:
+                                          i == _page.clamp(0, pageCount - 1),
+                                      inMutuallyExclusiveGroup: true,
+                                      label: i == 0
+                                          ? 'Semua dompet, ${list.length} dompet'
+                                          : '${list[i - 1].name}, dompet '
+                                                '${i + 1} dari $pageCount',
+                                      child: GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
+                                        // Tanpa haptic di sini: jumpToPage
+                                        // memicu onPageChanged → _pick yang
+                                        // sudah bergetar.
+                                        onTap: () => _ctrl.jumpToPage(i),
+                                        child: SizedBox(
+                                          key: ValueKey('home:dots-$i'),
+                                          width: 28,
+                                          height: 32,
+                                          child: Center(
+                                            child: _Dot(
+                                              key: ValueKey(
+                                                'home:dots-$i-visual',
+                                              ),
+                                              active:
+                                                  i ==
+                                                  _page.clamp(
+                                                    0,
+                                                    pageCount - 1,
+                                                  ),
+                                              activeColor: Colors.white,
+                                              inactiveColor: kDotIdle,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          Positioned(
+                            right: AppSpacing.page,
+                            child: SizedBox(
+                              width: AppSpacing.touchMin,
+                              height: AppSpacing.touchMin,
+                              child: IconButton(
+                                key: const ValueKey('home:manage'),
+                                tooltip: 'Kelola dompet',
+                                onPressed: () {
+                                  HapticFeedback.selectionClick();
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const AccountsScreen(),
+                                    ),
+                                  );
+                                },
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                icon: Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: kDotScrim,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.settings_outlined,
+                                    size: 18,
+                                    color: Colors.white.withValues(alpha: 0.95),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                      ],
-                    ),
-                  const Spacer(),
-                  TextButton(
-                    key: const ValueKey('home:manage'),
-                    onPressed: () {
-                      HapticFeedback.selectionClick();
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const AccountsScreen(),
-                        ),
-                      );
-                    },
-                    style: TextButton.styleFrom(
-                      minimumSize: const Size(0, AppSpacing.touchMin),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.s8,
+                        ],
                       ),
                     ),
-                    child: const Text('Kelola dompet'),
                   ),
                 ],
               ),
@@ -540,9 +596,20 @@ class _TapToOpenState extends State<_TapToOpen> {
 }
 
 class _Dot extends StatelessWidget {
-  const _Dot({super.key, required this.active});
+  const _Dot({
+    super.key,
+    required this.active,
+    this.activeColor,
+    this.inactiveColor,
+  });
 
   final bool active;
+
+  /// v1.38.1: indikator duduk di atas kartu mesh, jadi warnanya putih —
+  /// token tema (`primary`/`outline`) di sini kontrasnya jatuh ke ~1,6:1
+  /// terhadap hijau kartu. Default tetap token untuk pemakaian di luar kartu.
+  final Color? activeColor;
+  final Color? inactiveColor;
 
   @override
   Widget build(BuildContext context) {
@@ -562,7 +629,9 @@ class _Dot extends StatelessWidget {
         // golden v1.31 menunjukkan outlineVariant hanya 1,63:1 (light) dan
         // 2,13:1 (dark) terhadap latar — di bawah 3:1 yang diminta WCAG
         // 1.4.11 untuk komponen UI. outline ada di ≈4-7:1.
-        color: active ? scheme.primary : scheme.outline,
+        color: active
+            ? (activeColor ?? scheme.primary)
+            : (inactiveColor ?? scheme.outline),
       ),
     );
   }
