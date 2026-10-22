@@ -912,24 +912,28 @@ void main() {
     expect(find.byKey(const ValueKey('home:carousel')), findsOneWidget);
     expect(find.byKey(const ValueKey('home:dots-0')), findsOneWidget);
     expect(find.byKey(const ValueKey('home:dots-1')), findsOneWidget);
+    // v1.38.0: 2 dompet = 3 halaman (Semua + 2 dompet).
+    expect(find.byKey(const ValueKey('home:dots-2')), findsOneWidget);
     // v1.37: dots hanya untuk dompet; Kelola tombol terpisah.
     expect(find.byKey(const ValueKey('home:dots-manage')), findsNothing);
     expect(find.byKey(const ValueKey('home:manage')), findsOneWidget);
     expect(find.text('Semua'), findsNothing);
-    // v1.30: 2 dompet + auto-select kartu pertama (Keluarga, alfabetis) =
-    // judul seksi sebut scope. Pola gulir ikut test kategori-ganda
-    // (grid v1.26 + kontrol periode v1.36 mendorong judul ke bawah
-    // lipatan; sliver belum dibangun → scrollUntilVisible).
+    // v1.38.0: default = halaman "Semua dompet" (gabungan), jadi judul
+    // seksi TIDAK memakai suffix dompet — angkanya milik semua dompet.
+    expect(find.byKey(const ValueKey('home:card-all')), findsOneWidget);
+    expect(find.text('Semua dompet'), findsOneWidget);
+    // Pola gulir ikut test kategori-ganda (sliver belum dibangun →
+    // scrollUntilVisible).
     await tester.scrollUntilVisible(
-      find.text('Pengeluaran bulan ini · Keluarga'),
+      find.text('Pengeluaran bulan ini'),
       200,
       scrollable: _homeScrollable(),
     );
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
-    expect(find.text('Pengeluaran bulan ini · Keluarga'), findsOneWidget);
-    expect(find.text('Pengeluaran bulan ini'), findsNothing);
+    expect(find.text('Pengeluaran bulan ini'), findsOneWidget);
+    expect(find.text('Pengeluaran bulan ini · Keluarga'), findsNothing);
     await _flushDriftCloseTimer(tester);
   });
 

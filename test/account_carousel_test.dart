@@ -155,15 +155,20 @@ void main() {
 
     expect(find.byKey(const ValueKey('home:dots-0')), findsOneWidget);
     expect(find.byKey(const ValueKey('home:dots-1')), findsOneWidget);
+    // v1.38.0: 2 dompet = 3 halaman (Semua + 2 dompet).
+    expect(find.byKey(const ValueKey('home:dots-2')), findsOneWidget);
     // v1.37.1: slot 28×32 (minimum WCAG 2.2 AA = 24×24). 48px terbukti
     // merusak pitch: celah antar dot jadi 42px.
-    for (final key in ['home:dots-0', 'home:dots-1']) {
+    for (final key in ['home:dots-0', 'home:dots-1', 'home:dots-2']) {
       final size = tester.getSize(find.byKey(ValueKey(key)));
       expect(size.width, greaterThanOrEqualTo(24), reason: key);
       expect(size.height, greaterThanOrEqualTo(24), reason: key);
       expect(size.width, lessThan(AppSpacing.touchMin), reason: key);
     }
     // Indikator aktif beda BENTUK (pill 18px), bukan cuma warna.
+    // v1.38.0: halaman 0 = Semua dompet.
+    expect(find.text('Semua dompet'), findsOneWidget);
+    expect(find.byKey(const ValueKey('home:card-all')), findsOneWidget);
     expect(
       tester.getSize(find.byKey(const ValueKey('home:dots-0-visual'))).width,
       18,
@@ -183,9 +188,9 @@ void main() {
     // v1.37: Kelola tidak lagi jadi halaman carousel.
     expect(find.byKey(const ValueKey('home:dots-manage')), findsNothing);
     expect(find.byKey(const ValueKey('home:manage')), findsOneWidget);
-    // Halaman 0 = Utama. Geser kiri → halaman 1 = Keluarga.
-    // (PageView drop halaman offstage dari cache — setelah geser,
-    // Utama hilang total dan Keluarga tepat 1, bukan findsWidgets.)
+    // Halaman 0 = Semua. Geser kiri → halaman 1 = Utama.
+    // (PageView drop halaman offstage dari cache — setelah geser, halaman
+    // sebelumnya tak lagi dibangun penuh.)
     // v1.32: fling -200/1000 = 1 halaman (drag presisi snap-balik sejak
     // kartu 188px; terbukti probe).
     await tester.fling(
@@ -196,10 +201,30 @@ void main() {
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
-    // Kartu kedua tampil penuh (nama Keluarga terlihat di viewport).
+    final utama = find.text('Utama');
+    expect(utama, findsOneWidget);
+    expect(tester.getCenter(utama).dx, greaterThan(0));
+    // Geser sekali lagi → halaman 2 = Keluarga.
+    await tester.fling(
+      find.byKey(const ValueKey('home:carousel')),
+      const Offset(-200, 0),
+      1000,
+    );
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
     final fam = find.text('Keluarga');
     expect(fam, findsOneWidget);
     expect(tester.getCenter(fam).dx, greaterThan(0));
+    // Filter ikut halaman: dompet terakhir yang tampil.
+    final ctx = tester.element(find.byKey(const ValueKey('home:carousel')));
+    final keluargaId = (await tester.runAsync(
+      () => db.select(db.accounts).get(),
+    ))!.firstWhere((a) => a.name == 'Keluarga').id;
+    expect(
+      ProviderScope.containerOf(ctx).read(selectedAccountProvider),
+      keluargaId,
+    );
 
     await _flushDriftCloseTimer(tester);
   });
@@ -230,13 +255,75 @@ void main() {
     final pasif = tester
         .getSemantics(find.byKey(const ValueKey('home:dots-1')))
         .getSemanticsData();
-    expect(aktif.label, contains('Utama'));
+    expect(aktif.label, contains('Semua dompet'));
     // Flutter 3.32+ : hasFlag deprecated → flagsCollection (Tristate).
     expect(aktif.flagsCollection.isSelected, Tristate.isTrue);
-    expect(pasif.label, contains('Keluarga'));
+    // v1.38.0: dot 1 = dompet pertama (Utama).
+    expect(pasif.label, contains('Utama'));
     expect(pasif.flagsCollection.isSelected, Tristate.isFalse);
 
     handle.dispose();
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // v1.38.0: halaman "Semua dompet" = total gabungan, dan filternya
+  // benar-benar null (= Semua) — bukan lagi dipaksa ke dompet pertama.
+  testWidgets('Semua dompet: saldo gabungan + filter null (v1.38.0)', (
+    tester,
+  ) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(() async {
+      await _loadFonts();
+      final utama = (await db.select(db.accounts).get()).firstWhere(
+        (a) => a.name == 'Utama',
+      );
+      final keluargaId = await db
+          .into(db.accounts)
+          .insert(AccountsCompanion.insert(name: 'Keluarga'));
+      await reorderAccounts(db, [utama.id, keluargaId]);
+      Future<void> tx(int amount, bool isExpense, int accountId, String note) =>
+          db
+              .into(db.transactions)
+              .insert(
+                TransactionsCompanion.insert(
+                  amount: amount,
+                  isExpense: Value(isExpense),
+                  categoryId: const Value(1),
+                  date: DateTime.now(),
+                  note: Value(note),
+                  accountId: Value(accountId),
+                ),
+              );
+      await tx(100000, false, utama.id, 'Gaji');
+      await tx(40000, true, keluargaId, 'Belanja');
+    });
+    await _pumpCarousel(tester, db);
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byKey(const ValueKey('home:carousel'))),
+    );
+    // Halaman 0 default = Semua; filter kosong (bukan dompet pertama).
+    expect(find.text('Semua dompet'), findsOneWidget);
+    expect(find.text('SALDO GABUNGAN · 2 DOMPET'), findsOneWidget);
+    expect(container.read(selectedAccountProvider), isNull);
+    // 100.000 masuk − 40.000 keluar = Rp60.000 (dua dompet sekaligus).
+    expect(find.text('Rp60.000'), findsOneWidget);
+
+    // Geser ke Utama → filter jadi dompet itu, angka ikut menyempit.
+    await tester.fling(
+      find.byKey(const ValueKey('home:carousel')),
+      const Offset(-200, 0),
+      1000,
+    );
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    final utamaId = (await tester.runAsync(
+      () => db.select(db.accounts).get(),
+    ))!.firstWhere((a) => a.name == 'Utama').id;
+    expect(container.read(selectedAccountProvider), utamaId);
+    expect(find.text('Rp100.000'), findsOneWidget);
+
     await _flushDriftCloseTimer(tester);
   });
 
@@ -259,10 +346,17 @@ void main() {
     });
     await _pumpCarousel(tester, db);
 
-    // Kartu pertama (Utama) tampil penuh — tap kartunya.
+    // v1.38.0: halaman 0 = Semua; Utama kini halaman 1 dan belum dibangun.
+    // Pilih dompet lewat provider (sync-back memindahkan PageView), lalu tap.
     final utamaId = (await tester.runAsync(
       () => db.select(db.accounts).get(),
     ))!.firstWhere((a) => a.name == 'Utama').id;
+    ProviderScope.containerOf(
+      tester.element(find.byKey(const ValueKey('home:carousel'))),
+    ).read(selectedAccountProvider.notifier).state = utamaId;
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
     await tester.tap(find.byKey(ValueKey('home:card-$utamaId')));
     await tester.pump();
     for (var i = 0; i < 20; i++) {
@@ -430,22 +524,23 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
 
-    // Kartu 0 = Utama → kategorinya tampil, Keluarga belum.
-    // (Top kategori ikut selectedAccountProvider; riwayat tidak —
-    // riwayat pakai watchHistory tanpa filter akun, kontrak lama.)
+    // v1.38.0: kartu 0 = Semua dompet (gabungan); kategori di bawahnya
+    // memakai filter yang sama dengan halaman carousel.
     expect(find.byKey(const ValueKey('home:carousel')), findsOneWidget);
+    expect(find.text('Semua dompet'), findsOneWidget);
 
-    // Geser ke Keluarga → selected berubah → kategori ikut.
+    // Geser 2x: Semua → Utama → Keluarga (selected ikut berubah).
     // v1.32: fling -350/1000 (drag presisi snap-balik sejak kartu 188px;
-    // -350 di HomeScreen penuh agar lewati threshold; fling -200/1000 =
-    // 1 halaman, terbukti probe — tak lompat ke Kelola).
-    await tester.fling(
-      find.byKey(const ValueKey('home:carousel')),
-      const Offset(-350, 0),
-      1000,
-    );
-    for (var i = 0; i < 20; i++) {
-      await tester.pump(const Duration(milliseconds: 50));
+    // -350 di HomeScreen penuh agar lewati threshold).
+    for (var page = 0; page < 2; page++) {
+      await tester.fling(
+        find.byKey(const ValueKey('home:carousel')),
+        const Offset(-350, 0),
+        1000,
+      );
+      for (var i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
     }
     expect(find.text('Keluarga'), findsOneWidget);
 
@@ -482,14 +577,17 @@ void main() {
       }
 
       // v1.37: pintu catat tunggal = dock tengah; form mewarisi filter
-      // dompet yang sedang tampil (Keluarga).
-      await tester.fling(
-        find.byKey(const ValueKey('home:carousel')),
-        const Offset(-350, 0),
-        1000,
-      );
-      for (var i = 0; i < 20; i++) {
-        await tester.pump(const Duration(milliseconds: 50));
+      // dompet yang sedang tampil. v1.38.0: 2 geser (Semua → Utama →
+      // Keluarga) karena halaman 0 kini gabungan.
+      for (var page = 0; page < 2; page++) {
+        await tester.fling(
+          find.byKey(const ValueKey('home:carousel')),
+          const Offset(-350, 0),
+          1000,
+        );
+        for (var i = 0; i < 20; i++) {
+          await tester.pump(const Duration(milliseconds: 50));
+        }
       }
       expect(find.text('Keluarga'), findsOneWidget);
       // Dock Catat → form (filter = Keluarga).

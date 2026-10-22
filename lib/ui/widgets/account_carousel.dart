@@ -55,7 +55,8 @@ class _AccountCarouselState extends ConsumerState<AccountCarousel> {
     super.dispose();
   }
 
-  void _pick(int id) {
+  /// [id] null = "Semua dompet" (gabungan) — default provider.
+  void _pick(int? id) {
     HapticFeedback.selectionClick();
     ref.read(selectedAccountProvider.notifier).state = id;
   }
@@ -88,8 +89,22 @@ class _AccountCarouselState extends ConsumerState<AccountCarousel> {
             ),
           );
         }
-        var index = list.indexWhere((a) => a.id == selected);
-        if (index < 0) {
+        // v1.38.0: "Semua dompet" jadi halaman 0 saat dompet >1. Gabungan
+        // itulah default provider (`selectedAccountProvider` null = Semua),
+        // tapi dulu UI memaksa pilih dompet pertama — jadi total semua uang
+        // tak pernah punya tempat, padahal `balanceProvider` sudah
+        // menghitungnya.
+        final multi = list.length > 1;
+        final pageCount = multi ? list.length + 1 : list.length;
+        var index = 0;
+        if (multi) {
+          // index 0 = Semua; dompet ke-i jadi halaman i+1. id tak dikenal
+          // (-1 + 1 = 0) jatuh ke Semua, bukan ke dompet acak.
+          index = selected == null ? 0 : list.indexWhere((a) => a.id == selected) + 1;
+          if (index < 0) index = 0;
+        } else if (selected != list.first.id) {
+          // Satu dompet: pertahankan perilaku lama (pilih dompet itu) supaya
+          // Kelola tetap menyorot satu baris. Angkanya identik dengan Semua.
           index = 0;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
@@ -123,11 +138,17 @@ class _AccountCarouselState extends ConsumerState<AccountCarousel> {
                 onPageChanged: (i) {
                   setState(() => _page = i);
                   _syncing = true;
-                  _pick(list[i].id);
+                  _pick(
+                    multi ? (i == 0 ? null : list[i - 1].id) : list.first.id,
+                  );
                   _syncing = false;
                 },
-                itemCount: list.length,
-                itemBuilder: (_, i) => _WalletCard(account: list[i]),
+                itemCount: pageCount,
+                itemBuilder: (_, i) => multi
+                    ? (i == 0
+                          ? _AllWalletsCard(count: list.length)
+                          : _WalletCard(account: list[i - 1]))
+                    : _WalletCard(account: list.first),
               ),
             ),
             const SizedBox(height: AppSpacing.s8),
@@ -143,19 +164,20 @@ class _AccountCarouselState extends ConsumerState<AccountCarousel> {
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
               child: Row(
                 children: [
-                  if (list.length > 1)
+                  if (multi)
                     Row(
                       key: const ValueKey('home:dots'),
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        for (var i = 0; i < list.length; i++)
+                        for (var i = 0; i < pageCount; i++)
                           Semantics(
                             button: true,
-                            selected: i == _page.clamp(0, list.length - 1),
+                            selected: i == _page.clamp(0, pageCount - 1),
                             inMutuallyExclusiveGroup: true,
-                            label:
-                                '${list[i].name}, dompet ${i + 1} '
-                                'dari ${list.length}',
+                            label: i == 0
+                                ? 'Semua dompet, ${list.length} dompet'
+                                : '${list[i - 1].name}, dompet ${i + 1} '
+                                      'dari $pageCount',
                             child: GestureDetector(
                               behavior: HitTestBehavior.opaque,
                               // Tanpa haptic di sini: jumpToPage memicu
@@ -169,10 +191,7 @@ class _AccountCarouselState extends ConsumerState<AccountCarousel> {
                                 child: Center(
                                   child: _Dot(
                                     key: ValueKey('home:dots-$i-visual'),
-                                    active: i == _page.clamp(
-                                      0,
-                                      list.length - 1,
-                                    ),
+                                    active: i == _page.clamp(0, pageCount - 1),
                                   ),
                                 ),
                               ),
@@ -205,6 +224,120 @@ class _AccountCarouselState extends ConsumerState<AccountCarousel> {
           ],
         );
       },
+    );
+  }
+}
+
+/// Kartu gabungan "Semua dompet" (v1.38.0) — halaman 0 saat dompet >1.
+///
+/// Saldo = [balanceProvider] (semua dompet non-arsip, termasuk yang
+/// diarsipkan riwayatnya). Kartu ini **tidak** punya tap: aksinya mengelola
+/// dompet sudah ada di tombol `home:manage` di kanan, jadi tap di sini tidak
+/// perlu menjanjikan halaman ketiga yang berbeda. Mata toggle tetap ada
+/// karena ia satu-satunya cara menampilkan angka saat privacy aktif pada
+/// halaman ini.
+class _AllWalletsCard extends ConsumerWidget {
+  const _AllWalletsCard({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hide = ref.watch(hideBalanceProvider).value ?? false;
+    final display = ref.watch(displayPrefsProvider);
+    final total = ref.watch(balanceProvider);
+    const white = Colors.white;
+
+    return Container(
+      key: const ValueKey('home:card-all'),
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.page,
+        AppSpacing.s24,
+        AppSpacing.page,
+        0,
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: MeshGradient(
+              padding: AppSpacing.cardPaddingLarge,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Sisakan 48px kanan untuk mata overlay.
+                  Padding(
+                    padding: const EdgeInsets.only(right: 48),
+                    child: Text(
+                      'Semua dompet',
+                      style: AppType.labelMuted(context).copyWith(
+                        letterSpacing: 0.8,
+                        color: white.withValues(alpha: 0.85),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(
+                    'SALDO GABUNGAN · $count DOMPET',
+                    style: AppType.labelMuted(context).copyWith(
+                      letterSpacing: 0.8,
+                      color: white.withValues(alpha: 0.6),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: AppSpacing.s12),
+                  total.when(
+                    loading: () => const AppSkeleton(lines: 1),
+                    error: (_, _) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Saldo gagal dimuat.',
+                          style: AppType.balance(
+                            context,
+                          ).copyWith(fontSize: 20, color: white),
+                        ),
+                        const SizedBox(height: AppSpacing.s8),
+                        TextButton(
+                          onPressed: () => ref.invalidate(balanceProvider),
+                          child: const Text('Coba lagi'),
+                        ),
+                      ],
+                    ),
+                    data: (b) => FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        hide ? 'Rp••••••' : display.money(b),
+                        style: AppType.balanceHero(
+                          context,
+                        ).copyWith(color: white),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: AppSpacing.s24,
+            right: AppSpacing.s24,
+            child: AppIconButton(
+              icon: hide
+                  ? Icons.visibility_outlined
+                  : Icons.visibility_off_outlined,
+              tooltip: hide ? 'Tampilkan saldo' : 'Sembunyikan saldo',
+              color: white.withValues(alpha: 0.92),
+              bordered: false,
+              onPressed: () =>
+                  ref.read(settingsServiceProvider).setHideBalance(!hide),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
