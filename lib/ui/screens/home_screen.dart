@@ -520,9 +520,10 @@ class _RecentList extends ConsumerWidget {
             icon: '💸',
             title: 'Belum ada transaksi',
             subtitle:
-                // v1.24.3: jujur — CTA Beranda buka form pengeluaran
-                // (kritik brutal L4: janji "pemasukan" meleset).
-                'Ketuk + Catat keluar untuk mencatat pengeluaran.',
+                // v1.37: grid "Catat keluar" sudah tidak ada; satu-satunya
+                // pintu = + di dock (form pilih tipe sendiri). Jangan
+                // menyebut tombol yang tak lagi tampil.
+                'Ketuk + di bilah bawah untuk mencatat transaksi pertamamu.',
           );
         }
         final groups = <DateTime, List<TxWithCategory>>{};

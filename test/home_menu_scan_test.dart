@@ -75,6 +75,16 @@ Future<void> _pumpHome(WidgetTester tester, AppDatabase db) async {
   await _pump(tester);
 }
 
+/// v1.37: menu turun ke bawah data (transaksi terakhir + kategori di
+/// atasnya), jadi di viewport 390×844 ia belum dibangun — CustomScrollView
+/// lazy. Geser dulu sebelum menyentuh `home:features`.
+Future<void> _scrollToMenu(WidgetTester tester) async {
+  for (var i = 0; i < 6; i++) {
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -400));
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+}
+
 void main() {
   // Regresi audit visual v1.24.1 (pola test kontras CTA): ikon
   // scheme.onPrimary di atas lingkaran aksi (hijau masuk / merah keluar /
@@ -135,6 +145,7 @@ void main() {
     final db = await _newDb(tester);
     try {
       await _pumpHome(tester, db);
+      await _scrollToMenu(tester);
       expect(find.byKey(const ValueKey('home:features')), findsOneWidget);
       expect(find.text('Menu'), findsOneWidget);
       for (final label in ['Pindah dana', 'Budget', 'Laporan', 'Utang']) {
@@ -162,6 +173,7 @@ void main() {
             );
       });
       await _pumpHome(tester, db);
+      await _scrollToMenu(tester);
       await tester.tap(find.text('Pindah dana'));
       await _pump(tester);
       expect(find.byType(TransferSheet), findsOneWidget);
@@ -175,6 +187,7 @@ void main() {
     final db = await _newDb(tester);
     try {
       await _pumpHome(tester, db);
+      await _scrollToMenu(tester);
       final targets = <String, Type>{
         'Budget': BudgetScreen,
         'Laporan': ReportsScreen,

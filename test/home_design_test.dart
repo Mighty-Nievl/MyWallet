@@ -21,6 +21,7 @@ import 'package:mywallet/data/database.dart';
 import 'package:mywallet/data/providers.dart';
 import 'package:mywallet/ui/app_theme.dart';
 import 'package:mywallet/ui/components/app_feedback.dart';
+import 'package:mywallet/ui/components/app_section.dart';
 import 'package:mywallet/ui/components/period_switcher.dart';
 import 'package:mywallet/ui/components/setting_row.dart';
 import 'package:mywallet/ui/design/app_colors.dart';
@@ -276,14 +277,17 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
 
+    // SliverToBoxAdapter bukan RenderBox → getTopLeft gagal. Ukur isi
+    // section (AppSection) di dalam sliver-nya, bukan kuncinya.
+    Finder sectionIn(String key) => find.descendant(
+      of: find.byKey(ValueKey(key)),
+      matching: find.byType(AppSection),
+    );
+
     final periodY = tester.getTopLeft(find.byType(PeriodSwitcher)).dy;
     final flowY = tester.getTopLeft(find.byType(FlowCards)).dy;
-    final recentY = tester.getTopLeft(
-      find.byKey(const ValueKey('home:recent')),
-    ).dy;
-    final topcatsY = tester.getTopLeft(
-      find.byKey(const ValueKey('home:topcats')),
-    ).dy;
+    final recentY = tester.getTopLeft(sectionIn('home:recent')).dy;
+    final topcatsY = tester.getTopLeft(sectionIn('home:topcats')).dy;
     final menuY = tester.getTopLeft(find.byType(HomeFeatureGrid)).dy;
 
     expect(periodY, lessThan(flowY));
