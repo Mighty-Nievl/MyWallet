@@ -113,27 +113,36 @@ void main() {
   });
 
   testWidgets('konstanta uji masih sama dengan token asli', (tester) async {
+    // Jangan assert di dalam builder: nilainya dibaca dari context yang
+    // bisa belum ikut tema baru saat frame yang sama. Ambil context, pump
+    // ulang dari nol, baru assert di luar.
+    late BuildContext lightCtx;
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light(),
         home: Builder(
           builder: (context) {
-            expect(AppColors.strongSecondaryOf(context), _strongLight);
+            lightCtx = context;
             return const SizedBox();
           },
         ),
       ),
     );
+    expect(AppColors.strongSecondaryOf(lightCtx), _strongLight);
+
+    late BuildContext darkCtx;
+    await tester.pumpWidget(const SizedBox());
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.dark(),
         home: Builder(
           builder: (context) {
-            expect(AppColors.strongSecondaryOf(context), _strongDark);
+            darkCtx = context;
             return const SizedBox();
           },
         ),
       ),
     );
+    expect(AppColors.strongSecondaryOf(darkCtx), _strongDark);
   });
 }
