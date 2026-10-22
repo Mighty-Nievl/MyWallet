@@ -84,6 +84,21 @@ Future<void> deleteTransaction(WidgetRef ref, int id) async {
   );
 }
 
+/// Kebalikan [deleteTransaction] — tombol "Urungkan" (v1.38.4).
+///
+/// Sengaja menerima [AppDatabase], bukan `WidgetRef`: dipanggil dari
+/// SnackBar setelah form di-pop, jadi widget pemanggilnya sudah dibuang dan
+/// `ref`-nya tidak boleh dipakai lagi. `updatedAt` ikut diperbarui supaya
+/// kebangkitan baris ini menang LWW saat sync.
+Future<void> restoreTransaction(AppDatabase db, int id) async {
+  await (db.update(db.transactions)..where((t) => t.id.equals(id))).write(
+    TransactionsCompanion(
+      deletedAt: const drift.Value(null),
+      updatedAt: drift.Value(syncNow()),
+    ),
+  );
+}
+
 // ---------- Kategori ----------
 
 Future<int> addCategory(

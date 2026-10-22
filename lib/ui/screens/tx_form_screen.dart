@@ -177,28 +177,31 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
     if (mounted) Navigator.of(context).pop();
   }
 
+  /// Hapus transaksi (v1.38.4): tanpa dialog konfirmasi, tapi bisa
+  /// diurungkan 6 detik — hapus transaksi itu soft-delete (`deletedAt`
+  /// tombstone), jadi "Urungkan" cuma membersihkan tombstone-nya dan tidak
+  /// ada data yang benar-benar hilang. Dialog "tidak bisa dikembalikan"
+  /// justru berbohong ke user: datanya masih ada.
   Future<void> _delete() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Hapus transaksi?'),
-        content: const Text('Transaksi yang dihapus tidak bisa dikembalikan.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(c, false),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(c, true),
-            child: const Text('Hapus'),
-          ),
-        ],
+    final id = widget.existing!.id;
+    // Tangkap dulu: setelah `pop`, `context`/`ref` widget ini sudah mati,
+    // tapi messenger & db milik Scaffold/container tetap hidup.
+    final messenger = ScaffoldMessenger.of(context);
+    final db = ref.read(dbProvider);
+    await deleteTransaction(ref, id);
+    if (!mounted) return;
+    HapticFeedback.mediumImpact();
+    Navigator.of(context).pop();
+    messenger.showSnackBar(
+      SnackBar(
+        content: const Text('Transaksi dihapus.'),
+        duration: const Duration(seconds: 6),
+        action: SnackBarAction(
+          label: 'Urungkan',
+          onPressed: () => restoreTransaction(db, id),
+        ),
       ),
     );
-    if (ok == true) {
-      await deleteTransaction(ref, widget.existing!.id);
-      if (mounted) Navigator.of(context).pop();
-    }
   }
 
   /// Scan struk: pilih kamera/galeri → OCR on-device (ML Kit) →

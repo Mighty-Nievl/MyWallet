@@ -20,6 +20,30 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.38.4',
+    date: '22 Okt 2026',
+    user:
+        'Hapus transaksi kini tidak lagi minta konfirmasi dulu: sekali ketuk '
+        'langsung hilang, lalu muncul tombol "Urungkan" selama 6 detik kalau '
+        'salah pencet. Menu "Budget" berganti nama jadi "Anggaran" supaya '
+        'sebahasa dengan bagian aplikasi lainnya.',
+    tech:
+        'v1.38.4: hapus transaksi itu soft-delete (deletedAt tombstone), jadi '
+        'dialog "tidak bisa dikembalikan" di tx_form_screen berbohong ke '
+        'user. _delete() sekarang: deleteTransaction -> pop -> SnackBar 6 '
+        'detik + SnackBarAction "Urungkan" -> restoreTransaction(db, id) yang '
+        'mengosongkan deletedAt dan memperbarui updatedAt (biar kebangkitan '
+        'menang LWW saat sync). restoreTransaction menerima AppDatabase, '
+        'bukan WidgetRef, karena ref widget pemanggil sudah dibuang setelah '
+        'pop. Label "Budget" -> "Anggaran" di 8 string (budget_screen: judul, '
+        'caption, error, tersimpan, terhapus; account_detail; '
+        'home_feature_grid; home_menu_scan_test). test/contrast_test.dart '
+        'baru: 20 pasangan token dihitung rasionya untuk light+dark (ambang '
+        '4,5:1 teks, 3:1 batas komponen) + penjaga konstanta uji = token '
+        'asli; test/tx_delete_undo_test.dart baru. 2 test baru.',
+    breaking: null,
+  ),
+  (
     version: 'v1.38.3',
     date: '22 Okt 2026',
     user:

@@ -47,7 +47,7 @@ class HomeFeatureGrid extends StatelessWidget {
             Expanded(
               child: _LinkTile(
                 icon: Icons.savings_outlined,
-                label: 'Budget',
+                label: 'Anggaran',
                 onTap: () => _go(context, const BudgetScreen()),
               ),
             ),

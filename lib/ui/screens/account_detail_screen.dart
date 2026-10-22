@@ -155,7 +155,7 @@ class _Body extends ConsumerWidget {
                   ),
                   SettingRow(
                     icon: Icons.savings_outlined,
-                    title: 'Budget',
+                    title: 'Anggaran',
                     subtitle: 'Batas per kategori dompet ini',
                     onTap: () => _go(context, const BudgetScreen()),
                   ),

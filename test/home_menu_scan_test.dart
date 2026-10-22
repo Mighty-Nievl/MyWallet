@@ -148,7 +148,7 @@ void main() {
       await _scrollToMenu(tester);
       expect(find.byKey(const ValueKey('home:features')), findsOneWidget);
       expect(find.text('Menu'), findsOneWidget);
-      for (final label in ['Pindah dana', 'Budget', 'Laporan', 'Utang']) {
+      for (final label in ['Pindah dana', 'Anggaran', 'Laporan', 'Utang']) {
         expect(find.text(label), findsOneWidget, reason: label);
       }
       // Duplikat dock dihapus dari Beranda.
@@ -189,7 +189,7 @@ void main() {
       await _pumpHome(tester, db);
       await _scrollToMenu(tester);
       final targets = <String, Type>{
-        'Budget': BudgetScreen,
+        'Anggaran': BudgetScreen,
         'Laporan': ReportsScreen,
         'Utang': DebtScreen,
       };

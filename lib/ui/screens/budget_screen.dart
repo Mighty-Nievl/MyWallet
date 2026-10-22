@@ -63,7 +63,7 @@ class BudgetScreen extends ConsumerWidget {
                 0,
               ),
               child: AppHeader(
-                title: 'Budget',
+                title: 'Anggaran',
                 actionIcon: Icons.add,
                 actionTooltip: 'Tambah budget',
                 onAction: () =>
@@ -83,7 +83,7 @@ class BudgetScreen extends ConsumerWidget {
             // seperti bug saat periode lain aktif di layar lain.
             const SizedBox(height: AppSpacing.s4),
             Text(
-              'Budget selalu dihitung per bulan. Batas berlaku untuk semua '
+              'Anggaran selalu dihitung per bulan. Batas berlaku untuk semua '
               'dompet; angka terpakai mengikuti dompet yang dipilih.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.labelSmall
@@ -103,7 +103,7 @@ class BudgetScreen extends ConsumerWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.s24),
                     child: AppErrorState(
-                      title: 'Budget gagal dimuat.',
+                      title: 'Anggaran gagal dimuat.',
                       onRetry: () => ref.invalidate(budgetsProvider),
                     ),
                   ),
@@ -521,7 +521,7 @@ class BudgetScreen extends ConsumerWidget {
       );
       if (res == 'saved' && context.mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Budget tersimpan.')));
+            .showSnackBar(const SnackBar(content: Text('Anggaran tersimpan.')));
       } else if (res == 'delete' && existing != null && context.mounted) {
         await _confirmDelete(context, ref, month, existing);
       }
@@ -565,7 +565,7 @@ class BudgetScreen extends ConsumerWidget {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Budget ${item.name} dihapus.'),
+        content: Text('Anggaran ${item.name} dihapus.'),
         duration: const Duration(seconds: 5),
         action: SnackBarAction(
           label: 'Urungkan',
