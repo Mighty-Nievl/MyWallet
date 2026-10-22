@@ -45,12 +45,12 @@ void main() {
     final db = AppDatabase(
       NativeDatabase.memory(
         setup: (raw) async {
-          await raw.execute(_accountsV4);
-          await raw.execute(
+          raw.execute(_accountsV4);
+          raw.execute(
             "INSERT INTO accounts (name, opening_balance) "
             "VALUES ('Dompet Lama', 250000)",
           );
-          await raw.execute('PRAGMA user_version = 4');
+          raw.execute('PRAGMA user_version = 4');
         },
       ),
     );
