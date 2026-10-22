@@ -16,10 +16,14 @@ import '../screens/accounts_screen.dart';
 import '../screens/account_detail_screen.dart';
 
 /// v1.38.1: latar kapsul indikator halaman + tombol Kelola, keduanya
-/// mengambang di atas kartu mesh (hijau gelap, teks putih). Putih transparan
+/// mengambang di atas kartu mesh (hijau gelap, teks putih). Hitam transparan
 /// — bukan token tema — karena latarnya selalu mesh kartu, bukan `surface`.
-const Color kDotScrim = Color(0x2EFFFFFF); // putih 18%
-const Color kDotIdle = Color(0xCCFFFFFF); // putih 80%
+///
+/// Hitam, bukan putih: kapsul putih 18% menaikkan latar sehingga titik
+/// non-aktif hanya 2,88:1 terhadap kapsul (di bawah 3:1 WCAG 1.4.11);
+/// hitam 22% memberi 4,05–4,83:1 untuk ragam hijau mesh yang diukur.
+const Color kDotScrim = Color(0x38000000); // hitam 22%
+const Color kDotIdle = Color(0xC7FFFFFF); // putih 78%
 
 /// Carousel kartu dompet Beranda (v1.29): gantikan hero gabungan +
 /// strip chip. Satu halaman = satu kartu = satu dompet; kartu tampil
