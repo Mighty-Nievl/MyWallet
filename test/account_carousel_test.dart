@@ -15,7 +15,6 @@ import 'package:mywallet/data/database.dart';
 import 'package:mywallet/data/providers.dart';
 import 'package:mywallet/data/sync_engine.dart';
 import 'package:mywallet/ui/app_theme.dart';
-import 'package:mywallet/ui/design/app_radius.dart';
 import 'package:mywallet/ui/design/app_spacing.dart';
 import 'package:mywallet/ui/screens/accounts_screen.dart';
 import 'package:mywallet/ui/screens/account_detail_screen.dart';
@@ -100,11 +99,11 @@ void main() {
 
     await _flushDriftCloseTimer(tester);
   });
-  // v1.38.1: indikator + Kelola mengambang di bawah tengah kartu
-  // (permintaan user: `[ – • • ] [ gear ]`, rata tengah). Yang dikunci di
-  // sini cuma geometri yang bisa diukur tanpa render: posisi tengah, tinggi
-  // kapsul, radius pil, target sentuh gear, dan bahwa Kelola kini ikon.
-  testWidgets('indikator mengambang: kapsul pil tengah + gear 48px', (
+  // v1.38.2: indikator mengambang di bawah tengah kartu tanpa kapsul —
+  // titik putih langsung di mesh (kapsul scrim v1.38.1 cuma 1,31:1 dan
+  // memakan 21% tinggi kartu). Yang dikunci: posisi tengah, ukuran slot,
+  // warna titik, dan gear polos 48px.
+  testWidgets('indikator mengambang: titik tengah + gear polos 48px', (
     tester,
   ) async {
     final db = await _newDb(tester);
@@ -120,24 +119,39 @@ void main() {
     });
     await _pumpCarousel(tester, db);
 
-    final capsule = find.byKey(const ValueKey('home:dots'));
+    final dots = find.byKey(const ValueKey('home:dots'));
     final page = find.byKey(const ValueKey('home:carousel'));
-    expect(capsule, findsOneWidget);
-    final capRect = tester.getRect(capsule);
+    expect(dots, findsOneWidget);
+    final dotsRect = tester.getRect(dots);
     final pageRect = tester.getRect(page);
 
     // Rata tengah terhadap kartu.
-    expect((capRect.center.dx - pageRect.center.dx).abs(), lessThanOrEqualTo(1));
+    expect((dotsRect.center.dx - pageRect.center.dx).abs(), lessThanOrEqualTo(1));
     // Duduk di paruh bawah kartu, tidak menambah tinggi di bawahnya.
-    expect(capRect.top, greaterThan(pageRect.top + pageRect.height / 2));
-    expect(capRect.bottom, lessThanOrEqualTo(pageRect.bottom));
-    // Kapsul pil: tinggi 32, radius = setengah tinggi.
-    expect(capRect.height, 32);
-    final deco = tester.widget<Container>(capsule).decoration as BoxDecoration;
-    expect(deco.borderRadius, AppRadius.pillAll);
-    expect(deco.color, kDotScrim);
+    expect(dotsRect.top, greaterThan(pageRect.top + pageRect.height / 2));
+    expect(dotsRect.bottom, lessThanOrEqualTo(pageRect.bottom));
+    // Tanpa wadah: baris dot = Row, bukan Container berlatar.
+    expect(tester.widget(dots), isA<Row>());
 
-    // Gear menggantikan teks "Kelola dompet", target sentuh tetap penuh.
+    // Slot 24×24 (minimum WCAG 2.2 AA), pitch rapat → terbaca satu grup.
+    for (final key in ['home:dots-0', 'home:dots-1', 'home:dots-2']) {
+      final size = tester.getSize(find.byKey(ValueKey(key)));
+      expect(size.width, 24, reason: key);
+      expect(size.height, 24, reason: key);
+    }
+    // Warna titik: putih langsung di atas kartu (bukan token tema).
+    BoxDecoration decoOf(String key) {
+      final inner = find.descendant(
+        of: find.byKey(ValueKey(key)),
+        matching: find.byType(AnimatedContainer),
+      );
+      return tester.widget<AnimatedContainer>(inner).decoration!
+          as BoxDecoration;
+    }
+    expect(decoOf('home:dots-0-visual').color, Colors.white);
+    expect(decoOf('home:dots-1-visual').color, kDotIdle);
+
+    // Gear: ikon polos (tanpa chip), target sentuh penuh, sebaris dengan dot.
     final manage = find.byKey(const ValueKey('home:manage'));
     expect(
       find.descendant(of: manage, matching: find.byIcon(Icons.settings_outlined)),
@@ -145,16 +159,15 @@ void main() {
     );
     expect(tester.getSize(manage).width, AppSpacing.touchMin);
     expect(tester.getSize(manage).height, AppSpacing.touchMin);
-    expect(find.text('Kelola dompet'), findsNothing);
-    // Gear mengambang di kanan, di baris yang sama dengan kapsul.
     expect(
-      (tester.getRect(manage).center.dy - capRect.center.dy).abs(),
+      (tester.getRect(manage).center.dy - dotsRect.center.dy).abs(),
       lessThanOrEqualTo(1),
     );
+    expect(find.byTooltip('Kelola dompet'), findsOneWidget);
+    expect(find.text('Kelola dompet'), findsNothing);
 
     await _flushDriftCloseTimer(tester);
   });
-
 
   // v1.37: Kelola keluar dari PageView. Tap tombol → AccountsScreen,
   // filter dompet aktif TIDAK berubah (bukan halaman carousel).

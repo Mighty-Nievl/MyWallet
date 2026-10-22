@@ -20,6 +20,27 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.38.2',
+    date: '22 Okt 2026',
+    user:
+        'Penunjuk halaman kartu dompet kini bersih mengambang di bawah kartu '
+        'saldo: tiga titik putih yang jelas, halaman aktif jadi garis pendek. '
+        'Kotak gelap di belakangnya dihapus karena di layar HP hanya terlihat '
+        'seperti noda — sekarang tidak ada lagi yang menempel angka saldo.',
+    tech:
+        'v1.38.2: kapsul scrim (hitam 22%, v1.38.1) dibuang. Diukur dari '
+        'screenshot rilis v1.38.1: kartu #126547 vs kapsul #16513D = 1,31:1 '
+        '(di bawah 3:1 WCAG 1.4.11 untuk batas komponen) dan memakan 103/494 '
+        'px = 21% tinggi kartu untuk tiga titik 16 px. Titik kini langsung di '
+        'mesh: aktif putih 7,05:1, non-aktif kDotIdle putih 85% = 4,99:1 '
+        '(terendah 3,03:1 di mesh paling terang). Slot 28x32 -> 24x24 (pitch '
+        '24, minimum WCAG 2.2 AA) supaya tiga titik terbaca satu grup; tinggi '
+        'baris tetap touchMin 48. Kelola jadi AppIconButton bordered:false '
+        '(ikon putih polos seperti mata saldo), chip scrim dihapus. Sesuai '
+        'test yang sama diperbarui. 309 test.',
+    breaking: null,
+  ),
+  (
     version: 'v1.38.1',
     date: '22 Okt 2026',
     user:
