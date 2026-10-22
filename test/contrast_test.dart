@@ -78,20 +78,28 @@ void main() {
         );
       }
 
-      // ---- Teks ----
-      text('teks utama (onSurface)', scheme.onSurface, bg);
-      text('teks sekunder (onSurfaceVariant)', scheme.onSurfaceVariant, bg);
-      text('teks sekunder kuat', strong, bg);
-      text('label chip idle', strong, subtle);
-      text('label periode (onSurface)', scheme.onSurface, scheme.surface);
-      text('chip terpilih (onPrimaryContainer)', scheme.onPrimaryContainer,
-          scheme.primaryContainer);
-      text('aksi utama (onPrimary)', scheme.onPrimary, scheme.primary);
-      text('error (onError)', scheme.onError, scheme.error);
+      // Catatan: `expect` tidak boleh dipanggil saat deklarasi `group`
+      // (jalan di luar body test → OutsideTestException), jadi semua
+      // assertion dibungkus satu `test`.
+      test('pasangan token memenuhi ambang WCAG', () {
+        // ---- Teks ----
+        text('teks utama (onSurface)', scheme.onSurface, bg);
+        text('teks sekunder (onSurfaceVariant)', scheme.onSurfaceVariant, bg);
+        text('teks sekunder kuat', strong, bg);
+        text('label chip idle', strong, subtle);
+        text('label periode (onSurface)', scheme.onSurface, scheme.surface);
+        text(
+          'chip terpilih (onPrimaryContainer)',
+          scheme.onPrimaryContainer,
+          scheme.primaryContainer,
+        );
+        text('aksi utama (onPrimary)', scheme.onPrimary, scheme.primary);
+        text('error (onError)', scheme.onError, scheme.error);
 
-      // ---- Batas komponen ----
-      ui('border chip/kartu (outline)', scheme.outline, bg);
-      ui('aksen primary', scheme.primary, bg);
+        // ---- Batas komponen ----
+        ui('border chip/kartu (outline)', scheme.outline, bg);
+        ui('aksen primary', scheme.primary, bg);
+      });
     });
   }
 
