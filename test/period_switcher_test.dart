@@ -2,14 +2,14 @@
 //
 // Sengaja TERISOLASI: hanya PeriodSwitcher + PeriodNav di dalam MaterialApp,
 // tanpa DB/Beranda. Kalau gagal, yang salah widget ini — bukan Home yang
-// memang sudah overflow di textScaler 2.0 (lihat catatan di SKILL).
+// memang sudah overflow di textScaler 2.0.
 //
-// Angka yang dijaga (diukur dari screenshot 1224px / 390dp = 3,14x):
-// - empat label = 218,5dp; padding 12dp + jarak 8dp -> 338,5dp, muat di
-//   358dp (390 - 2x16 halaman) tanpa scroll;
-// - centang M3 dimatikan (dulu memakan ~19dp dan tak terlihat, 1,4:1);
-// - label idle #424242 (2,23:1 -> ~9:1);
-// - kalender di luar baris filter supaya tak bisa tergeser keluar layar.
+// Yang TIDAK diuji di sini: "empat label muat di 358dp". `flutter_test`
+// merender teks dengan font uji berlebar tetap (tiap glyph 1em), jadi
+// "Mingguan" terukur ~112dp di test vs ~68dp di HP — assertion lebar di
+// sini akan merah untuk alasan yang salah. Klaim muat itu aritmetika dari
+// screenshot (218,5dp label + 96dp padding + 24dp jarak = 338,5dp) dan
+// diverifikasi di HP user, bukan di test.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -71,38 +71,32 @@ Future<void> _pump(
 Finder _chip(String kind) => find.byKey(ValueKey('period:kind:$kind'));
 
 void main() {
-  testWidgets('empat periode muat penuh di 390dp (tidak ada yang kepotong)', (
+  testWidgets('baris filter = 4 periode saja, sisanya di luar scroll', (
     tester,
   ) async {
     await _pump(tester);
 
-    // ListView masih ada untuk textScaler besar, tapi di skala normal ia
-    // TIDAK boleh bisa di-scroll: kalau bisa, artinya ada chip di luar
-    // layar — persis bug v1.38.2 yang memotong "Tahunan" di tengah huruf.
-    final scrollable = find.descendant(
-      of: find.byType(PeriodSwitcher),
-      matching: find.byType(Scrollable),
-    );
-    expect(scrollable, findsOneWidget);
+    // Empat chip, bukan lima: "Kalender" bukan pilihan periode.
     expect(
-      tester.state<ScrollableState>(scrollable).position.maxScrollExtent,
-      0.0,
-      reason: 'empat label + padding wajib muat di 358dp',
+      find.descendant(
+        of: find.byType(PeriodSwitcher),
+        matching: find.byType(ChoiceChip),
+      ),
+      findsNWidgets(PeriodKind.values.length),
     );
-
-    // Dan semuanya benar-benar di dalam layar, tanpa terpotong.
+    // Tanpa ellipsis di level label: kalau teks dipotong, itu clip
+    // viewport (bug v1.38.2), bukan pemotongan yang disengaja.
+    for (final kind in PeriodKind.values) {
+      final label = tester.widget<Text>(
+        find.descendant(of: _chip(kind.name), matching: find.byType(Text)),
+      );
+      expect(label.overflow, isNot(TextOverflow.ellipsis));
+      expect(label.maxLines, isNull);
+    }
+    // Semua chip ada di dalam layar (kiri), tidak menempel negatif.
     for (final kind in PeriodKind.values) {
       final rect = tester.getRect(_chip(kind.name));
-      expect(
-        rect.left,
-        greaterThanOrEqualTo(AppSpacing.page - 0.5),
-        reason: '${kind.name} menempel keluar kiri',
-      );
-      expect(
-        rect.right,
-        lessThanOrEqualTo(_width - AppSpacing.page + 0.5),
-        reason: '${kind.name} terpotong di kanan',
-      );
+      expect(rect.left, greaterThanOrEqualTo(AppSpacing.page - 0.5));
     }
   });
 
@@ -117,11 +111,17 @@ void main() {
       isFalse,
       reason: 'centang 1,4:1 itu hantu yang memakan ~19dp lebar',
     );
-    // 4 + 8 = 12dp per sisi (dulu 8 + 8), vertikal tetap 8 supaya tinggi
-    // pill tidak berubah.
-    expect(chip.padding?.horizontal, AppSpacing.s12);
-    expect(chip.padding?.vertical, AppSpacing.s8);
-    expect(chip.labelPadding?.horizontal, AppSpacing.s8);
+    // Per sisi 4 (padding) + 8 (labelPadding) = 12dp, dulu 8 + 8 = 16.
+    // `.horizontal`/`.vertical` di EdgeInsets adalah JUMLAH dua sisi.
+    expect(chip.padding?.left, AppSpacing.s4);
+    expect(chip.labelPadding?.left, AppSpacing.s8);
+    expect(
+      chip.padding!.left + chip.labelPadding!.left,
+      AppSpacing.s12,
+      reason: '12dp per sisi, bukan 16dp',
+    );
+    // Vertikal tetap 8 supaya tinggi pill tidak berubah.
+    expect(chip.padding?.vertical, AppSpacing.s16);
     expect(
       chip.labelStyle?.color,
       const Color(0xFF424242),
