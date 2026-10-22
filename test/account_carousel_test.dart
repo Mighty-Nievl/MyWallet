@@ -230,9 +230,10 @@ void main() {
         .getSemantics(find.byKey(const ValueKey('home:dots-1')))
         .getSemanticsData();
     expect(aktif.label, contains('Utama'));
-    expect(aktif.hasFlag(SemanticsFlag.isSelected), isTrue);
+    // Flutter 3.32+ : hasFlag deprecated → flagsCollection.
+    expect(aktif.flagsCollection.isSelected, isTrue);
     expect(pasif.label, contains('Keluarga'));
-    expect(pasif.hasFlag(SemanticsFlag.isSelected), isFalse);
+    expect(pasif.flagsCollection.isSelected, isFalse);
 
     handle.dispose();
     await _flushDriftCloseTimer(tester);
