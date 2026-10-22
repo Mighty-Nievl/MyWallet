@@ -1,3 +1,8 @@
+// Lint meminta `this._run` sebagai initializing formal, tapi parameter
+// bernama tidak boleh diawali garis bawah di Dart (`required this._run`
+// = error), dan membuat tiga parameter fungsi jadi posisional akan
+// menghilangkan nama di call site. Jadi penugasan manual dibiarkan.
+// ignore_for_file: prefer_initializing_formals
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'auth_service.dart';
