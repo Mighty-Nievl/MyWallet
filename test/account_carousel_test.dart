@@ -2,6 +2,7 @@
 // gantikan hero gabungan + strip chip. Pump manual + flush Drift
 // (tanpa pumpAndSettle) ikut pola home_design_test.
 import 'dart:io';
+import 'dart:ui' show Tristate;
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -230,10 +231,10 @@ void main() {
         .getSemantics(find.byKey(const ValueKey('home:dots-1')))
         .getSemanticsData();
     expect(aktif.label, contains('Utama'));
-    // Flutter 3.32+ : hasFlag deprecated → flagsCollection.
-    expect(aktif.flagsCollection.isSelected, isTrue);
+    // Flutter 3.32+ : hasFlag deprecated → flagsCollection (Tristate).
+    expect(aktif.flagsCollection.isSelected, Tristate.isTrue);
     expect(pasif.label, contains('Keluarga'));
-    expect(pasif.flagsCollection.isSelected, isFalse);
+    expect(pasif.flagsCollection.isSelected, Tristate.isFalse);
 
     handle.dispose();
     await _flushDriftCloseTimer(tester);
