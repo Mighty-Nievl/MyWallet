@@ -56,6 +56,16 @@ class FlowCards extends ConsumerWidget {
               icon: Icons.south_west,
               display: display,
               prevLabel: previousPeriodPhrase(period.kind),
+              onTap: () {
+                // v1.37: tap kartu = Riwayat bertipe, bukan daftar
+                // campuran. Reset filter lain agar hasilnya persis
+                // "pemasukan/pengeluaran pada periode ini".
+                ref.read(historyFilterProvider.notifier).state =
+                    const HistoryFilter(isExpense: false);
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                );
+              },
             ),
           ),
           const SizedBox(width: AppSpacing.s12),
@@ -69,6 +79,13 @@ class FlowCards extends ConsumerWidget {
               icon: Icons.north_east,
               display: display,
               prevLabel: previousPeriodPhrase(period.kind),
+              onTap: () {
+                ref.read(historyFilterProvider.notifier).state =
+                    const HistoryFilter(isExpense: true);
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                );
+              },
             ),
           ),
         ],
@@ -87,6 +104,7 @@ class _FlowCard extends StatelessWidget {
     required this.icon,
     required this.display,
     required this.prevLabel,
+    required this.onTap,
   });
 
   final String label;
@@ -98,6 +116,8 @@ class _FlowCard extends StatelessWidget {
 
   /// "kemarin" · "minggu lalu" · "bulan lalu" · "tahun lalu".
   final String prevLabel;
+
+  final VoidCallback onTap;
 
   /// Persen perubahan vs periode sebelumnya; null bila tak bisa dihitung
   /// (periode lalu nol — persen dari nol tak bermakna).
@@ -139,11 +159,7 @@ class _FlowCard extends StatelessWidget {
           customBorder: const RoundedRectangleBorder(
             borderRadius: AppRadius.cardAll,
           ),
-          // Tap → Riwayat: kartu ini ringkasan, detailnya daftar
-          // transaksi. Riwayat memakai filter periode yang sama.
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const HistoryScreen()),
-          ),
+          onTap: onTap,
           child: Padding(
             padding: AppSpacing.cardPadding,
             child: Column(
@@ -182,10 +198,10 @@ class _FlowCard extends StatelessWidget {
                   child: Text(
                     display.money(amount),
                     maxLines: 1,
-                    style: AppType.amount(context, size: 18).copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: AppType.amount(
+                      context,
+                      size: 18,
+                    ).copyWith(color: color, fontWeight: FontWeight.w700),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.s4),

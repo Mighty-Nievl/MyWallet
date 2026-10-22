@@ -106,26 +106,11 @@ class HomeScreen extends ConsumerWidget {
                     key: const ValueKey('home:hero-slot'),
                     child: const AccountCarousel(),
                   ),
-                  // v1.34.0: arus kas periode aktif — Pemasukan &
-                  // Pengeluaran sebagai kartu sendiri. Dulu angka ini
-                  // hanya ada di Laporan; di Beranda user cuma lihat
-                  // saldo, jadi tak tahu uang masuk/keluar bulan ini.
-                  SliverToBoxAdapter(
-                    key: const ValueKey('home:flowcards'),
-                    child: _pad(const FlowCards(), top: AppSpacing.s12),
-                  ),
-                  // v1.26: menu fitur 4x2 (aksi + lihat) di bawah dompet,
-                  // di atas nav bulan — Beranda jadi pintu masuk semua.
-                  SliverToBoxAdapter(
-                    key: const ValueKey('home:features'),
-                    child: _pad(
-                      const HomeFeatureGrid(),
-                      top: AppSpacing.sectionGapLarge,
-                    ),
-                  ),
-                  // v1.36.0: switcher periode + navigasi. Key lama
+                  // v1.37: periode naik ke atas angka yang dipengaruhinya.
+                  // Dulu FlowCards tampil sebelum switcher → user melihat
+                  // total periode tanpa tahu rentangnya. Key lama
                   // (`home:monthnav`) dipertahankan agar test/lokasi
-                  // kontrol tidak pecah; isinya kini semua periode.
+                  // kontrol tidak pecah.
                   SliverToBoxAdapter(
                     key: const ValueKey('home:monthnav'),
                     child: _pad(
@@ -137,38 +122,20 @@ class HomeScreen extends ConsumerWidget {
                           PeriodNav(period: period),
                         ],
                       ),
-                      top: AppSpacing.sectionGapLarge,
+                      top: AppSpacing.s16,
                     ),
                   ),
-                  // Redesign v1.24 B2C minimalis: delta/kilat/debts DIHAPUS
-                  // (cognitive load). Spacing lega via token sectionGapLarge.
-                  // Top kategori + terakhir dicatat tampil langsung.
-                  if (showTop) ...[
-                    const SliverToBoxAdapter(
-                      child: SizedBox(height: AppSpacing.sectionGapLarge),
-                    ),
-                    SliverToBoxAdapter(
-                      key: const ValueKey('home:topcats'),
-                      child: _pad(
-                        AppSection(
-                          title:
-                              'Pengeluaran ${periodRelativeLabel(period)}$acctSuffix',
-                          trailing: TextButton(
-                            // v1.24.3: label konteks, bukan generik
-                            // "Lihat semua" (kritik brutal L5).
-                            // v1.26: push langsung (tab 3 sudah tak ada).
-                            onPressed: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const ReportsScreen(),
-                              ),
-                            ),
-                            child: const Text('Semua kategori'),
-                          ),
-                          child: _CategoryList(byCat: byCat, display: display),
-                        ),
-                      ),
-                    ),
-                  ],
+                  // v1.34.0: arus kas periode aktif — Pemasukan &
+                  // Pengeluaran sebagai kartu sendiri. Dulu angka ini
+                  // hanya ada di Laporan; di Beranda user cuma lihat
+                  // saldo, jadi tak tahu uang masuk/keluar bulan ini.
+                  SliverToBoxAdapter(
+                    key: const ValueKey('home:flowcards'),
+                    child: _pad(const FlowCards(), top: AppSpacing.s12),
+                  ),
+                  // v1.37: transaksi terakhir naik ke atas kategori/menu.
+                  // Ini data yang paling sering dicari saat membuka app;
+                  // jangan biarkan terkubur di bawah 8 tombol menu.
                   if (showRecent) ...[
                     const SliverToBoxAdapter(
                       child: SizedBox(height: AppSpacing.sectionGapLarge),
@@ -199,6 +166,45 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
                   ],
+                  // Redesign v1.24 B2C minimalis: delta/kilat/debts DIHAPUS
+                  // (cognitive load). Spacing lega via token sectionGapLarge.
+                  // v1.37: kategori turun setelah transaksi terakhir.
+                  if (showTop) ...[
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: AppSpacing.sectionGapLarge),
+                    ),
+                    SliverToBoxAdapter(
+                      key: const ValueKey('home:topcats'),
+                      child: _pad(
+                        AppSection(
+                          title:
+                              'Pengeluaran ${periodRelativeLabel(period)}$acctSuffix',
+                          trailing: TextButton(
+                            // v1.24.3: label konteks, bukan generik
+                            // "Lihat semua" (kritik brutal L5).
+                            // v1.26: push langsung (tab 3 sudah tak ada).
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const ReportsScreen(),
+                              ),
+                            ),
+                            child: const Text('Semua kategori'),
+                          ),
+                          child: _CategoryList(byCat: byCat, display: display),
+                        ),
+                      ),
+                    ),
+                  ],
+                  // v1.37: menu ringkas (4 pintasan unik) turun ke bawah
+                  // data. Catat/Scan/Riwayat sudah ada di dock, jadi
+                  // tidak diduplikasi lagi di sini.
+                  SliverToBoxAdapter(
+                    key: const ValueKey('home:features'),
+                    child: _pad(
+                      const HomeFeatureGrid(),
+                      top: AppSpacing.sectionGapLarge,
+                    ),
+                  ),
                   SliverToBoxAdapter(
                     child: SizedBox(
                       // v1.32.6: clearance adaptif = bottomPad + safeBottom
@@ -351,11 +357,11 @@ class _DailyStrip extends ConsumerWidget {
         if (d.$1 == 0 && d.$2 == 0) return const SizedBox.shrink();
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.s8),
-          // v1.24.5: SATU baris ringkasan (audit arsitektur: "Hari ini"
-          // dobel — strip + header grup pertama bertumpuk). Label depan
-          // dihapus, tanggal ikut header grup di bawahnya.
+          // v1.37: label eksplisit. Strip ini hidup di bawah ringkasan
+          // periode; tanpa "Hari ini" angkanya mudah disangka total
+          // periode yang sama.
           child: Text(
-            'Masuk ${display.signed(d.$1, isExpense: false)} · '
+            'Hari ini · Masuk ${display.signed(d.$1, isExpense: false)} · '
             'Keluar ${display.signed(d.$2, isExpense: true)}',
             style: AppType.secondary(context),
             maxLines: 1,

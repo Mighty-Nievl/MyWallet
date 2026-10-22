@@ -1,40 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../design/app_colors.dart';
 import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
-import '../scan_flow.dart';
 import '../screens/accounts_screen.dart';
 import '../screens/budget_screen.dart';
 import '../screens/debt_screen.dart';
-import '../screens/history_screen.dart';
 import '../screens/reports_screen.dart';
-import '../screens/tx_form_screen.dart';
 
-/// Grid menu fitur Beranda v1.26 (slot `home:features`): 4 kolom × 2 baris.
+/// Menu ringkas Beranda (v1.37): 4 pintasan yang TIDAK ada di dock.
 ///
-/// Baris 1 "Aksi cepat" (mengubah data sekali tap) vs baris 2 "Lihat" (cuma
-/// pindah halaman). Pemisah tiga lapis agar tak salah tap: label grup kecil
-/// di atas tiap baris + sekat hairline antar baris + beda gaya tombol
-/// (aksi = ikon dalam lingkaran isi warna tegas; pintas = ikon outline
-/// polos tenang).
-///
-/// Semua aksi ikut dompet aktif (form catat + transfer + hasil scan baca
-/// `selectedAccountProvider` di titik simpannya masing-masing — grid cuma
-/// membuka pintu, bukan meneruskan id).
-class HomeFeatureGrid extends ConsumerWidget {
+/// Catat, Scan, dan Riwayat sudah punya rumah permanen di kapsul bawah;
+/// menduplikasinya di Beranda hanya menambah tinggi dan pintu masuk.
+/// Yang tersisa di sini adalah tujuan yang tak punya slot dock:
+/// Pindah dana, Budget, Laporan, Utang.
+class HomeFeatureGrid extends StatelessWidget {
   const HomeFeatureGrid({super.key});
 
-  void _catat(BuildContext context, bool isExpense) {
+  void _transfer(BuildContext context) {
     HapticFeedback.lightImpact();
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => TxFormScreen(startAsExpense: isExpense),
-      ),
-    );
+    TransferSheet.show(context);
   }
 
   void _go(BuildContext context, Widget page) {
@@ -43,63 +29,19 @@ class HomeFeatureGrid extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _GroupLabel(label: 'Aksi cepat'),
-        const SizedBox(height: AppSpacing.s8),
-        Row(
-          children: [
-            Expanded(
-              child: _ActionTile(
-                icon: Icons.arrow_downward,
-                label: 'Catat masuk',
-                color: AppColors.incomeOf(context),
-                onTap: () => _catat(context, false),
-              ),
-            ),
-            Expanded(
-              child: _ActionTile(
-                icon: Icons.arrow_upward,
-                label: 'Catat keluar',
-                color: AppColors.expenseOf(context),
-                onTap: () => _catat(context, true),
-              ),
-            ),
-            Expanded(
-              child: _ActionTile(
-                icon: Icons.swap_horiz,
-                label: 'Pindah dana',
-                color: Theme.of(context).colorScheme.primary,
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  TransferSheet.show(context);
-                },
-              ),
-            ),
-            Expanded(
-              child: _ActionTile(
-                icon: Icons.document_scanner_outlined,
-                label: 'Scan struk',
-                color: Theme.of(context).colorScheme.primary,
-                onTap: () => runScanFlow(context, ref),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.s12),
-        Divider(height: 1, thickness: 0.5, color: AppColors.borderOf(context)),
-        const SizedBox(height: AppSpacing.s12),
-        _GroupLabel(label: 'Lihat'),
+        _GroupLabel(label: 'Menu'),
         const SizedBox(height: AppSpacing.s8),
         Row(
           children: [
             Expanded(
               child: _LinkTile(
-                icon: Icons.receipt_long_outlined,
-                label: 'Riwayat',
-                onTap: () => _go(context, const HistoryScreen()),
+                icon: Icons.swap_horiz,
+                label: 'Pindah dana',
+                onTap: () => _transfer(context),
               ),
             ),
             Expanded(
@@ -141,53 +83,6 @@ class _GroupLabel extends StatelessWidget {
       style: AppType.labelMuted(context).copyWith(letterSpacing: 0.6),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-    );
-  }
-}
-
-/// Tombol aksi: lingkaran isi warna + label 2 baris. Sentuh ≥48px.
-class _ActionTile extends StatelessWidget {
-  const _ActionTile({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: AppRadius.mdAll,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: AppSpacing.touchMin),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-              child: Icon(icon, color: scheme.onPrimary, size: 24),
-            ),
-            const SizedBox(height: AppSpacing.s4),
-            Text(
-              label,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
