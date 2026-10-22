@@ -36,7 +36,7 @@ const appChangelog = <({String version, String date, String user, String tech, S
         'selected + inMutuallyExclusiveGroup + nama dompet; Kelola jadi '
         'trailing plain TextButton (ikon gear dibuang, home:manage di luar '
         'home:dots); haptic dobel dihapus (jumpToPage → onPageChanged → _pick '
-        'sudah bergetar).',
+        'sudah bergetar). 306 test.',
     breaking: null,
   ),
   (
