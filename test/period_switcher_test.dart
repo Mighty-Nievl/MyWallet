@@ -112,16 +112,18 @@ void main() {
       reason: 'centang 1,4:1 itu hantu yang memakan ~19dp lebar',
     );
     // Per sisi 4 (padding) + 8 (labelPadding) = 12dp, dulu 8 + 8 = 16.
-    // `.horizontal`/`.vertical` di EdgeInsets adalah JUMLAH dua sisi.
-    expect(chip.padding?.left, AppSpacing.s4);
-    expect(chip.labelPadding?.left, AppSpacing.s8);
+    // EdgeInsetsGeometry tak punya `.left`; resolve dulu ke EdgeInsets.
+    final padding = chip.padding!.resolve(TextDirection.ltr);
+    final labelPadding = chip.labelPadding!.resolve(TextDirection.ltr);
+    expect(padding.left, AppSpacing.s4);
+    expect(labelPadding.left, AppSpacing.s8);
     expect(
-      chip.padding!.left + chip.labelPadding!.left,
+      padding.left + labelPadding.left,
       AppSpacing.s12,
       reason: '12dp per sisi, bukan 16dp',
     );
     // Vertikal tetap 8 supaya tinggi pill tidak berubah.
-    expect(chip.padding?.vertical, AppSpacing.s16);
+    expect(padding.vertical, AppSpacing.s16);
     expect(
       chip.labelStyle?.color,
       const Color(0xFF424242),
