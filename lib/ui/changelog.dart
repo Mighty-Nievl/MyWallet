@@ -35,7 +35,7 @@ const appChangelog = <({String version, String date, String user, String tech, S
         'historyFilterProvider (HistoryFilter) lalu push HistoryScreen; '
         '_DailyStrip berlabel "Hari ini"; HomeFeatureGrid jadi StatelessWidget '
         '4 _LinkTile (Pindah dana/Budget/Laporan/Utang); AccountCarousel '
-        'itemCount=list.length, dots hanya >1 (target sentuh 40), '
+        'itemCount=list.length, dots hanya >1 (target sentuh 48/touchMin), '
         'home:manage TextButton di luar PageView + empty-state action. '
         '305 test.',
     breaking: null,

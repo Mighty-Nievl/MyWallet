@@ -8,8 +8,6 @@ import '../../data/settings.dart';
 import '../components/app_empty_state.dart';
 import '../components/app_feedback.dart';
 import '../components/mesh_gradient.dart';
-import '../design/app_colors.dart';
-import '../design/app_radius.dart';
 import '../design/app_spacing.dart';
 import '../design/app_typography.dart';
 import '../display.dart';
@@ -133,22 +131,24 @@ class _AccountCarouselState extends ConsumerState<AccountCarousel> {
               ),
             ),
             const SizedBox(height: AppSpacing.s8),
-            // v1.37: dots hanya bila >1 dompet. Target sentuh 40px per
-            // dot (visual 6px); Kelola = tombol aksi terpisah.
+            // v1.37: dots hanya bila >1 dompet. Target sentuh 48px per
+            // dot (visual 6px, token AppSpacing.touchMin) — dulu 24px,
+            // di bawah standar. Dot dibungkus Wrap sendiri supaya dompet
+            // banyak turun baris, bukan overflow horizontal.
             Wrap(
               alignment: WrapAlignment.center,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 if (list.length > 1)
-                  Row(
+                  Wrap(
                     key: const ValueKey('home:dots'),
-                    mainAxisSize: MainAxisSize.min,
+                    alignment: WrapAlignment.center,
                     children: [
                       for (var i = 0; i < list.length; i++)
                         SizedBox(
                           key: ValueKey('home:dots-$i'),
-                          width: 40,
-                          height: 40,
+                          width: AppSpacing.touchMin,
+                          height: AppSpacing.touchMin,
                           child: Semantics(
                             button: true,
                             label: 'Dompet ${i + 1} dari ${list.length}',

@@ -14,6 +14,7 @@ import 'package:mywallet/data/database.dart';
 import 'package:mywallet/data/providers.dart';
 import 'package:mywallet/data/sync_engine.dart';
 import 'package:mywallet/ui/app_theme.dart';
+import 'package:mywallet/ui/design/app_spacing.dart';
 import 'package:mywallet/ui/screens/accounts_screen.dart';
 import 'package:mywallet/ui/screens/account_detail_screen.dart';
 import 'package:mywallet/ui/screens/home_screen.dart';
@@ -153,6 +154,14 @@ void main() {
 
     expect(find.byKey(const ValueKey('home:dots-0')), findsOneWidget);
     expect(find.byKey(const ValueKey('home:dots-1')), findsOneWidget);
+    // v1.37: target sentuh dot = token touchMin (48), bukan 24.
+    for (final key in ['home:dots-0', 'home:dots-1']) {
+      final size = tester.getSize(find.byKey(ValueKey(key)));
+      expect(size.width, greaterThanOrEqualTo(AppSpacing.touchMin),
+          reason: key);
+      expect(size.height, greaterThanOrEqualTo(AppSpacing.touchMin),
+          reason: key);
+    }
     // v1.37: Kelola tidak lagi jadi halaman carousel.
     expect(find.byKey(const ValueKey('home:dots-manage')), findsNothing);
     expect(find.byKey(const ValueKey('home:manage')), findsOneWidget);
