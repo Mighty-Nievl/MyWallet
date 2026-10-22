@@ -39,6 +39,7 @@ const appChangelog = <({String version, String date, String user, String tech, S
         'dot 28×32 dipertahankan (48px merusak pitch). Kelola: TextButton → '
         'IconButton settings_outlined 32px dalam target sentuh 48px '
         '(touchMin), bottom-right. 1 test baru. 309 test.',
+    breaking: null,
   ),
   (
     version: 'v1.38.0',
