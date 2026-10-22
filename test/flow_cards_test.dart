@@ -146,7 +146,9 @@ void main() {
     await _cleanup(tester, db);
   });
 
-  testWidgets('tap kartu membuka Riwayat', (tester) async {
+  testWidgets('tap kartu pengeluaran membuka Riwayat terfilter keluar', (
+    tester,
+  ) async {
     final db = await _newDb(tester);
     await _pumpCards(tester, db);
 
@@ -155,6 +157,31 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.byType(HistoryScreen), findsOneWidget);
+    final ctx = tester.element(find.byType(HistoryScreen));
+    expect(
+      ProviderScope.containerOf(ctx).read(historyFilterProvider).isExpense,
+      isTrue,
+    );
+
+    await _cleanup(tester, db);
+  });
+
+  testWidgets('tap kartu pemasukan membuka Riwayat terfilter masuk', (
+    tester,
+  ) async {
+    final db = await _newDb(tester);
+    await _pumpCards(tester, db);
+
+    await tester.tap(find.byKey(const ValueKey('home:flow-income')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.byType(HistoryScreen), findsOneWidget);
+    final ctx = tester.element(find.byType(HistoryScreen));
+    expect(
+      ProviderScope.containerOf(ctx).read(historyFilterProvider).isExpense,
+      isFalse,
+    );
 
     await _cleanup(tester, db);
   });

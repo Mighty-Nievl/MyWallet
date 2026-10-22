@@ -26,6 +26,8 @@ import 'package:mywallet/ui/components/setting_row.dart';
 import 'package:mywallet/ui/design/app_colors.dart';
 import 'package:mywallet/ui/screens/account_detail_screen.dart';
 import 'package:mywallet/ui/screens/home_screen.dart';
+import 'package:mywallet/ui/widgets/flow_cards.dart';
+import 'package:mywallet/ui/widgets/home_feature_grid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Golden (PNG) cuma stabil di SATU OS + font yang sama — file di
@@ -248,6 +250,85 @@ void main() {
     expect(find.byKey(const ValueKey('home:monthnav')), findsOneWidget);
     expect(find.byType(PeriodSwitcher), findsOneWidget);
     expect(find.byKey(const ValueKey('period:kind:bulanan')), findsOneWidget);
+    await _flushDriftCloseTimer(tester);
+  });
+
+  testWidgets('hierarki v1.37: periode → arus kas → transaksi → menu', (
+    tester,
+  ) async {
+    final db = await _newDb(tester, size: const Size(390, 1600));
+    await tester.runAsync(() async {
+      await _loadFonts();
+      await _seed(db);
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    final periodY = tester.getTopLeft(find.byType(PeriodSwitcher)).dy;
+    final flowY = tester.getTopLeft(find.byType(FlowCards)).dy;
+    final recentY = tester.getTopLeft(
+      find.byKey(const ValueKey('home:recent')),
+    ).dy;
+    final topcatsY = tester.getTopLeft(
+      find.byKey(const ValueKey('home:topcats')),
+    ).dy;
+    final menuY = tester.getTopLeft(find.byType(HomeFeatureGrid)).dy;
+
+    expect(periodY, lessThan(flowY));
+    expect(flowY, lessThan(recentY));
+    expect(recentY, lessThan(topcatsY));
+    expect(topcatsY, lessThan(menuY));
+    expect(recentY, lessThan(844));
+
+    await _flushDriftCloseTimer(tester);
+  });
+
+  testWidgets('tap kartu pengeluaran membuka Riwayat terfilter', (
+    tester,
+  ) async {
+    final db = await _newDb(tester, size: const Size(390, 1600));
+    await tester.runAsync(() async {
+      await _loadFonts();
+      await _seed(db);
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    await tester.tap(find.byKey(const ValueKey('home:flow-expense')));
+    await tester.pump();
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    expect(find.byType(HistoryScreen), findsOneWidget);
+    final ctx = tester.element(find.byType(HistoryScreen));
+    expect(
+      ProviderScope.containerOf(ctx).read(historyFilterProvider).isExpense,
+      isTrue,
+    );
+
     await _flushDriftCloseTimer(tester);
   });
 
@@ -605,13 +686,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
 
-    // v1.26: grid menu mendorong seksi recent ke bawah lipatan
-    // (CustomScrollView lazy) → seret dulu sebelum assert.
-    for (var i = 0; i < 5; i++) {
-      await tester.drag(find.byType(CustomScrollView), const Offset(0, -400));
-      await tester.pump(const Duration(milliseconds: 100));
-    }
-
+    // v1.37: seksi recent di atas kategori/menu → sudah terbangun.
     // Judul (note) tetap ada.
     expect(find.text('Makan siang'), findsOneWidget);
     expect(find.text('Ojek'), findsOneWidget);
@@ -649,11 +724,7 @@ void main() {
 
     // Ambil posisi kanan kedua nominal — Expanded + textAlign.end
     // menjamin sejajar (toleransi 1px render).
-    // v1.26: seret dulu (tile recent di bawah lipatan grid menu).
-    for (var i = 0; i < 5; i++) {
-      await tester.drag(find.byType(CustomScrollView), const Offset(0, -400));
-      await tester.pump(const Duration(milliseconds: 100));
-    }
+    // v1.37: seksi recent di atas kategori/menu → sudah terbangun.
     final r45 = tester.getRect(find.text('-Rp45.000'));
     final r18 = tester.getRect(find.text('-Rp18.000'));
     expect((r45.right - r18.right).abs(), lessThan(1.0));
@@ -661,10 +732,10 @@ void main() {
     await _flushDriftCloseTimer(tester);
   });
 
-  // Audit arsitektur v1.24.5 fix 3: strip ringkasan SATU baris, label
-  // "Hari ini" depan dihapus (tanggal ikut header grup). Seed hari ini:
-  // masuk Rp10.188.000 (Gaji+Bonus) · keluar Rp63.000.
-  testWidgets('strip ringkasan satu baris tanpa label Hari ini (v1.24.5)', (
+  // Audit arsitektur v1.24.5 fix 3: strip ringkasan SATU baris.
+  // v1.37: label "Hari ini" dikembalikan eksplisit — strip berada di
+  // bawah ringkasan periode, jadi tanpa label angkanya ambigu.
+  testWidgets('strip ringkasan satu baris berlabel Hari ini (v1.37)', (
     tester,
   ) async {
     final db = await _newDb(tester);
@@ -686,15 +757,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
 
-    // Baris ringkasan baru: "Masuk ... · Keluar ..." (kapital, 1 baris).
-    // v1.26: seret dulu (strip recent di bawah lipatan grid menu).
-    for (var i = 0; i < 5; i++) {
-      await tester.drag(find.byType(CustomScrollView), const Offset(0, -400));
-      await tester.pump(const Duration(milliseconds: 100));
-    }
-    expect(find.textContaining('Masuk +Rp'), findsOneWidget);
+    // v1.37: strip recent kini di atas kategori/menu → langsung
+    // terbangun di viewport awal.
+    expect(find.textContaining('Hari ini · Masuk +Rp'), findsOneWidget);
     expect(find.textContaining('Keluar -Rp'), findsOneWidget);
-    // Label lama lowercase + dobel "Hari ini" depan SUDAH tidak ada.
     expect(find.textContaining('masuk +Rp'), findsNothing);
     expect(find.textContaining('keluar -Rp'), findsNothing);
 
@@ -806,9 +872,10 @@ void main() {
     expect(find.text('SALDO SAAT INI'), findsOneWidget);
     expect(find.byKey(const ValueKey('home:carousel')), findsOneWidget);
     expect(find.text('Utama'), findsOneWidget);
-    // Tombol teks Kelola pensiun (v1.29.1 → kartu trailing bergambar
-    // gear); chip era lama juga tidak ada.
-    expect(find.text('Kelola dompet'), findsNothing);
+    // v1.37: Kelola keluar dari PageView → tombol aksi di bawah kartu.
+    expect(find.text('Kelola dompet'), findsOneWidget);
+    expect(find.byKey(const ValueKey('home:manage')), findsOneWidget);
+    expect(find.byKey(const ValueKey('home:dots-0')), findsNothing);
     expect(find.text('Semua'), findsNothing);
     expect(find.byKey(const ValueKey('home:accounts')), findsNothing);
     await _flushDriftCloseTimer(tester);
@@ -840,8 +907,9 @@ void main() {
     expect(find.byKey(const ValueKey('home:carousel')), findsOneWidget);
     expect(find.byKey(const ValueKey('home:dots-0')), findsOneWidget);
     expect(find.byKey(const ValueKey('home:dots-1')), findsOneWidget);
-    // v1.30: dots = halaman (2 dompet + Kelola = 3 dots).
-    expect(find.byKey(const ValueKey('home:dots-manage')), findsOneWidget);
+    // v1.37: dots hanya untuk dompet; Kelola tombol terpisah.
+    expect(find.byKey(const ValueKey('home:dots-manage')), findsNothing);
+    expect(find.byKey(const ValueKey('home:manage')), findsOneWidget);
     expect(find.text('Semua'), findsNothing);
     // v1.30: 2 dompet + auto-select kartu pertama (Keluarga, alfabetis) =
     // judul seksi sebut scope. Pola gulir ikut test kategori-ganda
@@ -884,11 +952,7 @@ void main() {
     for (var i = 0; i < 60; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
-    // v1.26: seret dulu (tile recent di bawah lipatan grid menu).
-    for (var i = 0; i < 5; i++) {
-      await tester.drag(find.byType(CustomScrollView), const Offset(0, -400));
-      await tester.pump(const Duration(milliseconds: 100));
-    }
+    // v1.37: seksi recent di atas kategori/menu → sudah terbangun.
     final rMkn = tester.getRect(find.text('Makan siang'));
     final rOjk = tester.getRect(find.text('Ojek'));
     final atas = rMkn.top < rOjk.top ? rMkn : rOjk;

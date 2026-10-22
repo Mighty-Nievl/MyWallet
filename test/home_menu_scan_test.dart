@@ -1,9 +1,8 @@
-// Regression v1.26: grid menu Beranda 4x2 + nav 3 tombol + pintu catat
-// tunggal + layar push punya tombol kembali.
+// Regression v1.37: Beranda fokus data + menu ringkas.
 //
 // Kontrak yang dikunci:
-// - Grid `home:features`: 8 item (4 aksi + 4 pintas), label grup
-//   "Aksi cepat"/"Lihat", tap tiap item buka tujuan yang benar.
+// - Grid `home:features` kini 4 pintasan unik (Pindah dana, Budget,
+//   Laporan, Utang); Catat/Scan/Riwayat hanya lewat dock.
 // - Shell: Beranda + tombol tengah (Catat transaksi) + Scan; tab lama
 //   (Riwayat/Budget/Laporan/Utang) + FAB hilang.
 // - Layar push (Riwayat/Budget/Laporan/Utang) punya tombol Kembali.
@@ -132,39 +131,22 @@ void main() {
     }
   });
 
-  testWidgets('grid 4x2: 8 item + 2 label grup (v1.26)', (tester) async {
+  testWidgets('menu ringkas: 4 pintasan unik (v1.37)', (tester) async {
     final db = await _newDb(tester);
     try {
       await _pumpHome(tester, db);
       expect(find.byKey(const ValueKey('home:features')), findsOneWidget);
-      expect(find.text('Aksi cepat'), findsOneWidget);
-      expect(find.text('Lihat'), findsOneWidget);
-      for (final label in [
-        'Catat masuk',
-        'Catat keluar',
-        'Pindah dana',
-        'Scan struk',
-        'Riwayat',
-        'Budget',
-        'Laporan',
-        'Utang',
-      ]) {
+      expect(find.text('Menu'), findsOneWidget);
+      for (final label in ['Pindah dana', 'Budget', 'Laporan', 'Utang']) {
         expect(find.text(label), findsOneWidget, reason: label);
       }
-    } finally {
-      await _cleanup(tester, db);
-    }
-  });
-
-  testWidgets('aksi Catat keluar buka form pengeluaran (v1.26)',
-      (tester) async {
-    final db = await _newDb(tester);
-    try {
-      await _pumpHome(tester, db);
-      await tester.tap(find.text('Catat keluar'));
-      await _pump(tester);
-      expect(find.byType(TxFormScreen), findsOneWidget);
-      expect(find.text('Keluar'), findsOneWidget);
+      // Duplikat dock dihapus dari Beranda.
+      for (final label in ['Catat masuk', 'Catat keluar', 'Scan struk']) {
+        expect(find.text(label), findsNothing, reason: label);
+      }
+      expect(find.text('Riwayat'), findsNothing);
+      expect(find.text('Aksi cepat'), findsNothing);
+      expect(find.text('Lihat'), findsNothing);
     } finally {
       await _cleanup(tester, db);
     }
@@ -183,23 +165,6 @@ void main() {
       await tester.tap(find.text('Pindah dana'));
       await _pump(tester);
       expect(find.byType(TransferSheet), findsOneWidget);
-    } finally {
-      await _cleanup(tester, db);
-    }
-  });
-
-  testWidgets('pintas Riwayat push + tombol Kembali pulang (v1.26)',
-      (tester) async {
-    final db = await _newDb(tester);
-    try {
-      await _pumpHome(tester, db);
-      await tester.tap(find.text('Riwayat').first);
-      await _pump(tester);
-      expect(find.byType(HistoryScreen), findsOneWidget);
-      await tester.tap(find.byTooltip('Kembali'));
-      await _pump(tester);
-      expect(find.byType(HistoryScreen), findsNothing);
-      expect(find.byKey(const ValueKey('home:features')), findsOneWidget);
     } finally {
       await _cleanup(tester, db);
     }

@@ -18,6 +18,7 @@ import 'package:mywallet/ui/screens/accounts_screen.dart';
 import 'package:mywallet/ui/screens/account_detail_screen.dart';
 import 'package:mywallet/ui/screens/home_screen.dart';
 import 'package:mywallet/ui/screens/tx_form_screen.dart';
+import 'package:mywallet/ui/shell.dart';
 import 'package:mywallet/ui/widgets/account_carousel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -76,51 +77,36 @@ Future<void> _pumpCarousel(WidgetTester tester, AppDatabase db) async {
 }
 
 void main() {
-  testWidgets('1 dompet: 1 kartu, dots sembunyi (v1.29)', (tester) async {
-    final db = await _newDb(tester);
-    await tester.runAsync(_loadFonts);
-    await _pumpCarousel(tester, db);
-
-    expect(find.text('Utama'), findsOneWidget);
-    expect(find.byKey(const ValueKey('home:carousel')), findsOneWidget);
-    // v1.30: dots = halaman (1 dompet + Kelola = 2 dots).
-    expect(find.byKey(const ValueKey('home:dots-0')), findsOneWidget);
-    expect(find.byKey(const ValueKey('home:dots-manage')), findsOneWidget);
-    // Kartu Kelola trailing (v1.29.1) belum di-build — di luar viewport.
-    expect(find.byKey(const ValueKey('home:card-manage')), findsNothing);
-    // Chip Semua (era chip) sudah tidak ada.
-    expect(find.text('Semua'), findsNothing);
-
-    await _flushDriftCloseTimer(tester);
-  });
-
-  // Kartu Kelola (v1.29.1): halaman TERAKHIR carousel, bergambar gear,
-  // tap → Kelola. v1.30: dots = indikator halaman (Kelola dapat 1 dot).
-  testWidgets('kartu Kelola trailing: geser → tap → Kelola (v1.29.1)', (
+  testWidgets('1 dompet: 1 kartu, tanpa dots + tombol Kelola (v1.37)', (
     tester,
   ) async {
     final db = await _newDb(tester);
     await tester.runAsync(_loadFonts);
     await _pumpCarousel(tester, db);
 
-    // 1 dompet = 2 halaman (Utama + Kelola). Geser 1x → kartu Kelola.
-    // v1.32: fling -200/1000 (drag presisi tanpa velocity tak lewati
-    // snap sejak kartu ramping 188px — terbukti probe: drag -200 snap
-    // balik, fling pindah 1 halaman).
-    await tester.fling(
-      find.byKey(const ValueKey('home:carousel')),
-      const Offset(-200, 0),
-      1000,
-    );
-    for (var i = 0; i < 20; i++) {
-      await tester.pump(const Duration(milliseconds: 50));
-    }
-    expect(find.byKey(const ValueKey('home:card-manage')), findsOneWidget);
+    expect(find.text('Utama'), findsOneWidget);
+    expect(find.byKey(const ValueKey('home:carousel')), findsOneWidget);
+    // v1.37: dots hanya muncul saat >1 dompet — 1 dompet tak butuh
+    // indikator halaman. Kelola kini tombol aksi, bukan halaman data.
+    expect(find.byKey(const ValueKey('home:dots')), findsNothing);
+    expect(find.byKey(const ValueKey('home:dots-0')), findsNothing);
+    expect(find.byKey(const ValueKey('home:manage')), findsOneWidget);
     expect(find.text('Kelola dompet'), findsOneWidget);
-    expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
-    // Dot Kelola ikut menyala (halaman trailing tampil).
-    expect(find.byKey(const ValueKey('home:dots-manage')), findsOneWidget);
-    // Filter tak berubah di halaman trailing (masih Utama).
+    expect(find.byKey(const ValueKey('home:card-manage')), findsNothing);
+    expect(find.text('Semua'), findsNothing);
+
+    await _flushDriftCloseTimer(tester);
+  });
+
+  // v1.37: Kelola keluar dari PageView. Tap tombol → AccountsScreen,
+  // filter dompet aktif TIDAK berubah (bukan halaman carousel).
+  testWidgets('tombol Kelola buka AccountsScreen tanpa ubah filter', (
+    tester,
+  ) async {
+    final db = await _newDb(tester);
+    await tester.runAsync(_loadFonts);
+    await _pumpCarousel(tester, db);
+
     final utamaId = (await tester.runAsync(
       () => db.select(db.accounts).get(),
     ))!.firstWhere((a) => a.name == 'Utama').id;
@@ -129,38 +115,17 @@ void main() {
       ProviderScope.containerOf(ctx).read(selectedAccountProvider),
       utamaId,
     );
-    // Tap kartu → layar Kelola terbuka.
-    await tester.tap(find.text('Kelola dompet'));
+
+    await tester.tap(find.byKey(const ValueKey('home:manage')));
     await tester.pump();
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
     expect(find.byType(AccountsScreen), findsOneWidget);
-
-    await _flushDriftCloseTimer(tester);
-  });
-
-  // Dots Kelola (v1.30): tap dot trailing → lompat ke kartu Kelola,
-  // filter TIDAK berubah (guard onPageChanged).
-  testWidgets('tap dots-manage → halaman Kelola, filter tetap (v1.30)', (
-    tester,
-  ) async {
-    final db = await _newDb(tester);
-    await tester.runAsync(_loadFonts);
-    await _pumpCarousel(tester, db);
-
-    final utamaId = (await tester.runAsync(
-      () => db.select(db.accounts).get(),
-    ))!.firstWhere((a) => a.name == 'Utama').id;
-
-    await tester.tap(find.byKey(const ValueKey('home:dots-manage')));
-    for (var i = 0; i < 20; i++) {
-      await tester.pump(const Duration(milliseconds: 50));
-    }
-    expect(find.byKey(const ValueKey('home:card-manage')), findsOneWidget);
-    final ctx = tester.element(find.byKey(const ValueKey('home:carousel')));
     expect(
-      ProviderScope.containerOf(ctx).read(selectedAccountProvider),
+      ProviderScope.containerOf(
+        tester.element(find.byType(AccountsScreen)),
+      ).read(selectedAccountProvider),
       utamaId,
     );
 
@@ -188,8 +153,9 @@ void main() {
 
     expect(find.byKey(const ValueKey('home:dots-0')), findsOneWidget);
     expect(find.byKey(const ValueKey('home:dots-1')), findsOneWidget);
-    // v1.30: halaman trailing Kelola ikut dapat dot.
-    expect(find.byKey(const ValueKey('home:dots-manage')), findsOneWidget);
+    // v1.37: Kelola tidak lagi jadi halaman carousel.
+    expect(find.byKey(const ValueKey('home:dots-manage')), findsNothing);
+    expect(find.byKey(const ValueKey('home:manage')), findsOneWidget);
     // Halaman 0 = Utama. Geser kiri → halaman 1 = Keluarga.
     // (PageView drop halaman offstage dari cache — setelah geser,
     // Utama hilang total dan Keluarga tepat 1, bukan findsWidgets.)
@@ -423,8 +389,8 @@ void main() {
     await _flushDriftCloseTimer(tester);
   });
 
-  // Task 6 (integrasi): CTA kartu kedua → tx tersimpan di dompet kedua.
-  testWidgets('integrasi: CTA kartu kedua → tx dompet kedua (v1.29)', (
+  // Task 6 (integrasi v1.37): dock Catat ikut dompet yang sedang tampil.
+  testWidgets('integrasi: dock Catat → tx dompet kedua', (
     tester,
   ) async {
     final db = await _newDb(tester);
@@ -444,7 +410,7 @@ void main() {
           overrides: [dbProvider.overrideWithValue(db)],
           child: MaterialApp(
             theme: AppTheme.light(),
-            home: HomeScreen(onGoTab: (_) {}),
+            home: const AppShell(),
           ),
         ),
       );
@@ -452,10 +418,8 @@ void main() {
         await tester.pump(const Duration(milliseconds: 50));
       }
 
-      // v1.32: CTA kartu DIHAPUS — pintu catat scoped = grid 'Catat
-      // keluar' (ikut filter Keluarga) + form tampilkan 'Catat ke'.
-      // (fling -350/1000: lewati threshold snap HomeScreen penuh; fling
-      // -200/1000 = 1 halaman, terbukti probe — tak lompat ke Kelola.)
+      // v1.37: pintu catat tunggal = dock tengah; form mewarisi filter
+      // dompet yang sedang tampil (Keluarga).
       await tester.fling(
         find.byKey(const ValueKey('home:carousel')),
         const Offset(-350, 0),
@@ -465,8 +429,8 @@ void main() {
         await tester.pump(const Duration(milliseconds: 50));
       }
       expect(find.text('Keluarga'), findsOneWidget);
-      // Grid Beranda → Catat keluar (filter = Keluarga).
-      await tester.tap(find.text('Catat keluar'));
+      // Dock Catat → form (filter = Keluarga).
+      await tester.tap(find.bySemanticsLabel('Catat transaksi'));
       await tester.pump();
       for (var i = 0; i < 20; i++) {
         await tester.pump(const Duration(milliseconds: 50));
