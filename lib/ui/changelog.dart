@@ -44,7 +44,7 @@ const appChangelog = <({String version, String date, String user, String tech, S
         'ListView (item ke-5 tak pernah terlihat di 390dp) ke PeriodNav '
         'sebagai IconButton.outlined 44dp, dengan penyeimbang 44dp supaya '
         'grup chevron+label tetap di tengah. Test baru '
-        'test/period_switcher_test.dart menjaga keempat klaim itu.',
+        'test/period_switcher_test.dart menjaga keempat klaim itu. 314 test.',
     breaking: null,
   ),
   (
