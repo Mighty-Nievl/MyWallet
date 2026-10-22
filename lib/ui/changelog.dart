@@ -20,6 +20,35 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.38.5',
+    date: '22 Okt 2026',
+    user:
+        'Data antar-HP kini menyusul sendiri: aplikasi mencoba menyinkronkan '
+        'saat dibuka, saat kembali dari background, dan begitu sinyal '
+        'kembali. Tidak perlu lagi membuka menu Keluarga lalu menekan '
+        '"Sinkronkan" — tombolnya tetap ada untuk sync paksa.',
+    tech:
+        'v1.38.5: syncNow() sebelumnya hanya dipanggil dari '
+        'family_screen.dart:947, jadi sync_engine(512)+sync_service(224) '
+        'bergantung pada satu tombol di satu layar. Baru: '
+        'lib/data/auto_sync.dart — AutoSyncController murni (tanpa widget, '
+        'tanpa WidgetRef; dependensi masuk lewat konstruktor) dengan aturan: '
+        'start sekali per sesi, resume/online dijatah minInterval 2 menit, '
+        'diam saat offline, diam tanpa householdId, dan tidak pernah '
+        'melempar (gagal = SyncState.failed). Penghitung '
+        'runs/skippedOffline/skippedNotReady/throttled untuk diagnosa. '
+        'Pemicu: lib/ui/widgets/auto_sync_binder.dart (postFrame start, '
+        'AppLifecycleState.resumed, transisi isOfflineProvider true→false), '
+        'dipasang sebagai home di app.dart. Hasil sync latar ditulis ke '
+        'syncStateProvider supaya layar Keluarga ikut menampilkan. '
+        'test/migration_test.dart baru: v4→v5 (is_shared ditambah, baris + PK '
+        '+ saldo utuh, default privat) dibangun lewat NativeDatabase.memory '
+        '(setup:) + PRAGMA user_version=4, dan onCreate v5 (seed kategori + '
+        'dompet Utama). test/auto_sync_test.dart baru: 7 kasus controller + 3 '
+        'widget. 330 test.',
+    breaking: null,
+  ),
+  (
     version: 'v1.38.4',
     date: '22 Okt 2026',
     user:
