@@ -20,6 +20,34 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.39.0',
+    date: '23 Okt 2026',
+    user:
+        'Data keuanganmu sekarang dicadangkan otomatis setiap hari ke dalam '
+        'HP — lima salinan terakhir disimpan. Kalau ada yang salah catat, '
+        'file rusak, atau HP bermasalah, kamu bisa memulihkannya dari '
+        'Pengaturan → Kelola tanpa harus ingat menekan tombol backup. '
+        'Bisa dimatikan kapan saja kalau tidak mau.',
+    tech:
+        'v1.39.0: dulu satu-satunya salinan adalah tombol `backupDb()` yang '
+        'butuh buka layar + pilih folder, jadi realitanya jarang ditekan; '
+        'sync Firestore bukan pengganti karena hanya dompet `isShared` yang '
+        'dikirim. Sekarang `AutoBackupController` (tanpa widget, injected '
+        'callbacks seperti AutoSyncController) dipicu `AutoBackupBinder` '
+        'pada `start`/`resume`, maksimal sekali per 20 jam, diam bila switch '
+        'mati, tidak pernah melempar, dan satu percobaan pada satu waktu '
+        '(`_busy`). Penulisan: `PRAGMA wal_checkpoint(TRUNCATE)` lalu salin '
+        '`mywallet.sqlite` ke `backups/mywallet-auto-YYYYMMDD-HHMM.sqlite` '
+        'di dokumen app, rotasi 5 terbaru (nama = urutan waktu, tanpa baca '
+        'mtime). Waktu terakhir di `last_backup_at` (millis), switch di '
+        '`auto_backup` (default ON). UI Kelola: status "Backup terakhir" + '
+        'tombol "Sekarang" yang melewati jatah, daftar salinan bisa dipilih '
+        'untuk restore (dialog konfirmasi sama persis dengan restore manual '
+        'lewat `restoreFromPath`). Test baru `auto_backup_test.dart` (16 '
+        'kasus: jatah, switch, gagal tulis, rotasi, label, binder). 350 test.',
+    breaking: null,
+  ),
+  (
     version: 'v1.38.7',
     date: '22 Okt 2026',
     user:

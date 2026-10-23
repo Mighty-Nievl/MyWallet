@@ -199,6 +199,9 @@ Rencana: simpan online + pasangan ikut nyatat (Google Sign-In + Firestore, opsi 
 - [ ] Transaksi berulang (langganan bulanan otomatis tercatat).
 
 ## Backlog — Data aman & berguna
+- [x] **Backup otomatis harian (v1.39.0)**: `AutoBackupController` + `AutoBackupBinder` (start/resume, maks. sekali per 20 jam, default ON) menyalin DB ke `backups/mywallet-auto-YYYYMMDD-HHMM.sqlite` dengan rotasi 5; UI Kelola punya status "Backup terakhir", tombol "Sekarang", dan daftar salinan untuk restore. 16 test baru (350 total).
+- [ ] **Pengingat backup berbasis notifikasi**: saat ini statusnya hanya terlihat kalau user membuka Pengaturan → Kelola; belum ada notifikasi "sudah lama tidak backup".
+- [ ] **Enkripsi DB lokal**: `mywallet.sqlite` masih SQLite biasa (tanpa sqlcipher); kunci PIN/biometrik hanya gerbang UI, file tetap bisa dibaca bila akses storage didapat. Butuh `sqlcipher_flutter_libs` + migrasi plaintext→terenkripsi + jalur backup/restore yang ikut terenkripsi, dan WAJIB diuji di HP (kunci hilang = data hilang).
 - [ ] Rencana menabung / target (sinking fund).
 - [ ] Insight sederhana: "pengeluaran makan naik 20% vs bulan lalu".
 
