@@ -20,6 +20,30 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.38.6',
+    date: '22 Okt 2026',
+    user:
+        'Label bulan di navigasi periode tidak lagi tampak abu-abu "mati" — '
+        'sekarang terbaca seterang teks lain. Chip periode yang sedang aktif '
+        'juga dapat garis tegas, jadi kelihatan mana yang dipilih tanpa harus '
+        'menebak dari warna latar.',
+    tech:
+        'v1.38.6: (1) PeriodNav memakai onPressed: isCurrent ? null : ... '
+        'sehingga ActionChip jatuh ke state disabled dan M3 menimpa warna '
+        'label jadi 38% onSurface — terukur 3,4:1 di atas pill #F0F8F0 '
+        '(gagal AA) walau style sudah onSurface eksplisit. "Oktober 2026" '
+        'adalah state default aplikasi, jadi label yang paling sering dilihat '
+        'justru yang tampak tidak bisa dipakai. Sekarang selalu aktif, ketuk '
+        'saat sudah di periode berjalan = no-op. (2) Seleksi chip periode '
+        'dulu hanya fill mint vs abu-abu (1,16:1) sementara border idle '
+        '7,36:1 di #FAFAFA, jadi elemen terpilih adalah yang paling pucat. '
+        'Idle TIDAK ditipiskan (7,36:1 sudah benar untuk batas komponen dan '
+        'ambang 3:1 di test/contrast_test.dart akan merah); yang dinaikkan '
+        'sisi terpilih: BorderSide(onPrimaryContainer, width 1.5) ~13:1 vs '
+        'background. 333 test.',
+    breaking: null,
+  ),
+  (
     version: 'v1.38.5',
     date: '22 Okt 2026',
     user:

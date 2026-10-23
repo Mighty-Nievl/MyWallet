@@ -165,6 +165,42 @@ void main() {
       AppTheme.light().colorScheme.onPrimaryContainer,
     );
     expect(active.labelStyle?.fontWeight, FontWeight.w700);
+    // v1.38.6: seleksi dulu cuma fill mint vs abu-abu (1,16:1) sementara
+    // border idle 7,36:1 — yang dipilih jadi elemen paling pucat.
+    expect(
+      active.side?.color,
+      AppTheme.light().colorScheme.onPrimaryContainer,
+      reason: 'garis chip aktif harus paling tegas di barisnya (~13:1)',
+    );
+    expect(active.side?.width, 1.5);
+  });
+
+  testWidgets('label periode tidak pernah dirender sebagai disabled', (
+    tester,
+  ) async {
+    await _pump(tester);
+    // PeriodNav di-pump dengan periode berjalan (22 Okt 2026), jadi ini
+    // state DEFAULT yang paling sering dilihat user.
+    final chip = tester.widget<ActionChip>(
+      find.byKey(const ValueKey('period:label')),
+    );
+    expect(
+      chip.onPressed,
+      isNotNull,
+      reason:
+          'ActionChip disabled membuat M3 menimpa label jadi 38% onSurface '
+          '= 3,4:1 di atas #F0F8F0 (gagal AA) dan "Oktober 2026" tampak '
+          'tidak bisa dipakai',
+    );
+    final label = tester.widget<Text>(
+      find
+          .descendant(
+            of: find.byKey(const ValueKey('period:label')),
+            matching: find.byType(Text),
+          )
+          .first,
+    );
+    expect(label.style?.color, AppTheme.light().colorScheme.onSurface);
   });
 
   testWidgets('kalender di luar baris filter: selalu tampil, tak tergeser', (

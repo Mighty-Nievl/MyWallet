@@ -66,7 +66,18 @@ class PeriodSwitcher extends ConsumerWidget {
             // v1.38.3: chip idle dulu #F4FBF4 di atas #FAFAFA (1,01:1) —
             // hanya border outlineVariant 1,91:1 yang menandai bentuknya.
             backgroundColor: AppColors.subtleOf(context),
-            side: BorderSide(color: scheme.outline),
+            // v1.38.6: seleksi dulu hanya dibawa fill mint vs abu-abu
+            // (1,16:1) sementara border idle 7,36:1 — yang terpilih justru
+            // elemen paling pucat di barisnya. Jalannya bukan menipiskan
+            // idle (border 7,36:1 itu sudah benar untuk batas komponen,
+            // dan menurunkannya melanggar ambang 3:1 di
+            // test/contrast_test.dart) melainkan menebalkan sisi yang
+            // dipilih: onPrimaryContainer ~13:1 di atas #FAFAFA, jadi chip
+            // aktif punya garis paling tegas tanpa merebut warna primary
+            // milik tombol aksi (FAB Catat).
+            side: selected
+                ? BorderSide(color: scheme.onPrimaryContainer, width: 1.5)
+                : BorderSide(color: scheme.outline),
             // 4+8 = 12dp horizontal (dulu 8+8 = 16dp), vertikal tetap 8
             // supaya tinggi pill tidak berubah.
             padding: const EdgeInsets.symmetric(
@@ -175,17 +186,26 @@ class PeriodNav extends ConsumerWidget {
                       ),
                       // Ketuk = pulang ke periode berjalan (perilaku sama
                       // dengan chip bulan di AppMonthNav).
-                      onPressed: isCurrent
-                          ? null
-                          : () {
-                              final now = DateTime.now();
-                              ref.read(periodAnchorProvider.notifier).state =
-                                  DateTime(now.year, now.month, now.day);
-                              if (period.kind == PeriodKind.bulanan) {
-                                ref.read(selectedMonthProvider.notifier).state =
-                                    currentMonthKey();
-                              }
-                            },
+                      //
+                      // v1.38.6: dulu `isCurrent ? null : ...`. ActionChip
+                      // yang disabled membuat M3 menimpa warna label jadi
+                      // 38% onSurface — terukur 3,4:1 di atas pill #F0F8F0
+                      // (gagal AA) meski `color: scheme.onSurface` sudah
+                      // ditulis eksplisit. Dan "Oktober 2026" adalah state
+                      // DEFAULT aplikasi, jadi yang paling sering dilihat
+                      // adalah label yang tampak tidak bisa dipakai.
+                      // Sekarang selalu aktif; saat sudah di periode
+                      // berjalan, ketukan tidak mengubah apa pun.
+                      onPressed: () {
+                        if (isCurrent) return;
+                        final now = DateTime.now();
+                        ref.read(periodAnchorProvider.notifier).state =
+                            DateTime(now.year, now.month, now.day);
+                        if (period.kind == PeriodKind.bulanan) {
+                          ref.read(selectedMonthProvider.notifier).state =
+                              currentMonthKey();
+                        }
+                      },
                     ),
                   ),
                   const SizedBox(width: AppSpacing.s4),
