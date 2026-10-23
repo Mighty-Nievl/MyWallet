@@ -40,7 +40,7 @@ const appChangelog = <({String version, String date, String user, String tech, S
         'pertama datang sebelum koneksi DB membuka file — retry 400 ms, karena '
         'dulu hasilnya "Belum pernah" padahal app baru dibuka. Test rotasi '
         'diperbarui + 2 kasus baru (satu file per hari, timpa berisi data '
-        'terbaru).',
+        'terbaru). 366 test.',
     breaking: null,
   ),
   (

@@ -5,6 +5,30 @@
 > catatan di sini menyimpan alasan, bukti, dan trade-off untuk diri sendiri
 > enam bulan kemudian. Ditulis tiap kali tag dibuat.
 
+## v1.41.0 — 23 Okt 2026 — backup ikut setiap simpan
+
+**Masalah.** Setelah mencatat transaksi, baris "Backup terakhir" tidak berubah —
+user (dan aku) mengharapkan "Baru saja". Dua sebab: (1) jatah 20 jam membuat
+backup hanya jalan sekali sehari, jadi salinan tidak pernah memuat catatan
+terakhir; (2) nama file berjam-menit membuat lima simpan dalam sehari
+menghabiskan seluruh rotasi 5 dan menghapus riwayat hari sebelumnya. Ada juga
+jalur gagal senyap: `start` bisa berjalan sebelum koneksi DB membuka file, lalu
+menyerah sampai resume berikutnya — hasilnya "Belum pernah" padahal app baru
+dibuka.
+
+**Yang dikerjakan.** `tx_form_screen` memanggil `runNow()` setelah simpan dan
+setelah hapus (jatah 20 jam kini hanya untuk pemicu latar). Nama file jadi
+`mywallet-auto-YYYYMMDD.sqlite` — satu file per hari, simpan berikutnya
+menimpa, rotasi 5 = lima hari terakhir. `start` diberi satu kesempatan 400 ms
+sebelum menyerah.
+
+**Pelajaran.** "Backup terakhir" adalah janji tentang *data*, bukan tentang
+*jadwal*. Label yang jujur harus bergerak setiap kali data berubah, bukan
+setiap kali jam dinding berubah.
+
+**Bukti.** Tag `v1.41.0`, 366 test (2 kasus rotasi baru), CI Analyze & Test
+hijau, Release APK + AAB terbit.
+
 ## v1.40.0 — 23 Okt 2026 — catat satu kolom
 
 **Masalah.** Form Catat punya dua isian (Nominal, Catatan). Cara tercepat user
