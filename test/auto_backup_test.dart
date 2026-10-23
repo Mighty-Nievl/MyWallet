@@ -5,7 +5,6 @@
 // sama-sama bug. Rotasi juga dikunci karena folder tak boleh tumbuh
 // selamanya di HP 32 GB.
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
