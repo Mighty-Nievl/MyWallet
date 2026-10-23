@@ -144,4 +144,82 @@ class BackupService {
     await src.copy(dest.path);
     await cleanJournals(dest);
   }
+
+  // ---------- Backup otomatis (v1.39.0) ----------
+  //
+  // Kenapa: `backupToFile` butuh user menekan tombol DI SATU LAYAR dan
+  // memilih folder sendiri. Itu satu-satunya salinan data; kalau HP hilang
+  // atau rusak sebelum tombol itu pernah ditekan, seluruh catatan hilang
+  // tanpa peringatan. Sync Firestore bukan pengganti: hanya dompet
+  // `isShared` + transaksinya yang dikirim.
+  //
+  // Semua helper di bawah sengaja file-op murni (folder masuk lewat
+  // parameter) supaya bisa diuji di temp dir tanpa path_provider.
+
+  /// Nama file backup harian: `mywallet-auto-YYYYMMDD-HHMM.sqlite`.
+  /// Urut abjad = urut waktu, jadi rotasi tidak butuh baca mtime.
+  static String autoBackupName(DateTime at) {
+    final d = '${at.year}${at.month.toString().padLeft(2, '0')}'
+        '${at.day.toString().padLeft(2, '0')}';
+    final t = '${at.hour.toString().padLeft(2, '0')}'
+        '${at.minute.toString().padLeft(2, '0')}';
+    return 'mywallet-auto-$d-$t.sqlite';
+  }
+
+  /// Folder salinan harian di dokumen aplikasi (`backups/`).
+  /// Dibuat bila belum ada.
+  static Future<Directory> autoBackupDir() async {
+    final base = await getApplicationDocumentsDirectory();
+    final dir = Directory(p.join(base.path, 'backups'));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir;
+  }
+
+  /// Salin [src] ke [dir] dengan nama bertanggal, lalu rotasi [keep]
+  /// terbaru. Return file hasil salinan.
+  static Future<File> writeAutoBackup(
+    File src,
+    Directory dir, {
+    int keep = 5,
+    DateTime? now,
+  }) async {
+    if (!await dir.exists()) await dir.create(recursive: true);
+    final dest = File(p.join(dir.path, autoBackupName(now ?? DateTime.now())));
+    await src.copy(dest.path);
+    await pruneAutoBackups(dir, keep: keep);
+    return dest;
+  }
+
+  /// Daftar salinan harian, TERBARU dulu. File lain di folder diabaikan.
+  static Future<List<File>> listAutoBackups(Directory dir) async {
+    if (!await dir.exists()) return <File>[];
+    final files = <File>[];
+    await for (final e in dir.list()) {
+      if (e is File &&
+          p.basename(e.path).startsWith('mywallet-auto-') &&
+          e.path.endsWith('.sqlite')) {
+        files.add(e);
+      }
+    }
+    files.sort((a, b) => p.basename(b.path).compareTo(p.basename(a.path)));
+    return files;
+  }
+
+  /// Hapus semua salinan kecuali [keep] terbaru. Return jumlah terhapus.
+  /// [keep] < 1 diperlakukan sebagai 1 — folder tidak boleh kosong karena
+  /// satu kesalahan parameter.
+  static Future<int> pruneAutoBackups(Directory dir, {int keep = 5}) async {
+    final files = await listAutoBackups(dir);
+    final limit = keep < 1 ? 1 : keep;
+    var deleted = 0;
+    for (var i = limit; i < files.length; i++) {
+      try {
+        await files[i].delete();
+        deleted++;
+      } catch (_) {
+        // Abaikan: file bisa hilang bersamaan (restore/reset).
+      }
+    }
+    return deleted;
+  }
 }

@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../data/auto_backup.dart';
 import '../../data/backup_service.dart';
 import '../../data/lock_service.dart';
 import '../../data/providers.dart';
@@ -610,6 +611,17 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
   Future<void> restoreDb() async {
     final src = await BackupService.pickRestoreFile();
     if (src == null || !mounted) return;
+    await restoreFromPath(src);
+  }
+
+  /// Konfirmasi + restore dari path tertentu (v1.39.0).
+  ///
+  /// Dipakai dua pintu: [restoreDb] (file yang dipilih user lewat file
+  /// picker) dan [restoreAuto] (salinan harian di folder app). Isi dialog
+  /// dan urutan operasinya SENGAJA satu tempat — dua salinan teks
+  /// konfirmasi yang berbeda adalah cara termudah membuat user salah paham
+  /// bahwa salah satunya lebih aman.
+  Future<void> restoreFromPath(String src) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
@@ -658,6 +670,84 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
         );
       }
     }
+  }
+
+  /// Tombol "Sekarang" di baris "Backup terakhir" (v1.39.0): tulis salinan
+  /// ke folder backup otomatis, bukan dialog pilih folder. Jatah 20 jam
+  /// sengaja dilewati — user menekan tombol berarti minta sekarang.
+  Future<void> backupNow() async {
+    final ok = await ref.read(autoBackupProvider).runNow();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok
+            ? 'Backup tersimpan di HP.'
+            : 'Backup gagal — coba lagi.'),
+      ),
+    );
+  }
+
+  /// Pulihkan dari salinan harian (v1.39.0). Daftar file dibaca dari folder
+  /// app, terbaru dulu; isi dialog konfirmasi sama dengan restore manual.
+  Future<void> restoreAuto() async {
+    final dir = await BackupService.autoBackupDir();
+    final files = await BackupService.listAutoBackups(dir);
+    if (!mounted) return;
+    if (files.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Belum ada backup otomatis di HP ini.')),
+      );
+      return;
+    }
+    // Ukuran + waktu dibaca SEBELUM sheet tampil supaya tidak ada await
+    // di dalam builder (setiap rebuild akan mengulang I/O).
+    final entries = <({String path, String when, String meta})>[];
+    for (final f in files) {
+      final len = await f.length();
+      final at = await f.lastModified();
+      entries.add((
+        path: f.path,
+        when: formatDateTime(at),
+        meta: formatBytes(len),
+      ));
+    }
+    if (!mounted) return;
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (c) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.page, 0, AppSpacing.page, AppSpacing.s8),
+              child: Text('Pulihkan backup otomatis',
+                  style: Theme.of(c).textTheme.titleMedium),
+            ),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final e in entries)
+                    ListTile(
+                      leading: const Icon(Icons.restore),
+                      title: Text(e.when),
+                      subtitle: Text('${e.meta} · tersimpan di HP'),
+                      onTap: () => Navigator.pop(c, e.path),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.s8),
+          ],
+        ),
+      ),
+    );
+    if (picked == null || !mounted) return;
+    await restoreFromPath(picked);
   }
 
   Future<void> wipeAll() async {

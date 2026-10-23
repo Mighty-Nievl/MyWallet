@@ -91,6 +91,30 @@ String formatDateTime(DateTime d) {
   return '${formatDate(d)} · $hh:$mm';
 }
 
+/// Umur backup untuk baris "Backup terakhir" (v1.39.0):
+/// "Baru saja" · "42 menit lalu" · "Kemarin" · "9 hari lalu" · tanggal.
+/// [now] bisa disuntik supaya bisa diuji tanpa jam asli.
+String backupAgeLabel(DateTime at, {DateTime? now}) {
+  final n = now ?? DateTime.now();
+  final diff = n.difference(at);
+  if (diff.isNegative || diff.inMinutes < 2) return 'Baru saja';
+  if (diff.inMinutes < 60) return '${diff.inMinutes} menit lalu';
+  if (diff.inHours < 24) return '${diff.inHours} jam lalu';
+  if (diff.inDays == 1) return 'Kemarin';
+  if (diff.inDays < 30) return '${diff.inDays} hari lalu';
+  return formatDate(at);
+}
+
+/// Ukuran file ringkas untuk daftar backup (v1.39.0): "812 B", "24 KB",
+/// "2.5 MB" — pembulatan satu desimal lewat [toStringAsFixed].
+String formatBytes(int bytes) {
+  if (bytes < 1024) return '$bytes B';
+  if (bytes < 1024 * 1024) {
+    return '${(bytes / 1024).toStringAsFixed(0)} KB';
+  }
+  return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+}
+
 /// "2026-10" -> "Oktober 2026"
 String monthLabel(String key) {
   final parts = key.split('-');

@@ -29,6 +29,9 @@ abstract final class SettingsKeys {
   static const compactList = 'compact_list'; // bool (list rapat)
   static const relativeDates = 'relative_dates'; // bool (Hari ini/Kemarin)
   static const showCategoryIcons = 'show_category_icons'; // bool
+  // --- Backup otomatis (v1.39.0) ---
+  static const autoBackup = 'auto_backup'; // bool (default true)
+  static const lastBackupAt = 'last_backup_at'; // int millis since epoch
 }
 
 /// Satu-satunya prefs provider (dipakai settings + actions).
@@ -149,6 +152,13 @@ class SettingsService {
   Future<void> setShowCategoryIcons(bool v) async {
     (await _prefs).setBool(SettingsKeys.showCategoryIcons, v);
     _ref.invalidate(showCategoryIconsProvider);
+  }
+
+  // --- Backup otomatis (v1.39.0) ---
+
+  Future<void> setAutoBackup(bool v) async {
+    (await _prefs).setBool(SettingsKeys.autoBackup, v);
+    _ref.invalidate(autoBackupEnabledProvider);
   }
 }
 
@@ -305,6 +315,22 @@ final relativeDatesProvider = FutureProvider<bool>((ref) async {
 final showCategoryIconsProvider = FutureProvider<bool>((ref) async {
   final p = await ref.watch(prefsProvider.future);
   return p.getBool(SettingsKeys.showCategoryIcons) ?? true;
+});
+
+// ---------- Backup otomatis (v1.39.0) ----------
+
+/// Salinan harian ke folder app menyala (default: menyala).
+final autoBackupEnabledProvider = FutureProvider<bool>((ref) async {
+  final p = await ref.watch(prefsProvider.future);
+  return p.getBool(SettingsKeys.autoBackup) ?? true;
+});
+
+/// Waktu backup terakhir (null = belum pernah sejak install ini).
+/// Ditulis `AutoBackupController`, dibaca baris "Backup terakhir".
+final lastBackupAtProvider = FutureProvider<DateTime?>((ref) async {
+  final p = await ref.watch(prefsProvider.future);
+  final ms = p.getInt(SettingsKeys.lastBackupAt);
+  return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
 });
 
 /// true bila SEMUA nominal harus disembunyikan (hide aktif + scope 'all').

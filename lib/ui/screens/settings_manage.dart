@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/providers.dart';
+import '../../data/settings.dart';
 import '../components/app_feedback.dart';
 import '../components/setting_row.dart';
 import '../design/app_spacing.dart';
+import '../format.dart';
 import 'categories_screen.dart';
 import 'settings_actions.dart';
 
@@ -51,6 +53,8 @@ class _ManageSettingsPageState extends ConsumerState<ManageSettingsPage>
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final cats = ref.watch(categoriesProvider);
+    final autoBackup = ref.watch(autoBackupEnabledProvider);
+    final lastBackup = ref.watch(lastBackupAtProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -142,6 +146,58 @@ class _ManageSettingsPageState extends ConsumerState<ManageSettingsPage>
                           subtitle:
                               'Simpan salinan mywallet.sqlite ke file',
                           onTap: backupDb,
+                        ),
+                      // v1.39.0: backup harian otomatis — jawaban untuk
+                      // "user tidak pernah menekan tombol backup".
+                      if (_match(
+                          'backup otomatis', 'harian salinan', const ['auto']))
+                        SettingRow(
+                          icon: Icons.settings_backup_restore,
+                          title: 'Backup otomatis',
+                          subtitle: autoBackup.when(
+                            loading: () =>
+                                'Tiap hari, 5 salinan terakhir di HP',
+                            error: (_, _) =>
+                                'Tiap hari, 5 salinan terakhir di HP',
+                            data: (on) => on
+                                ? 'Tiap hari, 5 salinan terakhir di HP'
+                                : 'Mati — backup hanya saat tombol ditekan',
+                          ),
+                          trailing: Switch(
+                            value: autoBackup.value ?? true,
+                            onChanged: (v) => ref
+                                .read(settingsServiceProvider)
+                                .setAutoBackup(v),
+                          ),
+                          onTap: () => ref
+                              .read(settingsServiceProvider)
+                              .setAutoBackup(!(autoBackup.value ?? true)),
+                        ),
+                      if (_match('backup terakhir', 'terakhir kapan',
+                          const ['backup', 'last']))
+                        SettingRow(
+                          icon: Icons.schedule,
+                          title: 'Backup terakhir',
+                          subtitle: lastBackup.when(
+                            loading: () => '…',
+                            error: (_, _) => 'Gagal membaca',
+                            data: (d) => d == null
+                                ? 'Belum pernah — data hanya ada di HP ini'
+                                : backupAgeLabel(d),
+                          ),
+                          trailing: TextButton(
+                            onPressed: backupNow,
+                            child: const Text('Sekarang'),
+                          ),
+                        ),
+                      if (_match('pulihkan backup', 'restore salinan',
+                          const ['restore', 'auto']))
+                        SettingRow(
+                          icon: Icons.restore,
+                          title: 'Pulihkan backup otomatis',
+                          subtitle:
+                              'Pilih salinan harian yang tersimpan di HP',
+                          onTap: restoreAuto,
                         ),
                     ],
                   ),

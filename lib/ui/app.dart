@@ -6,6 +6,7 @@ import '../data/settings.dart';
 import 'app_theme.dart';
 import 'screens/lock_screen.dart';
 import 'shell.dart';
+import 'widgets/auto_backup_binder.dart';
 import 'widgets/auto_sync_binder.dart';
 
 class MyWalletApp extends ConsumerStatefulWidget {
@@ -104,7 +105,11 @@ class _MyWalletAppState extends ConsumerState<MyWalletApp>
           // v1.38.5: sync latar (start/resume/online). Penjatahan ada di
           // AutoSyncController; tanpa binding ini sync hanya jalan kalau
           // user menekan tombol di layar Keluarga.
-          home: const AutoSyncBinder(child: AppShell()),
+          // v1.39.0: backup harian ke folder app (start/resume), lihat
+          // AutoBackupBinder.
+          home: const AutoSyncBinder(
+            child: AutoBackupBinder(child: AppShell()),
+          ),
         );
       },
     );
