@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../data/actions.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
+import '../../data/quick_parse.dart';
 import '../../data/receipt_parse.dart';
 import '../../data/receipt_scan_service.dart';
 import '../amount_input.dart';
@@ -81,6 +82,9 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
               : '');
     _amountCtrl = TextEditingController(text: seed);
     _noteCtrl = TextEditingController(text: e?.note ?? '');
+    // v1.40.0: petunjuk "nominal terbaca" harus hilang begitu user
+    // mengisi kolom nominal sendiri — listener ini yang memicu rebuild.
+    _amountCtrl.addListener(_onAmountChanged);
     // v1.36.1: tanggal baru ikut periode yang dilihat. Dulu selalu
     // DateTime.now() — mencatat saat menjelajah kemarin/bulan lalu
     // menyimpan transaksi di luar layar (seolah hilang).
@@ -99,6 +103,22 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
     _amountCtrl.dispose();
     _noteCtrl.dispose();
     super.dispose();
+  }
+
+  /// Nominal berubah → petunjuk "terbaca dari catatan" harus ikut hilang.
+  void _onAmountChanged() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  /// Petunjuk live di bawah kolom Catatan (v1.40.0): apa yang akan dipakai
+  /// saat simpan bila kolom nominal masih kosong. Segera hilang begitu user
+  /// mengisi nominal sendiri — jangan pernah menimpa angka yang diketik.
+  String? _quickHint() {
+    if (parseRp(_amountCtrl.text) > 0) return null;
+    final q = parseQuickInput(_noteCtrl.text);
+    if (q == null) return null;
+    return 'Terbaca ${formatRp(q.amount)} — dipakai saat simpan';
   }
 
   bool get _editing => widget.existing != null;
@@ -125,7 +145,20 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
 
   Future<void> _save() async {
     if (_saving) return;
-    final amount = parseRp(_amountCtrl.text);
+    var amount = parseRp(_amountCtrl.text);
+    var note = _noteCtrl.text;
+    // v1.40.0: satu kolom "makan 25 ribu". Bila nominal masih kosong tapi
+    // catatan berisi nominal yang bisa dibaca dengan yakin, pakai itu dan
+    // rapikan catatannya — dulu user ditolak "Isi nominal dulu" padahal
+    // angkanya sudah dia tulis.
+    if (amount <= 0) {
+      final quick = parseQuickInput(note);
+      if (quick != null) {
+        amount = quick.amount;
+        note = quick.note;
+        _amountCtrl.text = formatAmountField(quick.amount);
+      }
+    }
     if (amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Isi nominal dulu (lebih dari 0).')),
@@ -142,7 +175,7 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
           isExpense: _isExpense,
           categoryId: _categoryId,
           date: _date,
-          note: _noteCtrl.text,
+          note: note,
         );
       } else {
         // v1.32: dompet = pilihan user di form (state _accountId, terlihat
@@ -166,7 +199,7 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
           isExpense: _isExpense,
           categoryId: _categoryId,
           date: _date,
-          note: _noteCtrl.text,
+          note: note,
           accountId: acct,
         );
       }
@@ -450,11 +483,13 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
             const SizedBox(height: AppSpacing.s8),
             TextField(
               controller: _noteCtrl,
-              decoration: const InputDecoration(
-                hintText: 'cth. makan siang di warteg',
+              decoration: InputDecoration(
+                hintText: 'cth. makan siang 25 ribu',
+                helperText: _quickHint(),
               ),
               maxLines: 2,
               textInputAction: TextInputAction.done,
+              onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: AppSpacing.sectionGap),
             SizedBox(

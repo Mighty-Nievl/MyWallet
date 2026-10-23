@@ -20,6 +20,28 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.40.0',
+    date: '23 Okt 2026',
+    user:
+        'Mencatat sekarang bisa satu kolom: tulis "makan 25 ribu" di Catatan, '
+        'nominalnya terbaca sendiri saat disimpan — tidak perlu pindah kolom '
+        'atau mengetik ulang angkanya. Kalau kamu mengisi nominal sendiri, '
+        'yang kamu ketik selalu menang.',
+    tech:
+        'v1.40.0: `parseQuickInput` (`lib/data/quick_parse.dart`) murni string '
+        '→ angka, urutan prioritas: ribuan bertitik `\d{1,3}(?:\.\d{3})+`, '
+        'angka + satuan (`ribu|ribuan|rb|k|juta|jt`, koma/titik desimal), lalu '
+        'angka polos >= 4 digit. Angka < 1000 tanpa satuan dan > Rp1 triliun '
+        'mengembalikan null — menebak di situ lebih berbahaya daripada meminta '
+        'nominal. Sisa teks jadi catatan ("Rp" yatim dibuang, spasi dirapikan). '
+        'UI: `tx_form_screen` menampilkan helper live "Terbaca Rp25.000 — dipakai '
+        'saat simpan" (listener pada `_amountCtrl` mematikannya begitu user '
+        'mengetik nominal) dan `_save()` memakai hasil parse hanya bila '
+        '`parseRp` = 0, lalu mengisi kolom nominal. 15 test '
+        '`quick_parse_test.dart`.',
+    breaking: null,
+  ),
+  (
     version: 'v1.39.0',
     date: '23 Okt 2026',
     user:

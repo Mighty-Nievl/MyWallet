@@ -8,7 +8,7 @@ Urut saran pengerjaan setelah MVP stabil dipakai 2–4 minggu.
 - [x] Saldo awal / koreksi saldo (masuk P0 Pengaturan).
 - [x] Backup (file `.sqlite` via `VACUUM INTO` + restore + hapus semua data) — dimajukan dari v1.3 karena kritis untuk app offline.
 - [x] Tema gelap/terang + sembunyikan saldo.
-- [ ] Input cepat: parsing "makan 25 ribu" dari satu kolom.
+- [x] **Input cepat satu kolom (v1.40.0)**: `parseQuickInput` di `lib/data/quick_parse.dart` membaca nominal dari catatan — ribuan bertitik ("50.000", "Rp1.500.000"), angka + satuan ("25 ribu", "15rb", "25k", "1,5jt", "5 juta"), lalu angka polos ≥4 digit. Angka <1000 tanpa satuan dan nilai >Rp1 triliun sengaja ditolak (null, bukan tebakan). Form Catat menampilkan helper "Terbaca Rp25.000 — dipakai saat simpan" dan memakai hasil parse bila kolom nominal kosong; nominal yang diketik user tidak pernah ditimpa. 15 test `quick_parse_test.dart`.
 
 ## v1.2 — Tampilan full ✅ (rilis 7 Okt 2026 sebagai v1.2.0)
 - [x] Warna aksen (6 pilihan) + Material You / dynamic_color.
