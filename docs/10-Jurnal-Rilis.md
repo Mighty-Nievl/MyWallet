@@ -23,8 +23,8 @@ nominal kosong.
 jadi Rp3, dan salah nominal di aplikasi keuangan lebih mahal daripada satu
 ketikan tambahan.
 
-**Bukti.** Tag `v1.40.0`, 15 test `quick_parse_test.dart`, CI Analyze & Test
-hijau, Release APK + AAB terbit.
+**Bukti.** Tag `v1.40.0`, 15 test `quick_parse_test.dart` (365 total), CI Analyze
+& Test hijau, Release APK + AAB terbit.
 
 ## v1.39.0 — 23 Okt 2026 — backup tanpa tombol
 

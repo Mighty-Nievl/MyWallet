@@ -38,7 +38,7 @@ const appChangelog = <({String version, String date, String user, String tech, S
         'saat simpan" (listener pada `_amountCtrl` mematikannya begitu user '
         'mengetik nominal) dan `_save()` memakai hasil parse hanya bila '
         '`parseRp` = 0, lalu mengisi kolom nominal. 15 test '
-        '`quick_parse_test.dart`.',
+        '`quick_parse_test.dart`. 365 test.',
     breaking: null,
   ),
   (
