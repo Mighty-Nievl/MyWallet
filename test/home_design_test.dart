@@ -18,6 +18,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mywallet/data/database.dart';
+import 'package:mywallet/data/period.dart';
 import 'package:mywallet/data/providers.dart';
 import 'package:mywallet/ui/app_theme.dart';
 import 'package:mywallet/ui/components/app_feedback.dart';
@@ -338,6 +339,61 @@ void main() {
     expect(recentY, lessThan(topcatsY));
     expect(topcatsY, lessThan(menuY));
     expect(recentY, lessThan(844));
+
+    await _flushDriftCloseTimer(tester);
+  });
+
+  testWidgets('harian v1.38.7: pengeluaran hari ini naik di atas transaksi', (
+    tester,
+  ) async {
+    final db = await _newDb(tester, size: const Size(390, 1600));
+    await tester.runAsync(() async {
+      await _loadFonts();
+      await _seed(db);
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [dbProvider.overrideWithValue(db)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: HomeScreen(onGoTab: (_) {}),
+        ),
+      ),
+    );
+    for (var i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    Finder sectionIn(String key) => find.descendant(
+      of: find.byKey(ValueKey(key)),
+      matching: find.byType(AppSection),
+    );
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(HomeScreen)),
+    );
+
+    // Harian: rincian kategori dulu, daftar transaksi setelahnya.
+    container.read(periodKindProvider.notifier).state = PeriodKind.harian;
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(
+      tester.getTopLeft(sectionIn('home:topcats')).dy,
+      lessThan(tester.getTopLeft(sectionIn('home:recent')).dy),
+      reason: 'harian: "Pengeluaran hari ini" di atas "Terakhir dicatat"',
+    );
+
+    // Bulanan tidak ikut berubah: recent dulu, lalu kategori.
+    container.read(periodKindProvider.notifier).state = PeriodKind.bulanan;
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(
+      tester.getTopLeft(sectionIn('home:recent')).dy,
+      lessThan(tester.getTopLeft(sectionIn('home:topcats')).dy),
+      reason: 'bulanan: daftarnya panjang, kategori tetap di bawah',
+    );
 
     await _flushDriftCloseTimer(tester);
   });

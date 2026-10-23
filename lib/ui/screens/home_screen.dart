@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/auth_service.dart';
 import '../../data/database.dart';
+import '../../data/period.dart';
 import '../../data/providers.dart';
 import '../../data/settings.dart';
 import '../components/app_card.dart';
@@ -71,6 +72,75 @@ class HomeScreen extends ConsumerWidget {
     // Status bar adaptif (kritik brutal v1.24.2): ikon terang di dark,
     // gelap di light — bukan hardcode gelap terus.
     final isDark = AppColors.isDark(context);
+    // v1.38.7: di Harian, rincian "Pengeluaran hari ini" naik di atas
+    // "Terakhir dicatat". Untuk rentang sehari, "ke mana uang pergi" lebih
+    // menjawab pertanyaan daripada daftar 2-3 transaksi yang isinya sama —
+    // dan `_DailyStrip` di dalam "Terakhir dicatat" sudah menampilkan total
+    // harian, jadi angkanya dobel kalau keduanya berurutan seperti ini.
+    // Periode lain tetap recent dulu: sebulan/setahun daftarnya panjang, dan
+    // kategori di atas daftar panjang berarti user menggulir dua kali.
+    final dailyFirst = period.kind == PeriodKind.harian;
+    final recentSlivers = <Widget>[
+      if (showRecent) ...[
+        const SliverToBoxAdapter(
+          child: SizedBox(height: AppSpacing.sectionGapLarge),
+        ),
+        SliverToBoxAdapter(
+          key: const ValueKey('home:recent'),
+          child: _pad(
+            AppSection(
+              title: 'Terakhir dicatat$acctSuffix',
+              trailing: TextButton(
+                // v1.24.3: label konteks (kritik brutal L5).
+                // v1.26: push langsung (tab 1 sudah tak ada).
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const HistoryScreen(),
+                  ),
+                ),
+                child: const Text('Semua transaksi'),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (showDaily) _DailyStrip(dayTotals: dayTotals),
+                  _RecentList(count: recentCount),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    ];
+    final topcatSlivers = <Widget>[
+      if (showTop) ...[
+        const SliverToBoxAdapter(
+          child: SizedBox(height: AppSpacing.sectionGapLarge),
+        ),
+        SliverToBoxAdapter(
+          key: const ValueKey('home:topcats'),
+          child: _pad(
+            AppSection(
+              title:
+                  'Pengeluaran ${periodRelativeLabel(period)}$acctSuffix',
+              trailing: TextButton(
+                // v1.24.3: label konteks, bukan generik
+                // "Lihat semua" (kritik brutal L5).
+                // v1.26: push langsung (tab 3 sudah tak ada).
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const ReportsScreen(),
+                  ),
+                ),
+                child: const Text('Semua kategori'),
+              ),
+              child: _CategoryList(byCat: byCat, display: display),
+            ),
+          ),
+        ),
+      ],
+    ];
+
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -151,68 +221,11 @@ class HomeScreen extends ConsumerWidget {
                     key: const ValueKey('home:flowcards'),
                     child: _pad(const FlowCards(), top: AppSpacing.s12),
                   ),
-                  // v1.37: transaksi terakhir naik ke atas kategori/menu.
-                  // Ini data yang paling sering dicari saat membuka app;
-                  // jangan biarkan terkubur di bawah 8 tombol menu.
-                  if (showRecent) ...[
-                    const SliverToBoxAdapter(
-                      child: SizedBox(height: AppSpacing.sectionGapLarge),
-                    ),
-                    SliverToBoxAdapter(
-                      key: const ValueKey('home:recent'),
-                      child: _pad(
-                        AppSection(
-                          title: 'Terakhir dicatat$acctSuffix',
-                          trailing: TextButton(
-                            // v1.24.3: label konteks (kritik brutal L5).
-                            // v1.26: push langsung (tab 1 sudah tak ada).
-                            onPressed: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const HistoryScreen(),
-                              ),
-                            ),
-                            child: const Text('Semua transaksi'),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (showDaily) _DailyStrip(dayTotals: dayTotals),
-                              _RecentList(count: recentCount),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                  // Redesign v1.24 B2C minimalis: delta/kilat/debts DIHAPUS
-                  // (cognitive load). Spacing lega via token sectionGapLarge.
-                  // v1.37: kategori turun setelah transaksi terakhir.
-                  if (showTop) ...[
-                    const SliverToBoxAdapter(
-                      child: SizedBox(height: AppSpacing.sectionGapLarge),
-                    ),
-                    SliverToBoxAdapter(
-                      key: const ValueKey('home:topcats'),
-                      child: _pad(
-                        AppSection(
-                          title:
-                              'Pengeluaran ${periodRelativeLabel(period)}$acctSuffix',
-                          trailing: TextButton(
-                            // v1.24.3: label konteks, bukan generik
-                            // "Lihat semua" (kritik brutal L5).
-                            // v1.26: push langsung (tab 3 sudah tak ada).
-                            onPressed: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const ReportsScreen(),
-                              ),
-                            ),
-                            child: const Text('Semua kategori'),
-                          ),
-                          child: _CategoryList(byCat: byCat, display: display),
-                        ),
-                      ),
-                    ),
-                  ],
+                  // v1.38.7: urutan dua section ini bergantung periode —
+                  // Harian: pengeluaran per kategori dulu, lalu transaksi.
+                  ...(dailyFirst
+                      ? [...topcatSlivers, ...recentSlivers]
+                      : [...recentSlivers, ...topcatSlivers]),
                   ],
                   // v1.37: menu ringkas (4 pintasan unik) turun ke bawah
                   // data. Catat/Scan/Riwayat sudah ada di dock, jadi

@@ -20,6 +20,28 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.38.7',
+    date: '22 Okt 2026',
+    user:
+        'Kalau filternya "Harian", "Pengeluaran hari ini" sekarang tampil di '
+        'atas "Terakhir dicatat" — jadi yang pertama terlihat adalah ke mana '
+        'uang pergi hari ini, bukan daftar transaksinya. Untuk Mingguan, '
+        'Bulanan, dan Tahunan urutannya tetap seperti sebelumnya.',
+    tech:
+        'v1.38.7: urutan dua section Beranda kini bergantung periode. Di '
+        'home_screen.dart blok `home:recent` dan `home:topcats` diangkat jadi '
+        '`recentSlivers`/`topcatSlivers` lokal lalu di-spread kondisional '
+        'lewat `dailyFirst = period.kind == PeriodKind.harian`. Alasan: untuk '
+        'rentang sehari daftar transaksi cuma 2-3 baris dan `_DailyStrip` di '
+        'dalam "Terakhir dicatat" sudah menampilkan total harian, jadi angka '
+        'dobel bila keduanya berurutan seperti pola bulanan; untuk '
+        'sebulan/setahun daftarnya panjang sehingga kategori yang ditaruh di '
+        'atas berarti user menggulir dua kali. Test baru di '
+        'home_design_test.dart: harian topcats.dy < recent.dy, bulanan tetap '
+        'recent.dy < topcats.dy. 334 test.',
+    breaking: null,
+  ),
+  (
     version: 'v1.38.6',
     date: '22 Okt 2026',
     user:
