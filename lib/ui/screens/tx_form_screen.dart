@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../data/actions.dart';
+import '../../data/auto_backup.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../../data/quick_parse.dart';
@@ -206,6 +207,10 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+    // v1.41.0: "Backup terakhir: Baru saja" harus berarti transaksi yang
+    // barusan dicatat sudah ada di salinan. Tanpa ini backup hanya jalan
+    // sekali per 20 jam, jadi label itu tidak pernah bergerak setelah simpan.
+    await ref.read(autoBackupProvider).runNow();
     HapticFeedback.lightImpact();
     if (mounted) Navigator.of(context).pop();
   }
@@ -222,6 +227,8 @@ class _TxFormScreenState extends ConsumerState<TxFormScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final db = ref.read(dbProvider);
     await deleteTransaction(ref, id);
+    // v1.41.0: hapus juga mengubah data — salinan ikut diperbarui.
+    await ref.read(autoBackupProvider).runNow();
     if (!mounted) return;
     HapticFeedback.mediumImpact();
     Navigator.of(context).pop();

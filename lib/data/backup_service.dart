@@ -156,14 +156,17 @@ class BackupService {
   // Semua helper di bawah sengaja file-op murni (folder masuk lewat
   // parameter) supaya bisa diuji di temp dir tanpa path_provider.
 
-  /// Nama file backup harian: `mywallet-auto-YYYYMMDD-HHMM.sqlite`.
-  /// Urut abjad = urut waktu, jadi rotasi tidak butuh baca mtime.
+  /// Nama file backup harian: `mywallet-auto-YYYYMMDD.sqlite`.
+  ///
+  /// v1.41.0: dulu namanya memuat jam-menit, jadi lima kali simpan dalam
+  /// satu hari menghabiskan seluruh jatah rotasi dan riwayat hari
+  /// sebelumnya hilang. Sekarang SATU file per hari: simpan berikutnya di
+  /// hari yang sama menimpa, sehingga file terbaru selalu berisi data
+  /// terkini dan rotasi 5 berarti lima hari terakhir.
   static String autoBackupName(DateTime at) {
     final d = '${at.year}${at.month.toString().padLeft(2, '0')}'
         '${at.day.toString().padLeft(2, '0')}';
-    final t = '${at.hour.toString().padLeft(2, '0')}'
-        '${at.minute.toString().padLeft(2, '0')}';
-    return 'mywallet-auto-$d-$t.sqlite';
+    return 'mywallet-auto-$d.sqlite';
   }
 
   /// Folder salinan harian di dokumen aplikasi (`backups/`).
@@ -175,8 +178,8 @@ class BackupService {
     return dir;
   }
 
-  /// Salin [src] ke [dir] dengan nama bertanggal, lalu rotasi [keep]
-  /// terbaru. Return file hasil salinan.
+  /// Salin [src] ke [dir] dengan nama tanggal (menimpa file hari yang
+  /// sama), lalu rotasi [keep] terbaru. Return file hasil salinan.
   static Future<File> writeAutoBackup(
     File src,
     Directory dir, {

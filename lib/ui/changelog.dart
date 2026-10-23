@@ -20,6 +20,30 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.41.0',
+    date: '23 Okt 2026',
+    user:
+        'Setiap kali kamu menyimpan atau menghapus transaksi, salinan backup '
+        'ikut diperbarui saat itu juga — jadi "Backup terakhir: Baru saja" '
+        'berarti data terakhirmu benar-benar sudah tersalin, bukan menunggu '
+        'besok. Salinan disimpan satu file per hari: lima hari terakhir, '
+        'bukan lima menit terakhir.',
+    tech:
+        'v1.41.0: (1) `tx_form_screen` memanggil '
+        '`autoBackupProvider.runNow()` setelah simpan dan setelah hapus, jadi '
+        'jatah 20 jam hanya berlaku untuk pemicu latar (start/resume). (2) '
+        '`BackupService.autoBackupName` jadi tanggal saja '
+        '(`mywallet-auto-YYYYMMDD.sqlite`): nama berjam-menit membuat lima '
+        'simpan dalam sehari menghabiskan seluruh rotasi dan menghapus riwayat '
+        'hari sebelumnya; sekarang simpan berikutnya di hari yang sama menimpa, '
+        'jadi rotasi 5 = lima hari. (3) `start` tidak lagi gagal ketika frame '
+        'pertama datang sebelum koneksi DB membuka file — retry 400 ms, karena '
+        'dulu hasilnya "Belum pernah" padahal app baru dibuka. Test rotasi '
+        'diperbarui + 2 kasus baru (satu file per hari, timpa berisi data '
+        'terbaru).',
+    breaking: null,
+  ),
+  (
     version: 'v1.40.0',
     date: '23 Okt 2026',
     user:

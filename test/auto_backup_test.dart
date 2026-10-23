@@ -122,11 +122,41 @@ void main() {
   });
 
   group('rotasi file backup', () {
-    test('nama file urut abjad = urut waktu', () {
+    test('satu file per hari (v1.41.0)', () {
       expect(
         BackupService.autoBackupName(DateTime(2026, 10, 23, 9, 5)),
-        'mywallet-auto-20261023-0905.sqlite',
+        'mywallet-auto-20261023.sqlite',
       );
+      expect(
+        BackupService.autoBackupName(DateTime(2026, 10, 23, 21, 59)),
+        'mywallet-auto-20261023.sqlite',
+      );
+    });
+
+    test('simpan kedua di hari yang sama menimpa, bukan menambah', () async {
+      final dir = await Directory.systemTemp.createTemp('mw-autoover-');
+      try {
+        final src = File('${dir.path}/mywallet.sqlite');
+        await src.writeAsBytes(_dbBytes());
+        await BackupService.writeAutoBackup(
+          src,
+          dir,
+          now: DateTime(2026, 10, 23, 8),
+        );
+        // Data berubah, lalu simpan lagi di hari yang sama.
+        await src.writeAsBytes(Uint8List.fromList([..._dbBytes(), 0x42]));
+        await BackupService.writeAutoBackup(
+          src,
+          dir,
+          now: DateTime(2026, 10, 23, 20),
+        );
+
+        final files = await BackupService.listAutoBackups(dir);
+        expect(files.length, 1);
+        expect(await files.single.readAsBytes(), await src.readAsBytes());
+      } finally {
+        await dir.delete(recursive: true);
+      }
     });
 
     test('writeAutoBackup menyimpan salinan + menyisakan 3 terbaru', () async {
@@ -140,19 +170,19 @@ void main() {
             src,
             dir,
             keep: 3,
-            now: DateTime(2026, 10, 23, 9, i),
+            now: DateTime(2026, 10, 20 + i, 9),
           );
         }
 
         final files = await BackupService.listAutoBackups(dir);
         expect(files.length, 3);
-        // Terbaru dulu, dan yang bertahan adalah tiga menit terakhir.
+        // Terbaru dulu, dan yang bertahan adalah tiga hari terakhir.
         expect(
           files.map((f) => f.uri.pathSegments.last).toList(),
           [
-            'mywallet-auto-20261023-0904.sqlite',
-            'mywallet-auto-20261023-0903.sqlite',
-            'mywallet-auto-20261023-0902.sqlite',
+            'mywallet-auto-20261024.sqlite',
+            'mywallet-auto-20261023.sqlite',
+            'mywallet-auto-20261022.sqlite',
           ],
         );
       } finally {
@@ -183,7 +213,7 @@ void main() {
             src,
             dir,
             keep: 3,
-            now: DateTime(2026, 10, 23, 9, i),
+            now: DateTime(2026, 10, 20 + i, 9),
           );
         }
         final deleted = await BackupService.pruneAutoBackups(dir, keep: 0);

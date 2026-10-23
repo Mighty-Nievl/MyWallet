@@ -80,7 +80,13 @@ class AutoBackupController {
     }
   }
 
-  /// Tombol "Sekarang" — abaikan jatah, tetap hormati switch dan `_busy`.
+  /// Tombol "Sekarang" DAN setiap simpan/hapus transaksi (v1.41.0) —
+  /// abaikan jatah 20 jam, tetap hormati switch dan `_busy`.
+  ///
+  /// Kenapa simpan ikut memicu: "Backup terakhir: Baru saja" harus berarti
+  /// transaksi yang barusan dicatat SUDAH ada di salinan. Dengan jatah 20
+  /// jam saja, label itu hanya bergerak sekali sehari dan salinan tidak
+  /// pernah memuat catatan terakhir.
   Future<bool> runNow() async {
     if (_busy) return false;
     _busy = true;
@@ -131,6 +137,13 @@ final autoBackupProvider = Provider<AutoBackupController>((ref) {
         // Abaikan: mode jurnal bukan WAL atau koneksi sibuk.
       }
       final src = await BackupService.dbFile();
+      if (!await src.exists()) {
+        // v1.41.0: frame pertama bisa datang sebelum koneksi DB membuka
+        // file. Dulu ini langsung gagal dan baru dicoba lagi saat resume —
+        // user melihat "Belum pernah" padahal app baru dibuka. Beri satu
+        // kesempatan singkat sebelum menyerah.
+        await Future<void>.delayed(const Duration(milliseconds: 400));
+      }
       if (!await src.exists()) {
         // Belum ada DB = belum ada data. Lempar supaya percobaan ini
         // dihitung gagal dan diulang di resume berikutnya (bukan
