@@ -13,6 +13,7 @@
 7. [[07-Rilis-dan-Obtainium]] — signing, rilis GitHub, install via Obtainium.
 8. [[08-Karakteristik-Tampilan]] — identitas visual (mesh, floating, pill, kartu).
 9. [[09-Review-Beranda]] — arsip review UI/UX Beranda v1.36.2 + status tiap temuan di v1.38.0.
+10. [[10-Jurnal-Rilis]] — kenapa tiap rilis ada, bukti CI-nya, dan keputusan yang masih menggantung.
 
 ## Fakta kunci
 

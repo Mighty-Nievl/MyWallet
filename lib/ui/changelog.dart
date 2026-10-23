@@ -29,7 +29,7 @@ const appChangelog = <({String version, String date, String user, String tech, S
         'yang kamu ketik selalu menang.',
     tech:
         'v1.40.0: `parseQuickInput` (`lib/data/quick_parse.dart`) murni string '
-        '→ angka, urutan prioritas: ribuan bertitik `\d{1,3}(?:\.\d{3})+`, '
+        '→ angka, urutan prioritas: ribuan bertitik `\\d{1,3}(?:\\.\\d{3})+`, '
         'angka + satuan (`ribu|ribuan|rb|k|juta|jt`, koma/titik desimal), lalu '
         'angka polos >= 4 digit. Angka < 1000 tanpa satuan dan > Rp1 triliun '
         'mengembalikan null — menebak di situ lebih berbahaya daripada meminta '
