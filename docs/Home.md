@@ -21,7 +21,7 @@
 - **Penyimpanan:** 100% lokal, SQLite via Drift — tanpa login, tanpa server.
 - **State:** flutter_riverpod 3.x (`StreamProvider` auto-refresh, `StateProvider` via `legacy.dart`).
 - **File DB:** `mywallet.sqlite` di folder dokumen aplikasi; salinan otomatis di `backups/mywallet-auto-YYYYMMDD.sqlite` (satu file per hari, rotasi 5 hari, diperbarui tiap simpan/hapus — v1.41.0).
-- **Status:** v1.41.0 — catat satu kolom ("makan 25 ribu") dan backup yang ikut setiap simpan (5 hari terakhir, bisa dipulihkan dari Pengaturan → Kelola). Beranda dengan halaman **Semua dompet** (total gabungan) + onboarding satu CTA untuk user tanpa transaksi; indikator halaman mengambang sebagai tiga titik putih di bawah tengah kartu + gear Kelola polos, periode di atas arus kas, transaksi terakhir sebelum kategori, menu 4 pintasan. Baris filter periode kini memuat keempat pilihan utuh di 390dp dan tombol Kalender pindah ke baris navigasi periode.
+- **Status:** v1.42.0 — Beranda satu rail: semua isi kartu (hero, arus kas, baris transaksi) mendarat di x=32 sementara judul section tetap x=16, dengan ritme 24 di dalam blok (hero → periode → arus kas) dan 32 antar section. Dijaga test kontrak spacing (rail + ritme), jadi drift tak bisa balik diam-diam. Sebelumnya: catat satu kolom ("makan 25 ribu") dan backup yang ikut setiap simpan (5 hari terakhir, bisa dipulihkan dari Pengaturan → Kelola).
 
 ## Peta kode
 

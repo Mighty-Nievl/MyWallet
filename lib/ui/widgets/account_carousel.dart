@@ -290,7 +290,8 @@ class _AllWalletsCard extends ConsumerWidget {
         children: [
           Positioned.fill(
             child: MeshGradient(
-              padding: AppSpacing.cardPaddingLarge,
+              // v1.42.0 (satu rail): 24 → 16 (lihat _WalletCard).
+              padding: AppSpacing.cardPadding,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -352,9 +353,10 @@ class _AllWalletsCard extends ConsumerWidget {
               ),
             ),
           ),
+          // Mata toggle: inset 16 = padding isi v1.42.0.
           Positioned(
-            top: AppSpacing.s24,
-            right: AppSpacing.s24,
+            top: AppSpacing.s16,
+            right: AppSpacing.s16,
             child: AppIconButton(
               icon: hide
                   ? Icons.visibility_outlined
@@ -431,7 +433,11 @@ class _WalletCard extends ConsumerWidget {
                   );
                 },
                 child: MeshGradient(
-                  padding: AppSpacing.cardPaddingLarge,
+                  // v1.42.0 (satu rail): 24 → 16. Semua teks di dalam
+                  // kartu mendarat di x=32 (page 16 + padding 16), sama
+                  // dengan kartu arus kas & baris transaksi. Dulu hero
+                  // 24 = rail x40 yang membuat kolom kiri bergoyang.
+                  padding: AppSpacing.cardPadding,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -497,11 +503,11 @@ class _WalletCard extends ConsumerWidget {
               ),
             ),
           ),
-          // Mata toggle overlay pojok kanan-atas kartu (inset 24 = padding
-          // isi, posisi visual sama seperti dulu saat kolom lebar).
+          // Mata toggle overlay pojok kanan-atas kartu (inset 16 = padding
+          // isi v1.42.0; dulu 24 mengikuti padding hero yang lebih lega).
           Positioned(
-            top: AppSpacing.s24,
-            right: AppSpacing.s24,
+            top: AppSpacing.s16,
+            right: AppSpacing.s16,
             child: AppIconButton(
               icon: hide
                   ? Icons.visibility_outlined

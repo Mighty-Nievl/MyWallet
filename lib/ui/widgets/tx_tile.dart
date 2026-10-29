@@ -81,7 +81,7 @@ class TxTile extends ConsumerWidget {
     // polos) — padding s12, glyph 40, radius kartu + shadow lembut.
     return AppCard(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.s12,
+        horizontal: AppSpacing.s16,
         vertical: AppSpacing.s8,
       ),
       child: InkWell(

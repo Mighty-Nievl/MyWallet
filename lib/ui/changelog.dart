@@ -20,6 +20,21 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.42.0',
+    date: '29 Okt 2026',
+    user:
+        'Tampilan Beranda kini lebih rapi: semua tulisan di dalam kartu '
+        'duduk di satu garis yang sama, dan jarak antarbagian terasa '
+        'berirama — kolom kiri tidak lagi terlihat bergoyang saat digulir.',
+    tech:
+        'Satu rail: hero padding 24→16 (mata toggle ikut inset 16) + '
+        'TxTile horizontal 12→16 → semua isi kartu mendarat di x32; '
+        'judul section tetap x16. Satu ritme: hero→periode 16→24, '
+        'periode→arus kas 12→24 (antar section tetap 32). Test kontrak '
+        'spacing baru: rail 16/32 + ritme 24.',
+    breaking: null,
+  ),
+  (
     version: 'v1.41.0',
     date: '23 Okt 2026',
     user:

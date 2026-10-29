@@ -210,7 +210,10 @@ class HomeScreen extends ConsumerWidget {
                             PeriodNav(period: period),
                           ],
                         ),
-                        top: AppSpacing.s16,
+                        // v1.42.0 (satu ritme): 16 → 24. Jarak dalam satu
+                        // blok (hero → periode → arus kas) seragam 24;
+                        // antar section tetap 32. Angka 12 & 16 pensiun.
+                        top: AppSpacing.s24,
                       ),
                     ),
                   // v1.34.0: arus kas periode aktif — Pemasukan &
@@ -219,7 +222,9 @@ class HomeScreen extends ConsumerWidget {
                   // saldo, jadi tak tahu uang masuk/keluar bulan ini.
                   SliverToBoxAdapter(
                     key: const ValueKey('home:flowcards'),
-                    child: _pad(const FlowCards(), top: AppSpacing.s12),
+                    // v1.42.0 (satu ritme): 12 → 24 — arus kas satu blok
+                    // dengan periode di atasnya, bukan section terpisah.
+                    child: _pad(const FlowCards(), top: AppSpacing.s24),
                   ),
                   // v1.38.7: urutan dua section ini bergantung periode —
                   // Harian: pengeluaran per kategori dulu, lalu transaksi.
