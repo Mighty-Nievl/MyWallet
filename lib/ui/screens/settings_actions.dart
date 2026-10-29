@@ -520,9 +520,11 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text(uri == null
-                ? 'Backup dibatalkan.'
-                : 'Backup berhasil disimpan.')),
+          content: Text(uri == null
+              ? 'Backup dibatalkan.'
+              : 'Backup tersimpan — isinya data transaksi & kategori, '
+                  'bukan setelan aplikasi.'),
+        ),
       );
     } catch (e) {
       if (mounted) {
@@ -611,6 +613,8 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
         title: const Text('Restore database?'),
         content: const Text(
             'SEMUA data sekarang akan diganti isi file backup. '
+            'Setelan aplikasi (tema, aksen, toggle, PIN) tidak ikut file '
+            'backup dan tetap seperti sekarang. '
             'Setelah restore, tutup total aplikasi lalu buka lagi.'),
         actions: [
           TextButton(

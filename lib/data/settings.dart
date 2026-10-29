@@ -42,6 +42,20 @@ final prefsProvider = FutureProvider<SharedPreferences>(
 /// Status kunci aplikasi: sesi ini sudah lolos autentikasi atau belum.
 final unlockedProvider = StateProvider<bool>((ref) => false);
 
+/// Nilai sah untuk [SettingsKeys.appLock].
+const kAppLockModes = {'none', 'pin', 'biometric'};
+
+/// Normalisasi nilai `app_lock`. Nilai rusak / tak dikenal → `'none'`.
+///
+/// Kenapa fail-open, bukan fail-closed: gerbang di `app.dart` memakai
+/// `appLock != 'none'`, sedangkan label UI jatuh ke `_ => 'Mati'`. Kalau
+/// nilai rusak dianggap terkunci, layar kunci muncul padahal belum tentu
+/// ada PIN tersimpan — `LockService.verifyPin` selalu `false` tanpa hash,
+/// jadi aplikasi tak bisa dibuka sama sekali. Lebih baik tidak terkunci
+/// dan labelnya jujur "Mati" daripada brick.
+String normalizeAppLock(String? raw) =>
+    kAppLockModes.contains(raw) ? raw! : 'none';
+
 /// Util baca/tulis pengaturan + invalidate provider terkait.
 class SettingsService {
   SettingsService(this._ref);
@@ -65,7 +79,7 @@ class SettingsService {
   }
 
   Future<void> setAppLock(String v) async {
-    (await _prefs).setString(SettingsKeys.appLock, v);
+    (await _prefs).setString(SettingsKeys.appLock, normalizeAppLock(v));
     _ref.invalidate(appLockProvider);
   }
 
@@ -186,7 +200,7 @@ final startingBalanceProvider = FutureProvider<int>((ref) async {
 /// Mode kunci aplikasi: 'none' | 'pin' | 'biometric'.
 final appLockProvider = FutureProvider<String>((ref) async {
   final p = await ref.watch(prefsProvider.future);
-  return p.getString(SettingsKeys.appLock) ?? 'none';
+  return normalizeAppLock(p.getString(SettingsKeys.appLock));
 });
 
 /// Konfigurasi pengingat harian.

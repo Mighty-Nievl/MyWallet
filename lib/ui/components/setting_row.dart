@@ -99,8 +99,7 @@ class SettingRow extends StatelessWidget {
       ),
     );
     if (onTap == null) return content;
-    final tap = onTap;
-    if (tap == null) return content;
+    final tap = onTap!;
     return InkWell(
       // B2C v1.20: haptic di SEMUA baris pengaturan (sekali sentuh di
       // sini = kena Settings + Kategori + Keluarga + semua sub-halaman).

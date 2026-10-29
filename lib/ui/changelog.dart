@@ -20,6 +20,24 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.44.0',
+    date: '29 Okt 2026',
+    user:
+        'Kunci aplikasi kini tahan nilai rusak: kalau setelan kuncinya '
+        'terbaca tidak dikenal, aplikasi tidak akan mengunci diri sendiri '
+        'padahal belum ada PIN. Dialog backup dan restore juga jujur — '
+        'isinya data transaksi & kategori, setelan aplikasi tidak ikut.',
+    tech:
+        'app_lock divalidasi whitelist {none,pin,biometric} saat baca & '
+        'tulis lewat normalizeAppLock; nilai rusak → none supaya tidak '
+        'brick (verifyPin selalu false tanpa hash, gerbang app.dart pakai '
+        'appLock != none). SettingRow: cek null kedua yang tak tercapai '
+        'dibuang. Copy backup/restore menyebut setelan tidak ikut — '
+        'keputusan sadar: appLock & PIN tidak boleh ikut file, dan format '
+        'backup lama (.sqlite) harus tetap bisa direstore. 5 tes baru.',
+    breaking: null,
+  ),
+  (
     version: 'v1.43.0',
     date: '29 Okt 2026',
     user:
