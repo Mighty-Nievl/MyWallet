@@ -20,6 +20,25 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.46.0',
+    date: '29 Okt 2026',
+    user:
+        'Beranda tetap rapi saat ukuran teks HP diperbesar: judul bagian '
+        'tidak lagi terhimpit jadi satu huruf per baris, dan nominal di '
+        'daftar kategori tidak lagi keluar layar. Tombol periode '
+        '(Harian–Tahunan) dan tombol kalender juga lebih mudah ditekan.',
+    tech:
+        'Audit ui-ux-pro-max: header AppSection menumpuk trailing saat '
+        'textScaler ≥1.6 — sebelumnya tombol non-flex menekan judul ke 0px '
+        '(overflow 95px di 375, 150px di 320). Baris Top kategori: nominal '
+        'dibatasi 42% lebar + FittedBox.scaleDown. PeriodSwitcher 44→48 dan '
+        'PeriodNav _navSlot 44→48 (target sentuh Android 48dp). Kontras '
+        'dark terukur 11,10 / 14,62 / 9,31:1 — tidak diubah. Kontrak '
+        'home_ui_contract_test.dart (target sentuh, overflow 2× light+dark, '
+        'kontras).',
+    breaking: null,
+  ),
+  (
     version: 'v1.45.0',
     date: '29 Okt 2026',
     user:

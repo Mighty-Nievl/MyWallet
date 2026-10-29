@@ -39,7 +39,10 @@ class PeriodSwitcher extends ConsumerWidget {
     final active = ref.watch(periodKindProvider);
     final scheme = Theme.of(context).colorScheme;
     return SizedBox(
-      height: 44,
+      // v1.46 (a11y): 44 → 48. Chip periode bisa diketuk; target sentuh
+      // Android minimum 48dp, dan SizedBox 44 memotong padding tap-target
+      // Material (terukur 44×125,7).
+      height: 48,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         // v1.38.3: "Kalender" keluar dari baris ini (pindah ke PeriodNav).
@@ -84,9 +87,7 @@ class PeriodSwitcher extends ConsumerWidget {
               horizontal: AppSpacing.s4,
               vertical: AppSpacing.s8,
             ),
-            labelPadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.s8,
-            ),
+            labelPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.s8),
             labelStyle: TextStyle(
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               // v1.38.3: mutedOf 2,23:1 gagal AA. strongSecondaryOf ~9:1.
@@ -125,7 +126,7 @@ class PeriodNav extends ConsumerWidget {
 
   /// Slot tombol kalender (v1.38.3) — juga dipakai sebagai penyeimbang kiri
   /// supaya chevron+label tetap di tengah.
-  static const double _navSlot = 44;
+  static const double _navSlot = 48;
 
   void _shift(WidgetRef ref, int delta) {
     final next = period.shift(delta);
@@ -248,8 +249,9 @@ class PeriodNav extends ConsumerWidget {
             child: Text(
               'Ketuk label untuk kembali ke ${periodKindLabel(period.kind).toLowerCase()} ini',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelSmall
-                  ?.copyWith(color: AppColors.mutedOf(context)),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.mutedOf(context),
+              ),
             ),
           ),
       ],

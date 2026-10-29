@@ -21,7 +21,7 @@
 - **Penyimpanan:** 100% lokal, SQLite via Drift — tanpa login, tanpa server.
 - **State:** flutter_riverpod 3.x (`StreamProvider` auto-refresh, `StateProvider` via `legacy.dart`).
 - **File DB:** `mywallet.sqlite` di folder dokumen aplikasi; salinan otomatis di `backups/mywallet-auto-YYYYMMDD.sqlite` (satu file per hari, rotasi 5 hari, diperbarui tiap simpan/hapus — v1.41.0).
-- **Status:** v1.45.0 — Pengaturan dirapikan lewat audit `ui-ux-pro-max`: label grup sejajar rail halaman (x16), divider mulai di kolom teks, ekor daftar 96→32, tombol bersihkan pencarian punya nama untuk TalkBack, empty state memberi contoh kata kunci + tombol, dan baris tidak lagi overflow saat ukuran teks HP 2× di layar 320px. Dikunci `settings_ui_contract_test.dart`. Sebelumnya: kunci aplikasi tahan nilai rusak (`app_lock` whitelist) dan dialog backup/restore jujur soal isi.
+- **Status:** v1.46.0 — Beranda tahan teks besar: header section menumpuk tombol trailing pada skala ≥1.6 (dulu judul terhimpit 0px → overflow 95px/150px), nominal Top kategori dibatasi 42% + scale-down, dan tombol periode/kalender naik ke 48dp. Dikunci `home_ui_contract_test.dart` (target sentuh, overflow 2× light+dark, kontras). Sebelumnya: Pengaturan dirapikan lewat audit `ui-ux-pro-max`.
 
 ## Peta kode
 

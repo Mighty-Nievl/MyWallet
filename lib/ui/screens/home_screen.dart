@@ -94,9 +94,7 @@ class HomeScreen extends ConsumerWidget {
                 // v1.24.3: label konteks (kritik brutal L5).
                 // v1.26: push langsung (tab 1 sudah tak ada).
                 onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const HistoryScreen(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const HistoryScreen()),
                 ),
                 child: const Text('Semua transaksi'),
               ),
@@ -121,16 +119,13 @@ class HomeScreen extends ConsumerWidget {
           key: const ValueKey('home:topcats'),
           child: _pad(
             AppSection(
-              title:
-                  'Pengeluaran ${periodRelativeLabel(period)}$acctSuffix',
+              title: 'Pengeluaran ${periodRelativeLabel(period)}$acctSuffix',
               trailing: TextButton(
                 // v1.24.3: label konteks, bukan generik
                 // "Lihat semua" (kritik brutal L5).
                 // v1.26: push langsung (tab 3 sudah tak ada).
                 onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const ReportsScreen(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const ReportsScreen()),
                 ),
                 child: const Text('Semua kategori'),
               ),
@@ -140,7 +135,6 @@ class HomeScreen extends ConsumerWidget {
         ),
       ],
     ];
-
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -216,21 +210,21 @@ class HomeScreen extends ConsumerWidget {
                         top: AppSpacing.s24,
                       ),
                     ),
-                  // v1.34.0: arus kas periode aktif — Pemasukan &
-                  // Pengeluaran sebagai kartu sendiri. Dulu angka ini
-                  // hanya ada di Laporan; di Beranda user cuma lihat
-                  // saldo, jadi tak tahu uang masuk/keluar bulan ini.
-                  SliverToBoxAdapter(
-                    key: const ValueKey('home:flowcards'),
-                    // v1.42.0 (satu ritme): 12 → 24 — arus kas satu blok
-                    // dengan periode di atasnya, bukan section terpisah.
-                    child: _pad(const FlowCards(), top: AppSpacing.s24),
-                  ),
-                  // v1.38.7: urutan dua section ini bergantung periode —
-                  // Harian: pengeluaran per kategori dulu, lalu transaksi.
-                  ...(dailyFirst
-                      ? [...topcatSlivers, ...recentSlivers]
-                      : [...recentSlivers, ...topcatSlivers]),
+                    // v1.34.0: arus kas periode aktif — Pemasukan &
+                    // Pengeluaran sebagai kartu sendiri. Dulu angka ini
+                    // hanya ada di Laporan; di Beranda user cuma lihat
+                    // saldo, jadi tak tahu uang masuk/keluar bulan ini.
+                    SliverToBoxAdapter(
+                      key: const ValueKey('home:flowcards'),
+                      // v1.42.0 (satu ritme): 12 → 24 — arus kas satu blok
+                      // dengan periode di atasnya, bukan section terpisah.
+                      child: _pad(const FlowCards(), top: AppSpacing.s24),
+                    ),
+                    // v1.38.7: urutan dua section ini bergantung periode —
+                    // Harian: pengeluaran per kategori dulu, lalu transaksi.
+                    ...(dailyFirst
+                        ? [...topcatSlivers, ...recentSlivers]
+                        : [...recentSlivers, ...topcatSlivers]),
                   ],
                   // v1.37: menu ringkas (4 pintasan unik) turun ke bawah
                   // data. Catat/Scan/Riwayat sudah ada di dock, jadi
@@ -323,51 +317,66 @@ class _CategoryList extends ConsumerWidget {
             for (final c in list.take(5))
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.s8),
-                child: Row(
-                  children: [
-                    CategoryGlyph(emoji: c.icon, size: 36, iconSize: 18),
-                    const SizedBox(width: AppSpacing.s12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  c.name,
-                                  style: Theme.of(context).textTheme.bodyLarge
-                                      ?.copyWith(fontWeight: FontWeight.w600),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                // v1.46 (Dynamic Type): nominal dibatasi 42% lebar lalu
+                // di-scale-down. Sebelumnya nominal adalah anak non-flex
+                // yang tak bisa menyusut — pada teks 2× ia mendorong kolom
+                // nama ke 0px dan baris overflow 95px (375) / 150px (320).
+                child: LayoutBuilder(
+                  builder: (context, cons) => Row(
+                    children: [
+                      CategoryGlyph(emoji: c.icon, size: 36, iconSize: 18),
+                      const SizedBox(width: AppSpacing.s12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    c.name,
+                                    style: Theme.of(context).textTheme.bodyLarge
+                                        ?.copyWith(fontWeight: FontWeight.w600),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: AppSpacing.s8),
-                              Text(
-                                total == 0
-                                    ? '0%'
-                                    : '${(100 * c.total / total).round()}%',
-                                style: AppType.secondaryStrong(context),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.s4),
-                          AppProgress(
-                            value: total == 0
-                                ? 0
-                                : (c.total / total).clamp(0.0, 1.0),
-                            color: scheme.primary,
-                          ),
-                        ],
+                                const SizedBox(width: AppSpacing.s8),
+                                Text(
+                                  total == 0
+                                      ? '0%'
+                                      : '${(100 * c.total / total).round()}%',
+                                  style: AppType.secondaryStrong(context),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.s4),
+                            AppProgress(
+                              value: total == 0
+                                  ? 0
+                                  : (c.total / total).clamp(0.0, 1.0),
+                              color: scheme.primary,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: AppSpacing.s12),
-                    Text(
-                      display.money(c.total),
-                      // v1.24.3: 14→15 samakan nominal transaksi (kritik L3).
-                      style: AppType.amount(context),
-                    ),
-                  ],
+                      const SizedBox(width: AppSpacing.s12),
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: cons.maxWidth * 0.42,
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            display.money(c.total),
+                            // v1.24.3: 14→15 samakan nominal transaksi.
+                            style: AppType.amount(context),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
           ],
@@ -490,8 +499,9 @@ class _HomeHeader extends ConsumerWidget {
                   backgroundColor: scheme.primaryContainer,
                   child: Text(
                     initial,
-                    style: Theme.of(context).textTheme.titleMedium
-                        ?.copyWith(color: scheme.onPrimaryContainer),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: scheme.onPrimaryContainer,
+                    ),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.s12),
@@ -508,8 +518,9 @@ class _HomeHeader extends ConsumerWidget {
                       ),
                       Text(
                         name ?? 'Akun saya',
-                        style: AppType.screenTitle(context)
-                            .copyWith(fontSize: 20),
+                        style: AppType.screenTitle(
+                          context,
+                        ).copyWith(fontSize: 20),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
