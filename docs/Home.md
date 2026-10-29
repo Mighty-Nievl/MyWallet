@@ -21,7 +21,7 @@
 - **Penyimpanan:** 100% lokal, SQLite via Drift — tanpa login, tanpa server.
 - **State:** flutter_riverpod 3.x (`StreamProvider` auto-refresh, `StateProvider` via `legacy.dart`).
 - **File DB:** `mywallet.sqlite` di folder dokumen aplikasi; salinan otomatis di `backups/mywallet-auto-YYYYMMDD.sqlite` (satu file per hari, rotasi 5 hari, diperbarui tiap simpan/hapus — v1.41.0).
-- **Status:** v1.42.0 — Beranda satu rail: semua isi kartu (hero, arus kas, baris transaksi) mendarat di x=32 sementara judul section tetap x=16, dengan ritme 24 di dalam blok (hero → periode → arus kas) dan 32 antar section. Dijaga test kontrak spacing (rail + ritme), jadi drift tak bisa balik diam-diam. Sebelumnya: catat satu kolom ("makan 25 ribu") dan backup yang ikut setiap simpan (5 hari terakhir, bisa dipulihkan dari Pengaturan → Kelola).
+- **Status:** v1.43.0 — Pengaturan dirapikan: satu katalog setelan (31 entri) jadi sumber pencarian hub sekaligus filter tiap sub-halaman, jadi semua baris benar-benar bisa ditemukan; `SettingSwitch` + `SettingsScaffold` menghapus 526 baris duplikasi; export CSV pindah ke `ExportService` yang bisa dites; setelan "Ringkasan masuk / keluar" yang sudah yatim (tidak dibaca layar mana pun) dibuang. Sebelumnya: Beranda satu rail (isi kartu x=32, judul x=16) dengan ritme 24/32.
 
 ## Peta kode
 

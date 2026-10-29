@@ -116,17 +116,12 @@ class AutoBackupController {
 
 final autoBackupProvider = Provider<AutoBackupController>((ref) {
   return AutoBackupController(
-    isEnabled: () async {
-      final p = await ref.read(prefsProvider.future);
-      // Default ON: fitur ini justru untuk user yang tidak pernah menekan
-      // tombol backup. Mematikannya tetap satu ketukan di Pengaturan.
-      return p.getBool(SettingsKeys.autoBackup) ?? true;
-    },
-    lastAt: () async {
-      final p = await ref.read(prefsProvider.future);
-      final ms = p.getInt(SettingsKeys.lastBackupAt);
-      return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
-    },
+    // v1.43.0: satu sumber kebenaran — UI dan controller sama-sama lewat
+    // provider, bukan membaca `SettingsKeys.autoBackup` sendiri. Dulu dua
+    // parser dengan default `true` yang ditulis dua kali; kalau default
+    // diubah di satu tempat, yang lain diam-diam menyimpang.
+    isEnabled: () async => ref.read(autoBackupEnabledProvider.future),
+    lastAt: () async => ref.read(lastBackupAtProvider.future),
     run: () async {
       final db = ref.read(dbProvider);
       // Konsisten: checkpoint WAL dulu supaya byte yang disalin sudah

@@ -1,14 +1,9 @@
-import 'dart:io';
-
-import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../data/auto_backup.dart';
 import '../../data/backup_service.dart';
+import '../../data/export_service.dart';
 import '../../data/lock_service.dart';
 import '../../data/providers.dart';
 import '../../data/reminder_service.dart';
@@ -503,30 +498,18 @@ mixin SettingsActions<T extends ConsumerStatefulWidget>
   // ---------- Data: CSV / backup / restore / hapus ----------
 
   Future<void> exportCsv() async {
-    final db = ref.read(dbProvider);
-    final rows = await db.watchHistory(limit: 100000).first;
-    final csvRows = <List<dynamic>>[
-      ['tanggal', 'tipe', 'kategori', 'nominal', 'catatan'],
-      for (final t in rows)
-        [
-          t.date.toIso8601String(),
-          t.isExpense ? 'keluar' : 'masuk',
-          t.catName ?? '',
-          t.amount,
-          t.note,
-        ],
-    ];
-    final csv = Csv().encode(csvRows);
-    final dir = await getTemporaryDirectory();
-    final file = File(p.join(
-        dir.path, 'mywallet-${DateTime.now().millisecondsSinceEpoch}.csv'));
-    await file.writeAsString(csv);
-    await SharePlus.instance.share(
-      ShareParams(files: [XFile(file.path)], text: 'Export MyWallet CSV'),
-    );
-    if (mounted) {
+    // v1.43.0: isi CSV + tulis file + share pindah ke [ExportService]
+    // (murni & bisa dites tanpa widget). Di sini cuma terjemahan hasil.
+    try {
+      final res = await ExportService.exportTransactionsCsv(ref);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('CSV dibuat: ${rows.length} baris.')),
+        SnackBar(content: Text('CSV dibuat: ${res.rows} baris.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Export CSV gagal — coba lagi.')),
       );
     }
   }

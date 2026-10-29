@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/settings.dart';
-import '../components/app_feedback.dart';
 import '../components/setting_row.dart';
+import '../components/settings_scaffold.dart';
 import '../design/app_spacing.dart';
 import '../format.dart';
 import 'settings_actions.dart';
+import 'settings_catalog.dart';
 
 /// Sub-halaman Saldo, Privasi & Pengingat: sembunyikan + cakupan, saldo awal,
 /// kunci aplikasi, pengingat harian.
 ///
-/// STEP 4 — hanya presentasi yang diubah. Semua provider, setter,
-/// dialog (via [SettingsActions]), filter cari, dan nilai TETAP.
+/// v1.43.0: kerangka [SettingsScaffold], switch [SettingSwitch], filter dari
+/// [SettingsCatalog]. Nilai provider dibaca lewat `.value ?? default` —
+/// dulu tiap baris punya cabang loading/error sendiri sampai 20 tempat dan
+/// gagal baca prefs berakhir "…" permanen tanpa cara pulih.
 class PrivacySettingsPage extends ConsumerStatefulWidget {
   const PrivacySettingsPage({super.key, this.initialQuery = ''});
 
@@ -41,214 +44,124 @@ class _PrivacySettingsPageState extends ConsumerState<PrivacySettingsPage>
     super.dispose();
   }
 
-  bool _match(String title, String subtitle, [List<String> keys = const []]) {
-    if (_q.isEmpty) return true;
-    final hay = '$title $subtitle ${keys.join(' ')}'.toLowerCase();
-    return hay.contains(_q);
-  }
+  bool _show(String id) => SettingsCatalog.byId(id).matches(_q);
 
   @override
   Widget build(BuildContext context) {
-    final hideBalance = ref.watch(hideBalanceProvider);
-    final privacyScope = ref.watch(privacyScopeProvider);
-    final starting = ref.watch(startingBalanceProvider);
-    final appLock = ref.watch(appLockProvider);
-    final reminder = ref.watch(reminderProvider);
+    final hideBalance = ref.watch(hideBalanceProvider).value ?? false;
+    final privacyScope = ref.watch(privacyScopeProvider).value ?? 'balance';
+    final starting = ref.watch(startingBalanceProvider).value;
+    final appLock = ref.watch(appLockProvider).value ?? 'none';
+    final reminder =
+        ref.watch(reminderProvider).value ??
+        (enabled: false, hour: 20, minute: 0);
+    final service = ref.read(settingsServiceProvider);
 
-    String scopeLabel(String s) => s == 'all'
-        ? 'Semua nominal (saldo + list + laporan)'
-        : 'Hanya saldo Beranda';
     String lockLabel(String m) => switch (m) {
-          'pin' => 'PIN',
-          'biometric' => 'Biometrik',
-          _ => 'Mati',
-        };
+      'pin' => 'PIN',
+      'biometric' => 'Biometrik',
+      _ => 'Mati',
+    };
 
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
+    return SettingsScaffold(
+      title: 'Saldo, Privasi & Pengingat',
+      search: SettingsSearchField(
+        controller: _searchCtrl,
+        hint: 'Cari di pengaturan ini…',
+        query: _q,
+        onChanged: (v) => setState(() => _q = v),
+      ),
+      children: [
+        SettingsGroup(
+          title: 'Saldo',
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(
-                AppSpacing.page,
-                AppSpacing.s8,
-                AppSpacing.page,
-                0,
+            if (_show('sembunyikan-saldo'))
+              SettingSwitch(
+                icon: Icons.visibility_off_outlined,
+                title: 'Sembunyikan saldo',
+                subtitle: privacyScope == 'all'
+                    ? 'Semua nominal jadi Rp••••'
+                    : 'Nominal jadi Rp•••• di Beranda',
+                value: hideBalance,
+                onChanged: service.setHideBalance,
               ),
-              child: BackHeader(title: 'Saldo, Privasi & Pengingat'),
-            ),
-            const SizedBox(height: AppSpacing.s8),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.page,
-                  AppSpacing.s8,
-                  AppSpacing.page,
-                  96,
+            // Cakupan tetap tampil walau "sembunyikan" mati: nilainya
+            // tersimpan, dan menyembunyikannya membuat pencarian
+            // ("cakupan") berakhir di halaman kosong.
+            if (_show('cakupan'))
+              SettingRow(
+                icon: Icons.privacy_tip_outlined,
+                title: 'Cakupan sembunyikan',
+                subtitle: privacyScope == 'all'
+                    ? 'Semua nominal (saldo + list + laporan)'
+                    : 'Hanya saldo Beranda',
+                trailing: SettingValue(
+                  value: privacyScope == 'all' ? 'Semua' : 'Saldo',
                 ),
-                children: [
-                  TextField(
-                    controller: _searchCtrl,
-                    decoration: InputDecoration(
-                      hintText: 'Cari di pengaturan ini…',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _q.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                _searchCtrl.clear();
-                                setState(() => _q = '');
-                              },
-                            )
-                          : null,
-                    ),
-                    onChanged: (v) =>
-                        setState(() => _q = v.trim().toLowerCase()),
-                  ),
-                  const SizedBox(height: AppSpacing.s16),
-                  SettingsGroup(
-                    title: 'Saldo',
-                    children: [
-                      if (_match('sembunyikan', 'privacy', const ['hide']))
-                        SettingRow(
-                          icon: Icons.visibility_off_outlined,
-                          title: 'Sembunyikan saldo',
-                          subtitle: privacyScope.when(
-                            loading: () => 'Nominal jadi Rp••••',
-                            error: (_, _) => 'Nominal jadi Rp••••',
-                            data: (s) => s == 'all'
-                                ? 'Semua nominal jadi Rp••••'
-                                : 'Nominal jadi Rp•••• di Beranda',
-                          ),
-                          trailing: Switch(
-                            value: hideBalance.value ?? false,
-                            onChanged: (v) => ref
-                                .read(settingsServiceProvider)
-                                .setHideBalance(v),
-                          ),
-                          onTap: () => ref
-                              .read(settingsServiceProvider)
-                              .setHideBalance(
-                                  !(hideBalance.value ?? false)),
-                        ),
-                      if ((hideBalance.value ?? false) &&
-                          _match('cakupan', 'semua nominal', const ['scope']))
-                        SettingRow(
-                          icon: Icons.privacy_tip_outlined,
-                          title: 'Cakupan sembunyikan',
-                          subtitle: privacyScope.when(
-                            loading: () => '…',
-                            error: (_, _) => 'Gagal memuat',
-                            data: scopeLabel,
-                          ),
-                          trailing: SettingValue(
-                            value: privacyScope.when(
-                              loading: () => '…',
-                              error: (_, _) => '…',
-                              data: (s) =>
-                                  s == 'all' ? 'Semua' : 'Saldo',
-                            ),
-                          ),
-                          onTap: pickPrivacyScope,
-                        ),
-                      if (_match('saldo awal', 'uang mulai', const ['balance']))
-                        SettingRow(
-                          icon: Icons.account_balance_wallet_outlined,
-                          title: 'Saldo awal',
-                          subtitle: starting.when(
-                            loading: () => '…',
-                            error: (_, _) => 'Gagal memuat',
-                            data: (s) => s == 0
-                                ? 'Belum diatur (mulai dari Rp0)'
-                                : formatRp(s),
-                          ),
-                          trailing: SettingValue(
-                            value: starting.when(
-                              loading: () => '…',
-                              error: (_, _) => '…',
-                              data: (s) =>
-                                  s == 0 ? 'Atur' : formatRp(s),
-                            ),
-                          ),
-                          onTap: editStartingBalance,
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sectionGap),
-                  SettingsGroup(
-                    title: 'Keamanan',
-                    children: [
-                      if (_match('kunci', 'pin biometrik', const ['lock']))
-                        SettingRow(
-                          icon: Icons.lock_outlined,
-                          title: 'Kunci aplikasi',
-                          subtitle: appLock.when(
-                            loading: () => '…',
-                            error: (_, _) => 'Gagal memuat',
-                            data: lockLabel,
-                          ),
-                          trailing: SettingValue(
-                            value: appLock.when(
-                              loading: () => '…',
-                              error: (_, _) => '…',
-                              data: lockLabel,
-                            ),
-                          ),
-                          onTap: pickLock,
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sectionGap),
-                  SettingsGroup(
-                    title: 'Pengingat',
-                    children: [
-                      if (_match('pengingat', 'notifikasi', const ['reminder']))
-                        reminder.when(
-                          loading: () => const Padding(
-                              padding: AppSpacing.cardPadding,
-                              child: AppSkeleton(lines: 2)),
-                          error: (_, _) => const Padding(
-                              padding: AppSpacing.cardPadding,
-                              child: Text(
-                                  'Gagal memuat pengaturan pengingat.')),
-                          data: (r) => Column(
-                            children: [
-                              SettingRow(
-                                icon: Icons.notifications_outlined,
-                                title: 'Ingatkan mencatat',
-                                subtitle: r.enabled
-                                    ? 'Setiap hari pukul ${hhmm(r.hour, r.minute)}'
-                                    : 'Mati',
-                                trailing: Switch(
-                                  value: r.enabled,
-                                  onChanged: (v) => toggleReminder(
-                                      v, r.hour, r.minute),
-                                ),
-                                onTap: () => toggleReminder(
-                                    !r.enabled, r.hour, r.minute),
-                              ),
-                              if (r.enabled)
-                                SettingRow(
-                                  icon: Icons.schedule,
-                                  title: 'Jam pengingat',
-                                  subtitle: hhmm(r.hour, r.minute),
-                                  trailing: SettingValue(
-                                    value:
-                                        hhmm(r.hour, r.minute),
-                                  ),
-                                  onTap: pickReminderTime,
-                                ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
+                onTap: pickPrivacyScope,
               ),
-            ),
+            if (_show('saldo-awal'))
+              SettingRow(
+                icon: Icons.account_balance_wallet_outlined,
+                title: 'Saldo awal',
+                subtitle: starting == null
+                    ? '…'
+                    : (starting == 0
+                          ? 'Belum diatur (mulai dari Rp0)'
+                          : formatRp(starting)),
+                trailing: SettingValue(
+                  value: starting == null
+                      ? '…'
+                      : (starting == 0 ? 'Atur' : formatRp(starting)),
+                ),
+                onTap: editStartingBalance,
+              ),
           ],
         ),
-      ),
+        const SizedBox(height: AppSpacing.sectionGap),
+        SettingsGroup(
+          title: 'Keamanan',
+          children: [
+            if (_show('kunci-aplikasi'))
+              SettingRow(
+                icon: Icons.lock_outlined,
+                title: 'Kunci aplikasi',
+                subtitle: lockLabel(appLock),
+                trailing: SettingValue(value: lockLabel(appLock)),
+                onTap: pickLock,
+              ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sectionGap),
+        SettingsGroup(
+          title: 'Pengingat',
+          children: [
+            if (_show('pengingat'))
+              SettingSwitch(
+                icon: Icons.notifications_outlined,
+                title: 'Ingatkan mencatat',
+                subtitle: reminder.enabled
+                    ? 'Setiap hari pukul ${hhmm(reminder.hour, reminder.minute)}'
+                    : 'Mati',
+                value: reminder.enabled,
+                onChanged: (v) =>
+                    toggleReminder(v, reminder.hour, reminder.minute),
+              ),
+            // Jam hanya relevan saat pengingat menyala — kecuali user
+            // sedang mencari "jam": jangan beri halaman kosong.
+            if ((reminder.enabled || _q.isNotEmpty) && _show('jam-pengingat'))
+              SettingRow(
+                icon: Icons.schedule,
+                title: 'Jam pengingat',
+                subtitle: hhmm(reminder.hour, reminder.minute),
+                trailing: SettingValue(
+                  value: hhmm(reminder.hour, reminder.minute),
+                ),
+                onTap: pickReminderTime,
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

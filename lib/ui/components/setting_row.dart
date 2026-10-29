@@ -114,6 +114,42 @@ class SettingRow extends StatelessWidget {
   }
 }
 
+/// Baris dengan switch — pola yang dulu disalin 12×: `Switch(onChanged:)`
+/// plus `onTap` yang membalik nilai. Dua affordance, satu sumber.
+///
+/// [value] sudah diresolusi pemanggil (bukan AsyncValue) supaya komponen
+/// tetap murni dan bisa dites tanpa container Riverpod.
+class SettingSwitch extends StatelessWidget {
+  const SettingSwitch({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.value,
+    required this.onChanged,
+    this.destructive = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingRow(
+      icon: icon,
+      title: title,
+      subtitle: subtitle,
+      destructive: destructive,
+      trailing: Switch(value: value, onChanged: onChanged),
+      onTap: () => onChanged(!value),
+    );
+  }
+}
+
 /// Chevron standar untuk baris navigasi.
 class SettingChevron extends StatelessWidget {
   const SettingChevron({super.key});

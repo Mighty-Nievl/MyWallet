@@ -20,6 +20,24 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.43.0',
+    date: '29 Okt 2026',
+    user:
+        'Pengaturan kini konsisten: semua yang bisa dicari dari halaman utama '
+        'benar-benar ketemu — nama sapaan, jam pengingat, export PDF, sampai '
+        'urusan backup. Satu setelan yang dulu bisa diubah tapi tidak '
+        'berpengaruh apa pun sudah dibuang.',
+    tech:
+        'Katalog setelan tunggal (31 entri) jadi sumber pencarian hub + '
+        'filter sub-halaman (dulu 25 entri hardcoded untuk 32 baris → 7 '
+        'tidak terjangkau). SettingSwitch + SettingsScaffold memangkas 526 '
+        'baris di 5 halaman. Export CSV pindah ke ExportService (murni, 7 '
+        'tes). showMonthTotals dibuang (yatim sejak v1.37); autoBackup '
+        'dibaca lewat provider, bukan key mentah. Tes kontrak: tiap '
+        'provider setelan wajib punya konsumen di luar settings.dart.',
+    breaking: null,
+  ),
+  (
     version: 'v1.42.0',
     date: '29 Okt 2026',
     user:

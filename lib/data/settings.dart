@@ -18,8 +18,8 @@ abstract final class SettingsKeys {
   static const trueBlack = 'true_black'; // bool (hitam pekat mode gelap)
   static const privacyScope = 'privacy_scope'; // 'balance' | 'all'
   static const showTopCategories = 'show_top_categories'; // bool
-  static const showMonthTotals = 'show_month_totals'; // bool
-  static const showDailyTotals = 'show_daily_totals'; // bool (ringkasan hari ini)
+  static const showDailyTotals =
+      'show_daily_totals'; // bool (ringkasan hari ini)
   static const displayName = 'display_name'; // nama sapaan di Beranda
   static const showRecent = 'show_recent'; // bool
   static const recentCount = 'recent_count'; // int (3/5/10)
@@ -35,8 +35,9 @@ abstract final class SettingsKeys {
 }
 
 /// Satu-satunya prefs provider (dipakai settings + actions).
-final prefsProvider =
-    FutureProvider<SharedPreferences>((_) => SharedPreferences.getInstance());
+final prefsProvider = FutureProvider<SharedPreferences>(
+  (_) => SharedPreferences.getInstance(),
+);
 
 /// Status kunci aplikasi: sesi ini sudah lolos autentikasi atau belum.
 final unlockedProvider = StateProvider<bool>((ref) => false);
@@ -46,8 +47,7 @@ class SettingsService {
   SettingsService(this._ref);
   final Ref _ref;
 
-  Future<SharedPreferences> get _prefs =>
-      _ref.read(prefsProvider.future);
+  Future<SharedPreferences> get _prefs => _ref.read(prefsProvider.future);
 
   Future<void> setThemeMode(String v) async {
     (await _prefs).setString(SettingsKeys.themeMode, v);
@@ -104,11 +104,6 @@ class SettingsService {
     _ref.invalidate(showTopCategoriesProvider);
   }
 
-  Future<void> setShowMonthTotals(bool v) async {
-    (await _prefs).setBool(SettingsKeys.showMonthTotals, v);
-    _ref.invalidate(showMonthTotalsProvider);
-  }
-
   Future<void> setShowDailyTotals(bool v) async {
     (await _prefs).setBool(SettingsKeys.showDailyTotals, v);
     _ref.invalidate(showDailyTotalsProvider);
@@ -162,8 +157,9 @@ class SettingsService {
   }
 }
 
-final settingsServiceProvider =
-    Provider<SettingsService>((ref) => SettingsService(ref));
+final settingsServiceProvider = Provider<SettingsService>(
+  (ref) => SettingsService(ref),
+);
 
 /// Mode tema aktif.
 final themeModeProvider = FutureProvider<ThemeMode>((ref) async {
@@ -194,15 +190,16 @@ final appLockProvider = FutureProvider<String>((ref) async {
 });
 
 /// Konfigurasi pengingat harian.
-final reminderProvider =
-    FutureProvider<({bool enabled, int hour, int minute})>((ref) async {
-  final p = await ref.watch(prefsProvider.future);
-  return (
-    enabled: p.getBool(SettingsKeys.reminderEnabled) ?? false,
-    hour: p.getInt(SettingsKeys.reminderHour) ?? 20,
-    minute: p.getInt(SettingsKeys.reminderMinute) ?? 0,
-  );
-});
+final reminderProvider = FutureProvider<({bool enabled, int hour, int minute})>(
+  (ref) async {
+    final p = await ref.watch(prefsProvider.future);
+    return (
+      enabled: p.getBool(SettingsKeys.reminderEnabled) ?? false,
+      hour: p.getInt(SettingsKeys.reminderHour) ?? 20,
+      minute: p.getInt(SettingsKeys.reminderMinute) ?? 0,
+    );
+  },
+);
 
 // ---------- Tampilan ----------
 
@@ -235,12 +232,6 @@ final privacyScopeProvider = FutureProvider<String>((ref) async {
 final showTopCategoriesProvider = FutureProvider<bool>((ref) async {
   final p = await ref.watch(prefsProvider.future);
   return p.getBool(SettingsKeys.showTopCategories) ?? true;
-});
-
-/// Tampilkan ringkasan masuk/keluar di kartu saldo.
-final showMonthTotalsProvider = FutureProvider<bool>((ref) async {
-  final p = await ref.watch(prefsProvider.future);
-  return p.getBool(SettingsKeys.showMonthTotals) ?? true;
 });
 
 /// Nama sapaan MANUAL di Beranda — menimpa nama akun Google bila diisi.
@@ -285,19 +276,19 @@ final fontScaleProvider = FutureProvider<String>((ref) async {
 
 /// Nilai skala font sebagai faktor.
 double fontScaleValue(String name) => switch (name) {
-      'small' => 0.85,
-      'large' => 1.15,
-      'xlarge' => 1.3,
-      _ => 1.0,
-    };
+  'small' => 0.85,
+  'large' => 1.15,
+  'xlarge' => 1.3,
+  _ => 1.0,
+};
 
 /// Label Indonesia untuk skala font.
 String fontScaleLabel(String name) => switch (name) {
-      'small' => 'Kecil',
-      'large' => 'Besar',
-      'xlarge' => 'Sangat besar',
-      _ => 'Normal',
-    };
+  'small' => 'Kecil',
+  'large' => 'Besar',
+  'xlarge' => 'Sangat besar',
+  _ => 'Normal',
+};
 
 /// List rapat (kepadatan compact).
 final compactListProvider = FutureProvider<bool>((ref) async {
