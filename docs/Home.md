@@ -21,7 +21,7 @@
 - **Penyimpanan:** 100% lokal, SQLite via Drift — tanpa login, tanpa server.
 - **State:** flutter_riverpod 3.x (`StreamProvider` auto-refresh, `StateProvider` via `legacy.dart`).
 - **File DB:** `mywallet.sqlite` di folder dokumen aplikasi; salinan otomatis di `backups/mywallet-auto-YYYYMMDD.sqlite` (satu file per hari, rotasi 5 hari, diperbarui tiap simpan/hapus — v1.41.0).
-- **Status:** v1.44.0 — kunci aplikasi tahan nilai rusak (`app_lock` divalidasi whitelist `none/pin/biometric` saat baca & tulis; nilai asing jadi `none`, jadi app tidak mengunci diri sendiri padahal PIN belum ada), dan dialog backup/restore menyebut eksplisit bahwa isinya data saja — setelan aplikasi tidak ikut. Sebelumnya: Pengaturan pakai satu katalog setelan (31 entri) sebagai sumber pencarian hub + filter sub-halaman, `SettingSwitch`/`SettingsScaffold` memangkas 526 baris, export CSV pindah ke `ExportService`.
+- **Status:** v1.45.0 — Pengaturan dirapikan lewat audit `ui-ux-pro-max`: label grup sejajar rail halaman (x16), divider mulai di kolom teks, ekor daftar 96→32, tombol bersihkan pencarian punya nama untuk TalkBack, empty state memberi contoh kata kunci + tombol, dan baris tidak lagi overflow saat ukuran teks HP 2× di layar 320px. Dikunci `settings_ui_contract_test.dart`. Sebelumnya: kunci aplikasi tahan nilai rusak (`app_lock` whitelist) dan dialog backup/restore jujur soal isi.
 
 ## Peta kode
 

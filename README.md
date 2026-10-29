@@ -10,8 +10,8 @@ Tanpa login, tanpa server — semua data cuma tinggal di perangkatmu.
 ![Flutter](https://img.shields.io/badge/Flutter-3.44-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.12-0175C2?logo=dart&logoColor=white)
 ![Drift](https://img.shields.io/badge/Drift-2.35-EAECED?logo=sqlite&logoColor=black)
-![Version](https://img.shields.io/badge/version-1.44.0-6C5CE7)
-![Tests](https://img.shields.io/badge/tests-385%2F385-2ECC71)
+![Version](https://img.shields.io/badge/version-1.45.0-6C5CE7)
+![Tests](https://img.shields.io/badge/tests-388%2F388-2ECC71)
 [![Check](https://github.com/Mighty-Nievl/MyWallet/actions/workflows/build.yml/badge.svg)](https://github.com/Mighty-Nievl/MyWallet/actions/workflows/build.yml)
 
 [**Ringkasan**](#-ringkasan) · [**Fitur**](#-fitur) · [**Mulai Cepat**](#-mulai-cepat) · [**Dokumentasi**](#-dokumentasi) · [**Rilis**](#-instal-dan-rilis)

@@ -7,6 +7,7 @@ import '../app_theme.dart';
 import '../components/setting_row.dart';
 import '../components/settings_scaffold.dart';
 import '../design/app_spacing.dart';
+import '../design/app_typography.dart';
 import 'settings_about.dart';
 import 'settings_appearance.dart';
 import 'settings_catalog.dart';
@@ -77,10 +78,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       children: [
         if (searching)
           if (results.isEmpty)
-            const Card(
+            // v1.45: empty state tidak boleh buntu. Dulu cuma "tidak ada
+            // yang cocok" — user tak tahu harus mengetik apa. Sekarang:
+            // contoh kata kunci + jalan keluar satu tap.
+            Card(
               child: Padding(
                 padding: AppSpacing.cardPadding,
-                child: Text('Tidak ada pengaturan yang cocok.'),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tidak ada pengaturan yang cocok.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.s4),
+                    Text(
+                      'Coba kata lain: tema, backup, kategori, atau kunci.',
+                      style: AppType.secondary(context),
+                    ),
+                    const SizedBox(height: AppSpacing.s4),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed: () {
+                          _searchCtrl.clear();
+                          setState(() => _q = '');
+                        },
+                        child: const Text('Bersihkan pencarian'),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             )
           else

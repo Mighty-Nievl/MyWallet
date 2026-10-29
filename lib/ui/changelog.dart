@@ -20,6 +20,26 @@
 /// - `test/changelog_test.dart` gagal bila entri teratas beda dengan pubspec.
 const appChangelog = <({String version, String date, String user, String tech, String? breaking})>[
   (
+    version: 'v1.45.0',
+    date: '29 Okt 2026',
+    user:
+        'Tampilan Pengaturan dirapikan: label grup sejajar dengan judul lain, '
+        'garis pemisah mulai tepat di kolom teks, tidak ada ruang kosong '
+        'berlebih di bawah daftar, dan pencarian yang tidak ketemu sekarang '
+        'memberi contoh kata kunci + tombol untuk mengosongkannya. Baris '
+        'setelan juga tidak lagi terpotong saat ukuran teks HP diperbesar.',
+    tech:
+        'Audit ui-ux-pro-max (pro-rules): AppType.groupLabel (hapus '
+        'hardcoded 13/0.2), label grup x20→x16, divider indent 52→64, '
+        'list bottom 96→32 (halaman ini tanpa FAB), clear button + tooltip '
+        '+ textInputAction.search, empty state + saran + tombol bersihkan, '
+        'judul maxLines 2, trailing dibatasi 42% lebar + value maxLines 2 → '
+        'overflow 15px di 320px/teks 2× hilang. Kontrak '
+        'settings_ui_contract_test.dart: target sentuh ≥48, rail, divider, '
+        'ekor list, empty state, Dynamic Type 2×.',
+    breaking: null,
+  ),
+  (
     version: 'v1.44.0',
     date: '29 Okt 2026',
     user:

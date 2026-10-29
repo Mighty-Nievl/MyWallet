@@ -47,6 +47,16 @@ abstract final class AppType {
     color: Theme.of(context).colorScheme.onSurfaceVariant,
   );
 
+  /// Label grup di halaman pengaturan ("Warna & tema", "Data").
+  /// v1.45: dulu hardcoded `fontSize: 13, letterSpacing: 0.2` di
+  /// `SettingsGroup` — sekarang satu token, sama seperti judul section.
+  static TextStyle groupLabel(BuildContext context) => TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.2,
+    color: Theme.of(context).colorScheme.primary,
+  );
+
   /// Teks sekunder satu baris ("Makanan · Hari ini").
   static TextStyle secondary(BuildContext context) {
     final base =

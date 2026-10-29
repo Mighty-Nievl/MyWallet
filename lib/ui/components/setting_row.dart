@@ -73,7 +73,7 @@ class SettingRow extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                     color: titleColor,
                   ),
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (subtitle != null) ...[
@@ -90,7 +90,16 @@ class SettingRow extends StatelessWidget {
           ),
           if (trailing != null) ...[
             const SizedBox(width: AppSpacing.s8),
-            trailing!,
+            // v1.45 (Dynamic Type): trailing dibatasi 42% lebar layar.
+            // Tanpa ini, nilai panjang ("5 transaksi") pada teks 2×
+            // mendorong Row melebihi lebar — terukur overflow 15px di
+            // 320px (probe `settings_ui_contract_test`).
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.sizeOf(context).width * 0.42,
+              ),
+              child: trailing,
+            ),
           ] else if (onTap != null) ...[
             const SizedBox(width: AppSpacing.s8),
             const SettingChevron(),
@@ -178,7 +187,9 @@ class SettingValue extends StatelessWidget {
           child: Text(
             value,
             style: AppType.secondary(context),
-            maxLines: 1,
+            // 2 baris: pada teks 2× nilai seperti "5 transaksi" pecah
+            // jadi dua baris, bukan terpotong "5 tran…".
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -211,22 +222,24 @@ class SettingsGroup extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: AppSpacing.s8),
+          // v1.45: left 4 → 0. Label grup duduk di rail halaman (x=16),
+          // bukan x=20 — sama dengan judul section Beranda (v1.42).
+          padding: const EdgeInsets.only(bottom: AppSpacing.s8),
           child: Text(
             title,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.2,
-              color: titleColor ?? scheme.primary,
-            ),
+            style: AppType.groupLabel(
+              context,
+            ).copyWith(color: titleColor ?? scheme.primary),
           ),
         ),
         Card(
           child: Column(
             children: [
               for (var i = 0; i < children.length; i++) ...[
-                if (i > 0) const Divider(height: 1, indent: 52),
+                // v1.45: 52 → 64 = 12 (padding baris) + 40 (kotak ikon) +
+                // 12 (gap) — divider mulai tepat di kolom teks, bukan di
+                // tengah ikon.
+                if (i > 0) const Divider(height: 1, indent: 64),
                 children[i],
               ],
             ],

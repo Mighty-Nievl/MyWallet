@@ -46,7 +46,9 @@ class SettingsScaffold extends StatelessWidget {
                   AppSpacing.page,
                   AppSpacing.s8,
                   AppSpacing.page,
-                  96,
+                  // v1.45: 96 → 32. Halaman pengaturan tidak punya FAB
+                  // (shell FAB hanya di Beranda), jadi 96 = ruang mati.
+                  AppSpacing.sectionGapLarge,
                 ),
                 children: [
                   if (search != null) ...[
@@ -88,6 +90,10 @@ class SettingsSearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
+      // v1.45 (a11y): tombol ikon wajib punya nama — dulu TalkBack cuma
+      // bilang "tombol". autocorrect mati: ini kotak cari, bukan penulisan.
+      autocorrect: false,
+      textInputAction: TextInputAction.search,
       decoration: InputDecoration(
         hintText: hint,
         prefixIcon: const Icon(Icons.search),
@@ -95,6 +101,7 @@ class SettingsSearchField extends StatelessWidget {
             ? null
             : IconButton(
                 icon: const Icon(Icons.clear),
+                tooltip: 'Bersihkan pencarian',
                 onPressed: () {
                   controller.clear();
                   onChanged('');
